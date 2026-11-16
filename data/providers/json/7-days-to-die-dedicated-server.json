@@ -1,0 +1,104 @@
+{
+  "manifest_version": 1,
+  "id": "7-days-to-die-dedicated-server",
+  "name": "7 Days to Die Dedicated Server",
+  "description": "7 Days to Die is an open-world game that is a unique combination of first-person shooter, survival horror, tower defense, and role-playing games. Play the definitive zombie survival sandbox RPG that came first. Navezgane awaits!",
+  "genres": [
+    "Action",
+    "Adventure",
+    "Indie",
+    "RPG",
+    "Simulation",
+    "Strategy"
+  ],
+  "artwork": {
+    "cover": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/header.jpg?t=1784044715",
+    "hero": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/header.jpg?t=1784044715",
+    "accent": "#4F6BFF"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 294420,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\startdedicated.bat",
+    "arguments": "",
+    "working_dir": "{server_root}",
+    "stop_command": "quit"
+  },
+  "network": {
+    "default_port": 26900,
+    "protocol": "both",
+    "query": "a2s",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "7 Days to Die is a voxel-based survival game from The Fun Pimps. It mixes first-person shooting, crafting, base building and RPG-style progression. You scavenge a ruined world by day and fortify against the zombie horde that grows stronger every seventh night. The whole world can be destroyed and rebuilt, so the bases you design really matter.\n\nThe free dedicated server tool keeps your world running even when the host is not playing. Friends can drop in, keep their progress and build together on a shared map. You control the rules through serverconfig.xml: world type (Navezgane or a random world), difficulty, player count, passwords and much more. Optional telnet and web dashboard interfaces let you run admin tasks remotely.",
+    "developer": "The Fun Pimps",
+    "publisher": "The Fun Pimps Entertainment LLC",
+    "release_date": "Jul 25, 2024",
+    "website": "https://7daystodie.com",
+    "store_url": "https://store.steampowered.com/app/251570/",
+    "docs_url": "https://7daystodie.wiki.gg/wiki/Server:_serverconfig.xml",
+    "max_players": "Configurable (default 8 via ServerMaxPlayerCount)",
+    "features": [
+      "Open-world zombie survival with crafting, building and RPG progression",
+      "Fully destructible voxel world with base building",
+      "Horde nights every seventh day that grow in difficulty",
+      "Choose the handcrafted Navezgane map or a randomly generated world",
+      "All server rules are set in serverconfig.xml",
+      "Optional telnet console and web dashboard for remote admin",
+      "Cross-platform multiplayer"
+    ],
+    "server_requirements": {
+      "notes": "No official server-only figures are published. The Steam store lists 8 GB RAM minimum and 12 GB recommended for the game client, with 15 GB of disk, and warns that running a dedicated server and the client on the same PC doubles the RAM requirement."
+    },
+    "ports": [
+      {
+        "port": "26900",
+        "protocol": "TCP+UDP",
+        "purpose": "Game traffic and server list (ServerPort)"
+      },
+      {
+        "port": "26901-26902",
+        "protocol": "UDP",
+        "purpose": "Additional game/networking traffic (ServerPort +1 and +2)"
+      },
+      {
+        "port": "8080",
+        "protocol": "TCP",
+        "purpose": "Web control panel (optional, disabled by default)"
+      },
+      {
+        "port": "8081",
+        "protocol": "TCP",
+        "purpose": "Telnet admin console (enabled by default)"
+      }
+    ],
+    "setup_tips": [
+      "The app starts the server with startdedicated.bat in the server folder, which reads serverconfig.xml from there. Set ServerName, ServerPassword, ServerMaxPlayerCount and GameWorld in that file before the first launch.",
+      "The game's default ServerPort is 26900. Open it on the Firewall Rules page or through Connect to Tunnel together with the next two UDP ports (26901-26902), and keep it matching ServerPort in serverconfig.xml.",
+      "If you change ServerPort, the extra UDP ports move with it. For example, a server on 26920 also uses 26921-26922.",
+      "Telnet is enabled by default on port 8081. Set TelnetPassword and do not expose 8081 or 8080 to the internet unless you need remote admin.",
+      "Keep a backup copy of your edited serverconfig.xml, because a SteamCMD update or verify can replace the stock file.",
+      "If you also play on the same PC, expect roughly double the RAM use: Steam's requirements warn that a server and client together need twice the memory."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/766ed3debfe7b894fbb5650aa89fa213fa254d5d/ss_766ed3debfe7b894fbb5650aa89fa213fa254d5d.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/2d243d95de4989b37df448f29de123f0d662088c/ss_2d243d95de4989b37df448f29de123f0d662088c.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/33edbeefc7f5ff8ccda4bda274b01eff84eb4eb8/ss_33edbeefc7f5ff8ccda4bda274b01eff84eb4eb8.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/70c05a775f747e9d556435bfd8795536ddd4117d/ss_70c05a775f747e9d556435bfd8795536ddd4117d.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/8aff547df25c2d393fbdef2977dc109806de3112/ss_8aff547df25c2d393fbdef2977dc109806de3112.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/d7b2bba330c25e1eae848d8d8bb7321b9b1833d0/ss_d7b2bba330c25e1eae848d8d8bb7321b9b1833d0.1920x1080.jpg"
+    ]
+  }
+}

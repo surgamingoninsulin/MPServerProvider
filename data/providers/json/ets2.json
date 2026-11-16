@@ -1,0 +1,87 @@
+{
+  "manifest_version": 1,
+  "id": "ets2",
+  "name": "Euro Truck Simulator 2 Server",
+  "description": "Official ETS2 dedicated server via SteamCMD. Needs server_packages files exported from your game client (see SCS documentation).",
+  "genres": [
+    "Simulation"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/227300/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/227300/library_hero.jpg",
+    "accent": "#64748B"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 1948160,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\bin\\win_x64\\eurotrucks2_server.exe",
+    "arguments": "",
+    "working_dir": "{server_root}"
+  },
+  "network": {
+    "default_port": 27015,
+    "protocol": "both",
+    "query": "none",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Euro Truck Simulator 2 is SCS Software's long-running trucking sim. You drive licensed trucks across a large map of Europe, deliver cargo, and grow your own haulage company. Its Convoy mode lets friends share one world and drive together.\n\nSCS's official dedicated server lets you host a Convoy session without keeping the game open on a host PC. The server uses the map, DLC and mod setup you export from your own game client as server_packages files, so it needs no DLC or mod data of its own. Settings such as lobby name, password, traffic, player damage and moderators live in server_config.sii.",
+    "developer": "SCS Software",
+    "publisher": "SCS Software",
+    "release_date": "Oct 12, 2012",
+    "website": "https://eurotrucksimulator2.com/",
+    "store_url": "https://store.steampowered.com/app/227300/",
+    "docs_url": "https://modding.scssoft.com/wiki/Documentation/Tools/Dedicated_Server",
+    "max_players": "Up to 8 players",
+    "features": [
+      "Official SCS dedicated server for Convoy multiplayer",
+      "Map, DLC and mod setup taken from server_packages files exported from your game",
+      "Lobby name, password, welcome message and description settings",
+      "Toggles for AI traffic, player damage, speed limiter and name tags",
+      "Session moderators with chat commands such as /set_time and /set_rain_factor",
+      "Optional Steam logon token for a persistent server ID"
+    ],
+    "server_requirements": {
+      "notes": "SCS's dedicated server documentation does not list hardware requirements. The server needs no DLC or mod data, only the exported server_packages.sii and server_packages.dat files."
+    },
+    "ports": [
+      {
+        "port": "27015",
+        "protocol": "TCP+UDP",
+        "purpose": "Game connection (connection_dedicated_port)"
+      },
+      {
+        "port": "27016",
+        "protocol": "TCP+UDP",
+        "purpose": "Steam query / session browser (query_dedicated_port)"
+      }
+    ],
+    "setup_tips": [
+      "In your game client, set uset g_console \"1\" in config.cfg, open the console with ~ and run export_server_packages. Copy the generated server_packages.sii and server_packages.dat into the server's home folder.",
+      "The first launch creates a default server_config.sii and reports that server packages are missing until you copy them in. Edit lobby_name, password and max_players there (8 is the maximum).",
+      "Open connection_dedicated_port 27015 (the app's default) and query_dedicated_port 27016 for both TCP and UDP so the server shows in the session browser. The virtual ports (100/101, allowed range 100-200) do not need forwarding.",
+      "Without port forwarding, players can still join through direct search using the server ID printed when the server starts.",
+      "The anonymous server gets a new ID each start. For a persistent ID, create a logon token at steamcommunity.com/dev/managegameservers using the game's app ID 227300 (not the server's) and set server_logon_token.",
+      "Add trusted players' SteamID64 values to moderator_list so they can use /set_time and /set_rain_factor in chat."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/227300/e040f74641ac21f15e3ec7c2415fc8b4de0b6bf9/ss_e040f74641ac21f15e3ec7c2415fc8b4de0b6bf9.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/227300/edbff61a062a49d1d97269e53b8afbffde05bb24/ss_edbff61a062a49d1d97269e53b8afbffde05bb24.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/227300/c610d985eb21cc22c26507b53cd843cfa0b3a00d/ss_c610d985eb21cc22c26507b53cd843cfa0b3a00d.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/227300/a944c7f801629bfa0cfb91fa7b23b4ff95e11753/ss_a944c7f801629bfa0cfb91fa7b23b4ff95e11753.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/227300/06aa11ece5d3303cfcfeafb3c81734258a7dd614/ss_06aa11ece5d3303cfcfeafb3c81734258a7dd614.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/227300/5dff1bca6580b5df288a4ad061e4f92f62f6a073/ss_5dff1bca6580b5df288a4ad061e4f92f62f6a073.1920x1080.jpg"
+    ]
+  }
+}

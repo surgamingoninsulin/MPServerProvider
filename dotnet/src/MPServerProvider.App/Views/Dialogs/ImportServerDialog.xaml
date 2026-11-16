@@ -1,0 +1,95 @@
+<local:DialogWindow x:Class="MPServerProvider.App.Views.Dialogs.ImportServerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
+        Title="Import Server" Width="520" SizeToContent="Height">
+    <!-- Imports an existing server folder (ServerImportService): shows what was detected in it,
+         then copies it into the servers folder or registers it where it is. -->
+    <Grid Margin="24,18,24,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock x:Name="TitleText" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock Text="Brings the whole server folder (worlds, configs, mods and plugins) into the app."
+                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Server folder" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="FolderBox" IsReadOnly="True" AutomationProperties.Name="Server folder" />
+                <Button x:Name="BrowseButton" Grid.Column="2" Content="Browse…" Style="{StaticResource GhostButtonStyle}" Click="BrowseButton_Click" />
+            </Grid>
+
+            <!-- What was found in the folder -->
+            <Border x:Name="DetectionCard" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="DetectionIcon" Style="{StaticResource IconTextStyle}" FontSize="16" Margin="0,1,10,0"
+                               VerticalAlignment="Top" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock x:Name="DetectionTitle" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="DetectionDetail" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                   Margin="0,3,0,0" TextWrapping="Wrap" />
+                        <TextBlock x:Name="DetectionNotes" Foreground="{StaticResource WarningBrush}" FontSize="12"
+                                   Margin="0,4,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="120" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Server name" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <TextBox x:Name="NameBox" AutomationProperties.Name="Server name" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Port" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <TextBox x:Name="PortBox" AutomationProperties.Name="Port" />
+                </StackPanel>
+            </Grid>
+
+            <RadioButton x:Name="CopyRadio" GroupName="importMode" IsChecked="True" Foreground="{StaticResource TextPrimaryBrush}"
+                         Content="Copy into the app's servers folder (recommended)" />
+            <TextBlock Text="Your original folder is left exactly as it is."
+                       Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="22,2,0,8" TextWrapping="Wrap" />
+            <RadioButton x:Name="InPlaceRadio" GroupName="importMode" Foreground="{StaticResource TextPrimaryBrush}"
+                         Content="Use the folder where it is" />
+            <TextBlock Text="No copy is made: the server runs from its current folder. Deleting it in the app later keeps these files."
+                       Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="22,2,0,0" TextWrapping="Wrap" />
+
+            <TextBlock x:Name="StatusText" Foreground="{StaticResource DangerBrush}" FontSize="12"
+                       Margin="0,10,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" x:Name="ProgressPanel" Visibility="Collapsed" Margin="0,8,0,8">
+            <TextBlock x:Name="ProgressStatusText" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                       Margin="0,0,0,6" TextWrapping="Wrap" />
+            <ProgressBar x:Name="ProgressBarControl" Height="6" Minimum="0" Maximum="100" BorderThickness="0"
+                         Foreground="{StaticResource BrandAccentBrush}" Background="{StaticResource PanelBackgroundBrush}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource GhostButtonStyle}" Margin="0,0,10,0" Click="CancelButton_Click" />
+            <Button x:Name="ImportButton" Content="Import Server" Style="{StaticResource AccentButtonStyle}" IsDefault="True" Click="ImportButton_Click" />
+        </StackPanel>
+    </Grid>
+</local:DialogWindow>

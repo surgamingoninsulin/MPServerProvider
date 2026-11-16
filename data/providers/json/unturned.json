@@ -1,0 +1,81 @@
+{
+  "manifest_version": 1,
+  "id": "unturned",
+  "name": "Unturned Dedicated Server",
+  "description": "Official Unturned dedicated server from Smartly Dressed Games, installed through Valve\u0027s SteamCMD (anonymous). Band together or betray your friends in a blocky post-apocalyptic sandbox.",
+  "genres": [
+    "Survival",
+    "Sandbox"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/304930/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/304930/library_hero.jpg",
+    "accent": "#4F6BFF"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 1110390,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\Unturned.exe",
+    "arguments": "-nographics -batchmode \u002Bsecureserver/{server_name}",
+    "working_dir": "{server_root}",
+    "stop_command": "shutdown"
+  },
+  "network": {
+    "default_port": 27015,
+    "protocol": "both",
+    "query": "a2s",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Unturned is a free-to-play open-world zombie survival sandbox from Smartly Dressed Games. Players scavenge for food, weapons and vehicles, build bases and either cooperate or fight each other across maps such as PEI, Washington, Russia and Germany, plus many curated Workshop maps.\n\nThe Unturned Dedicated Server (U3DS) lets you run your own world with your choice of map, player cap, PvP or PvE rules, perspective lock and difficulty settings. Mods and maps from the Steam Workshop can be listed in a config file, and the server downloads and updates them on startup. Connecting players get them automatically.\n\nServers can run as LAN or Internet servers. Internet servers need a Game Server Login Token, and can be reached with either port forwarding or Steam's Fake IP relay.",
+    "developer": "Smartly Dressed Games",
+    "publisher": "Smartly Dressed Games",
+    "release_date": "Jul 7, 2017",
+    "website": "https://smartlydressedgames.com/unturned/",
+    "store_url": "https://store.steampowered.com/app/304930/",
+    "docs_url": "https://docs.smartlydressedgames.com/en/stable/servers/server-hosting.html",
+    "max_players": "Configurable via MaxPlayers in Commands.dat (official example uses 24)",
+    "features": [
+      "Official Unturned Dedicated Server (U3DS), installed anonymously via SteamCMD (app 1110390)",
+      "Official and curated Workshop maps (Map command)",
+      "Workshop mods auto-installed via WorkshopDownloadConfig.json",
+      "Difficulty presets and detailed gameplay settings in the server config",
+      "PvE mode, perspective locks and admin/cheat commands",
+      "Reachable without port forwarding using Server Codes or Fake IP"
+    ],
+    "ports": [
+      {
+        "port": "27015-27016",
+        "protocol": "UDP",
+        "purpose": "Server list queries (port) and game traffic (port + 1)"
+      }
+    ],
+    "setup_tips": [
+      "The app launches Unturned.exe -nographics -batchmode +secureserver/<server name>, so settings and saves live in the U3DS\\Servers\\<server name> folder.",
+      "Edit Server\\Commands.dat to set Name, Map, MaxPlayers, Password, Owner (your SteamID64) and Port.",
+      "For an Internet server, add a Game Server Login Token in the server config. This also keeps the Server Code the same between launches.",
+      "Forward UDP 27015-27016 (or the Port value and port + 1) with Firewall Rules or Connect to Tunnel, or enable Fake IP if you only need Server Code joins.",
+      "There is no autosave. Use the Save command, or stop with 'shutdown' (the app's stop command), so progress is written to disk.",
+      "List Workshop file IDs in WorkshopDownloadConfig.json to install maps and mods. When running several servers, space their ports two apart (27015, 27017, 27019)."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/a2d8ffa4eaff717539c1fd9d3cd0440691c6fc81/ss_a2d8ffa4eaff717539c1fd9d3cd0440691c6fc81.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/c0f8253a44a7e322ee287e309e3596d17d9aacba/ss_c0f8253a44a7e322ee287e309e3596d17d9aacba.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/a4200b3c585bde5934230580162899c92a483610/ss_a4200b3c585bde5934230580162899c92a483610.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/accee15f453a1f6b981114579f2a67440563d850/ss_accee15f453a1f6b981114579f2a67440563d850.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/e502ef25688ec9415914ca018e8318698117248d/ss_e502ef25688ec9415914ca018e8318698117248d.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/7382b0dfbc4bc44986e888c263be3535cef11a31/ss_7382b0dfbc4bc44986e888c263be3535cef11a31.1920x1080.jpg"
+    ]
+  }
+}

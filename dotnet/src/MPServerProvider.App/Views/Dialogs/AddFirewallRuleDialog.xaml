@@ -1,0 +1,65 @@
+<local:DialogWindow x:Class="MPServerProvider.App.Views.Dialogs.AddFirewallRuleDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
+        xmlns:conv="clr-namespace:MPServerProvider.App.Converters"
+        Title="Add Firewall Rule"
+        Width="452" SizeToContent="Height">
+    <Window.Resources>
+        <conv:IntZeroToVisibilityConverter x:Key="LengthZeroToVisibility" />
+    </Window.Resources>
+    <!-- Port of views_addfirewallruledialog.xaml: name/port/protocol fields + an explanatory
+         note, matching the recovered XAML's element tree. Chrome comes from DialogWindow. -->
+    <StackPanel Margin="24,18,24,24">
+        <TextBlock Text="Add Firewall Rule" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+        <TextBlock Text="Create a new inbound firewall rule for your server"
+                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,16" TextWrapping="Wrap" />
+
+        <TextBlock Text="Rule Name" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <Grid Margin="0,0,0,14">
+            <TextBox x:Name="NameBox" />
+            <TextBlock Text="My Game Server" Foreground="{StaticResource TextMutedBrush}" FontSize="13"
+                       Margin="13,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                       Visibility="{Binding Text.Length, ElementName=NameBox, Converter={StaticResource LengthZeroToVisibility}}" />
+        </Grid>
+
+        <TextBlock Text="Port" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <Grid Margin="0,0,0,14">
+            <TextBox x:Name="PortBox" />
+            <TextBlock Text="25565" Foreground="{StaticResource TextMutedBrush}" FontSize="13"
+                       Margin="13,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                       Visibility="{Binding Text.Length, ElementName=PortBox, Converter={StaticResource LengthZeroToVisibility}}" />
+        </Grid>
+
+        <TextBlock Text="Protocol" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <ComboBox x:Name="ProtocolCombo" SelectedIndex="0" Margin="0,0,0,14">
+            <ComboBoxItem Content="TCP/UDP (Both)" />
+            <ComboBoxItem Content="TCP" />
+            <ComboBoxItem Content="UDP" />
+        </ComboBox>
+
+        <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="&#xE946;" Style="{StaticResource IconTextStyle}" Foreground="{StaticResource BrandAccentBrush}"
+                           VerticalAlignment="Top" Margin="0,2,8,0" />
+                <TextBlock Grid.Column="1" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12">
+                    <Run Text="Note:" FontWeight="SemiBold" />
+                    <Run Text=" This will open the specified port in your Windows Firewall to allow incoming connections." />
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="12" Margin="0,0,0,8"
+                   TextWrapping="Wrap" Visibility="Collapsed" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="Cancel" Width="90" Style="{StaticResource GhostButtonStyle}" Click="CancelButton_Click" />
+            <Button x:Name="AddButton" Content="Add Rule" Width="110" Margin="10,0,0,0" IsDefault="True"
+                    Style="{StaticResource AccentButtonStyle}" Click="AddButton_Click" />
+        </StackPanel>
+    </StackPanel>
+</local:DialogWindow>

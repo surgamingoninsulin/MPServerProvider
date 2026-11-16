@@ -1,0 +1,86 @@
+{
+  "manifest_version": 1,
+  "id": "minecraft-bedrock",
+  "name": "Minecraft: Bedrock Edition",
+  "description": "Official Bedrock Dedicated Server from Mojang \u2014 for phones, consoles and Windows 10/11 clients.",
+  "genres": [
+    "Sandbox",
+    "Survival"
+  ],
+  "artwork": {
+    "cover": "https://cdn2.steamgriddb.com/thumb/131df8dfa437f57f24aa804fc542d653.jpg",
+    "hero": "https://www.minecraft.net/content/dam/minecraftnet/franchise/logos/minecraft-creeper-face.jpg",
+    "accent": "#10B981"
+  },
+  "install": {
+    "provider": "minecraft-bedrock",
+    "variants": [],
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_file}",
+    "arguments": "",
+    "working_dir": "{server_root}",
+    "stop_command": "stop"
+  },
+  "network": {
+    "default_port": 19132,
+    "protocol": "udp",
+    "query": "minecraft-bedrock",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Minecraft: Bedrock Edition is the cross-platform version of Minecraft. It runs on Windows, Xbox, PlayStation, Nintendo Switch, iOS and Android, and players on all of them can play together.\n\nThe Bedrock Dedicated Server (BDS) is Mojang's free, official server software for this edition, available for Windows and Ubuntu Linux. Hosting your own BDS keeps a world online around the clock. You control the settings through server.properties and decide who can join with the allow-list and permission files.",
+    "developer": "Mojang Studios",
+    "release_date": "Aug 16, 2011",
+    "website": "https://www.minecraft.net/en-us/about-minecraft",
+    "store_url": "https://www.minecraft.net/en-us/store/minecraft-java-bedrock-edition-pc",
+    "docs_url": "https://minecraft.wiki/w/Bedrock_Dedicated_Server",
+    "max_players": "Configurable (default 10)",
+    "features": [
+      "Official, free server software from Mojang for Windows and Ubuntu Linux",
+      "Cross-platform play for Bedrock clients on PC, mobile and consoles",
+      "Allow-list and per-player permission levels",
+      "World, difficulty, game mode and cheat settings in server.properties",
+      "Lightweight next to Java Edition, with no Java runtime needed"
+    ],
+    "server_requirements": {
+      "min_ram_mb": 4096,
+      "disk_gb": 1,
+      "notes": "From the minecraft.net BDS download page: Intel Core i3 3210 / AMD A8 7600 APU or equivalent, 4 GB RAM, 180 MB to 1 GB of disk space, and Windows 10 (10.0.15063+), Windows Server 2016+ or Ubuntu 22.04+. The FAQ on the same page says small servers need at least 1 GB of RAM. minecraft.wiki notes that more than 10 players may need more memory."
+    },
+    "ports": [
+      {
+        "port": "19132",
+        "protocol": "UDP",
+        "purpose": "Game traffic, IPv4 (server-port)"
+      },
+      {
+        "port": "19133",
+        "protocol": "UDP",
+        "purpose": "Game traffic, IPv6 (server-portv6)"
+      }
+    ],
+    "setup_tips": [
+      "Bedrock uses UDP, not TCP. Open UDP 19132 on the Firewall Rules page, or use Connect to Tunnel, for players outside your network. Open 19133 only if you need IPv6.",
+      "allow-list defaults to true in server.properties, so only players listed in allowlist.json can join. Add players with 'allowlist add <name>' in the console, or set allow-list=false for an open server.",
+      "Unlike Java Edition, there is no memory setting. BDS uses what it needs, so leave headroom beyond the 4 GB minimum for larger groups.",
+      "Players connect with the server's IP and port 19132 from the Servers tab. minecraft.wiki notes that Xbox, PlayStation and Switch players may need a LAN or custom-DNS workaround to add a custom server.",
+      "Use the 'stop' console command to shut down cleanly so the world saves. BDS does not support RCON."
+    ],
+    "screenshots": [
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_1_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_2_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_5_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_6_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/key-art/Hero-Image_Vanilla_Standard_1200x675.jpg"
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+<local:DialogWindow x:Class="MPServerProvider.App.Views.Dialogs.InstallServerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
+        Title="Install Server" Width="492" SizeToContent="Height">
+    <!-- Port of views_installserverdialog.xaml: variant/version picker -> name/port/ram form ->
+         Install drives InstallService.InstallAsync with a live progress bar. Chrome (title bar,
+         close button, rounded card, shadow) comes from DialogWindow. -->
+    <Grid Margin="24,18,24,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock x:Name="TitleText" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock x:Name="SubtitleText" Foreground="{StaticResource TextSecondaryBrush}"
+                       Margin="0,4,0,0" TextWrapping="Wrap" MaxHeight="96" TextTrimming="WordEllipsis" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Server name" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+            <TextBox x:Name="NameBox" Margin="0,0,0,12" />
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel x:Name="VariantPanel" Grid.Column="0">
+                    <TextBlock Text="Variant" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <ComboBox x:Name="VariantCombo" SelectionChanged="VariantCombo_SelectionChanged" />
+                </StackPanel>
+                <StackPanel x:Name="VersionPanel" Grid.Column="2">
+                    <TextBlock Text="Version" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <ComboBox x:Name="VersionCombo" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Port" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <TextBox x:Name="PortBox" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="RAM min (MB)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <TextBox x:Name="RamMinBox" Text="1024" />
+                </StackPanel>
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="RAM max (MB)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <TextBox x:Name="RamMaxBox" Text="2048" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Description (optional)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
+            <TextBox x:Name="DescriptionBox" Margin="0,0,0,12" />
+
+            <StackPanel x:Name="EulaPanel" Orientation="Vertical" Visibility="Collapsed" Margin="0,0,0,8">
+                <CheckBox x:Name="EulaCheck" Content="I accept the Minecraft EULA (aka.ms/MinecraftEULA)" />
+                <TextBlock Text="Mojang requires accepting the Minecraft EULA to run a server."
+                           Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="28,4,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" x:Name="ProgressPanel" Visibility="Collapsed" Margin="0,8,0,8">
+            <TextBlock x:Name="ProgressStatusText" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                       Margin="0,0,0,6" TextWrapping="Wrap" />
+            <ProgressBar x:Name="ProgressBarControl" Height="6" Minimum="0" Maximum="100" BorderThickness="0"
+                         Foreground="{StaticResource BrandAccentBrush}" Background="{StaticResource PanelBackgroundBrush}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource GhostButtonStyle}" Margin="0,0,10,0" Click="CancelButton_Click" />
+            <Button x:Name="InstallButton" Content="Install" Style="{StaticResource AccentButtonStyle}" IsDefault="True" Click="InstallButton_Click" />
+        </StackPanel>
+    </Grid>
+</local:DialogWindow>

@@ -1,0 +1,757 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:MPServerProvider.App.Controls"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!--
+        Colors sampled directly from real screenshots of the running original
+        app (user-supplied reference images), since the BAML-recovered
+        app.xaml's own brush resources are stored in a deferred binary block
+        that could not be decoded to literal hex values. Pixel-sampled via a
+        PowerShell/System.Drawing probe against the reference PNGs:
+          - BrandAccent   (#4F6BFF) from the "PROVIDER" logo text and the
+            "Manage Servers" button fill (same color used in both places).
+          - NavSelected   (#1B2B66) from the active sidebar nav pill background.
+          - PanelBackground (#0D1220) from stat tiles / settings cards / the
+            tunnel dialog's tab strip.
+          - RootBackground (#05070D) from the outer window background.
+        Success/Warning/Danger are NOT sampled (no clear reference pixel found)
+        and use conventional Fluent-dark-theme values as a placeholder; revisit
+        if a clearer reference screenshot turns up.
+    -->
+
+    <Color x:Key="RootBackgroundColor">#05070D</Color>
+    <Color x:Key="SidebarBackgroundColor">#0F0D0B</Color>
+    <Color x:Key="PanelBackgroundColor">#0D1220</Color>
+    <Color x:Key="CardBackgroundColor">#11151F</Color>
+    <Color x:Key="BrandAccentColor">#4F6BFF</Color>
+    <Color x:Key="BrandAccentDarkColor">#0B1C83</Color>
+    <Color x:Key="NavSelectedColor">#1B2B66</Color>
+    <Color x:Key="SuccessColor">#2FBF71</Color>
+    <Color x:Key="WarningColor">#F2B705</Color>
+    <Color x:Key="DangerColor">#E5484D</Color>
+    <Color x:Key="TextPrimaryColor">#EEF1F8</Color>
+    <Color x:Key="TextSecondaryColor">#A7AEC2</Color>
+    <Color x:Key="TextMutedColor">#6B7280</Color>
+
+    <SolidColorBrush x:Key="RootBackgroundBrush" Color="{StaticResource RootBackgroundColor}" />
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="{StaticResource SidebarBackgroundColor}" />
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource PanelBackgroundColor}" />
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="{StaticResource CardBackgroundColor}" />
+    <SolidColorBrush x:Key="BrandAccentBrush" Color="{StaticResource BrandAccentColor}" />
+    <SolidColorBrush x:Key="BrandAccentDarkBrush" Color="{StaticResource BrandAccentDarkColor}" />
+    <SolidColorBrush x:Key="NavSelectedBrush" Color="{StaticResource NavSelectedColor}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+
+    <!-- Logo text gradient: "MP SERVER" reads near-white/light, "PROVIDER"
+         reads in BrandAccentColor, per the sampled reference (not a literal
+         LinearGradientBrush in the original — two separate Runs). -->
+    <LinearGradientBrush x:Key="LogoAccentGradientBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource TextPrimaryColor}" Offset="0" />
+        <GradientStop Color="{StaticResource BrandAccentColor}" Offset="1" />
+    </LinearGradientBrush>
+
+    <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
+
+    <!-- Icon font: Windows 11 ships "Segoe Fluent Icons", Windows 10 only "Segoe MDL2 Assets".
+         WPF falls back per glyph through the list, so every icon in the app uses codepoints
+         present in BOTH fonts (verified against the installed font files' cmaps) and never
+         renders as an empty "tofu" box. -->
+    <FontFamily x:Key="IconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <FontFamily x:Key="MonoFontFamily">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+    <Color x:Key="InputBorderColor">#232B45</Color>
+    <Color x:Key="HoverColor">#1A2140</Color>
+    <SolidColorBrush x:Key="InputBorderBrush" Color="{StaticResource InputBorderColor}" />
+    <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}" />
+    <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource BrandAccentColor}" />
+
+    <!-- Icon glyph TextBlock (codepoints shared by Segoe Fluent Icons + Segoe MDL2 Assets). -->
+    <Style x:Key="IconTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource IconFontFamily}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+    </Style>
+
+    <!-- Shared metrics so every card/pill/tile in the shell uses the same rounding, matching
+         the soft-rounded tiles visible in every reference screenshot (stat tiles, nav pills,
+         settings cards, the splash's status panel). -->
+    <CornerRadius x:Key="CardCornerRadius">12</CornerRadius>
+    <CornerRadius x:Key="PillCornerRadius">10</CornerRadius>
+    <!-- Inputs (TextBox/PasswordBox/ComboBox) share one compact size so form rows line up:
+         34px tall, 10,6 padding, 13px text, same rounding as the buttons beside them. -->
+    <CornerRadius x:Key="InputCornerRadius">8</CornerRadius>
+    <sys:Double x:Key="InputHeight">34</sys:Double>
+
+    <!-- Hero banner background: the real asset is unrecoverable (deferred BAML binary), so this
+         approximates it with a dark radial vignette plus a faint accent-blue top glow, close to
+         1.png's hero (dark photographic background, brand text + CTA buttons on top). -->
+    <RadialGradientBrush x:Key="HeroBannerBackgroundBrush" Center="0.5,0" RadiusX="1.1" RadiusY="1.0">
+        <GradientStop Color="#17204A" Offset="0" />
+        <GradientStop Color="#0D1220" Offset="0.55" />
+        <GradientStop Color="#05070D" Offset="1" />
+    </RadialGradientBrush>
+
+    <!-- Splash background: dark atmospheric stand-in for the real (unrecoverable) photo asset
+         per docs/reference-screenshots/9.png and 10.png. -->
+    <RadialGradientBrush x:Key="SplashBackgroundBrush" Center="0.5,0.4" RadiusX="0.9" RadiusY="0.9">
+        <GradientStop Color="#1A1F33" Offset="0" />
+        <GradientStop Color="#0A0D17" Offset="0.6" />
+        <GradientStop Color="#05070D" Offset="1" />
+    </RadialGradientBrush>
+
+    <Style TargetType="Window">
+        <Setter Property="Background" Value="{StaticResource RootBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+    </Style>
+
+    <Style x:Key="AccentButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource BrandAccentBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="8"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GhostButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BrandAccentDarkBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Destructive-action button (delete server/file confirmations), filled with DangerBrush —
+         same shape as AccentButtonStyle, different fill, used by ConfirmDialog. -->
+    <Style x:Key="DangerButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="8"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Sidebar/top nav pill (NavHome/NavLibrary/NavMods/NavServers/NavSettings in the real
+         views_mainwindow.xaml) — a RadioButton styled as a flat pill, accent navy
+         (NavSelectedBrush) when checked, transparent + hover tint otherwise. -->
+    <Style x:Key="NavPillStyle" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="PillBorder"
+                            Background="Transparent"
+                            CornerRadius="{StaticResource PillCornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="PillBorder" Property="Background" Value="{StaticResource NavSelectedBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PillBorder" Property="Background" Value="{StaticResource BrandAccentDarkBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Custom chrome buttons (fullscreen / MaxRestoreButton / close) per views_mainwindow.xaml's
+         third top-bar StackPanel; flat glyph buttons that tint on hover, close tints red. -->
+    <Style x:Key="ChromeButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="#1A2140" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ChromeCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource ChromeButtonStyle}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{StaticResource DangerBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Generic card surface (stat tiles / settings cards / news cards / mod rows). -->
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource CardCornerRadius}" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <!-- Horizontal, scrollbar-hidden ScrollViewer template used by
+         Controls:AutoScrollingItemsControl's default template (see Themes/Theme.xaml usage in
+         AutoScrollingItemsControl's own template below) so the news carousel slides smoothly
+         without a visible scrollbar, matching the reference screenshot's subtle feel while still
+         actually scrolling (unlike the Rust/Slint port's static row). -->
+    <Style TargetType="{x:Type controls:AutoScrollingItemsControl}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:AutoScrollingItemsControl}">
+                    <ScrollViewer x:Name="PART_ScrollViewer"
+                                  HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  CanContentScroll="False"
+                                  Padding="0">
+                        <ItemsPresenter />
+                    </ScrollViewer>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Toast overlay card (bottom-right stack), severity-colored left accent bar. -->
+    <Style x:Key="ToastCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource PillCornerRadius}" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="MinWidth" Value="260" />
+        <Setter Property="MaxWidth" Value="360" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="4" Opacity="0.45" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Global hidden-scrollbar style: the default OS scrollbar (a light-gray track/thumb) looks
+        out of place against this dark theme wherever a page's content overflows (Library's card
+        grid, Mods/Settings' long panels, etc.). Content still scrolls perfectly fine via mouse
+        wheel or drag with no visible track — this matches an explicit "any scrollbar must be
+        hidden" requirement rather than attempting to re-skin the native thumb/track to match.
+        Applies to every ScrollBar in the app (implicit style, no x:Key) unless a specific
+        instance opts out with its own local Style.
+    -->
+    <Style TargetType="ScrollBar">
+        <Setter Property="Width" Value="0" />
+        <Setter Property="Height" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Every ScrollViewer (including ones inside TextBox/ListBox/ComboBox templates) forwards
+         the mouse wheel to its parent when it can't scroll further itself, so nested scrollers
+         never trap the wheel now that no scrollbar is visible to drag instead. -->
+    <Style TargetType="ScrollViewer">
+        <Setter Property="controls:WheelScroll.ForwardToParent" Value="True" />
+    </Style>
+
+    <!-- ===================================================================================
+         Dark input controls. Without these, ComboBox/CheckBox/TextBox fell back to the light
+         Aero2 system look (white combo boxes, white check squares) on this dark UI.
+         =================================================================================== -->
+
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CaretBrush" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
+        <Setter Property="SelectionOpacity" Value="0.45" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="{StaticResource InputHeight}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
+        <Setter Property="AllowDrop" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource InputCornerRadius}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <!-- No Margin=Padding here: TextBoxBase already applies Padding to its
+                                 content host, binding it again doubled the inner spacing. -->
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            <!-- Placeholder: set Tag="Search…" on any TextBox to get a hint that
+                                 shows while the box is empty. -->
+                            <TextBlock x:Name="Placeholder" Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="{TemplateBinding FontSize}"
+                                       Margin="{TemplateBinding Padding}" Padding="2,0,0,0"
+                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                       IsHitTestVisible="False" Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Text" Value="" />
+                                <Condition Property="IsKeyboardFocused" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Placeholder" Property="Visibility" Value="Visible" />
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.5" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsKeyboardFocused" Value="True" />
+                                <Condition Property="IsReadOnly" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="1" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <!-- Multi-line fields (Start Command, descriptions) grow and read top-down. -->
+            <Trigger Property="AcceptsReturn" Value="True">
+                <Setter Property="VerticalContentAlignment" Value="Top" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Code editor surface (File Manager built-in editor): no focus border, monospace. -->
+    <Style x:Key="CodeEditorTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CaretBrush" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
+        <Setter Property="SelectionOpacity" Value="0.45" />
+        <Setter Property="FontFamily" Value="{StaticResource MonoFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="AcceptsTab" Value="True" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="PasswordBox">
+        <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CaretBrush" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
+        <Setter Property="SelectionOpacity" Value="0.45" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="{StaticResource InputHeight}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource InputCornerRadius}"
+                            SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.5" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="#3A4466" />
+        <Setter Property="Padding" Value="10,0,0,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="Box" Width="18" Height="18" CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1.5" VerticalAlignment="Center">
+                            <TextBlock x:Name="Mark" Text="&#xE73E;" FontFamily="{StaticResource IconFontFamily}"
+                                       FontSize="11" Foreground="White" Visibility="Collapsed"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ContentPresenter Grid.Column="1" Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center" RecognizesAccessKey="True" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Mark" Property="Text" Value="&#xE738;" />
+                            <Setter TargetName="Mark" Property="Foreground" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Transparent full-size toggle that opens the ComboBox dropdown. -->
+    <Style x:Key="ComboBoxToggleStyle" TargetType="ToggleButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="ClickMode" Value="Press" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="5"
+                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource NavSelectedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="{StaticResource InputHeight}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="MaxDropDownHeight" Value="320" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="30" />
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="Bd" Grid.ColumnSpan="2"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource InputCornerRadius}" />
+                        <ContentPresenter x:Name="ContentSite" Grid.Column="0"
+                                          IsHitTestVisible="False"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center" HorizontalAlignment="Left"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                          ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
+                        <TextBox x:Name="PART_EditableTextBox" Grid.Column="0"
+                                 Visibility="Hidden" IsReadOnly="{TemplateBinding IsReadOnly}"
+                                 Background="Transparent" BorderThickness="0"
+                                 Foreground="{TemplateBinding Foreground}"
+                                 Padding="{TemplateBinding Padding}" VerticalAlignment="Center" MinHeight="0" />
+                        <TextBlock x:Name="Arrow" Grid.Column="1" Text="&#xE70D;"
+                                   FontFamily="{StaticResource IconFontFamily}" FontSize="10"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   IsHitTestVisible="False" />
+                        <ToggleButton x:Name="Toggle" Grid.ColumnSpan="2" Style="{StaticResource ComboBoxToggleStyle}"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                        <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False"
+                               PopupAnimation="Fade"
+                               IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                            <Border x:Name="DropDownBorder" Margin="0,4,8,8"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                    Background="{StaticResource CardBackgroundBrush}"
+                                    BorderBrush="{StaticResource BrandAccentDarkBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="4">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.5" />
+                                </Border.Effect>
+                                <ScrollViewer SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="DropDownBorder" Property="MinHeight" Value="36" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentDarkBrush}" />
+                            <Setter TargetName="Arrow" Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            <Setter TargetName="Arrow" Property="Text" Value="&#xE70E;" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="Toggle" Property="Grid.Column" Value="1" />
+                            <Setter TargetName="Toggle" Property="Grid.ColumnSpan" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsGrouping" Value="True">
+                            <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ToolTip">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BrandAccentDarkBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}" MaxWidth="360">
+                        <ContentPresenter>
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Small square icon-only button (row actions such as edit/delete in the file list). -->
+    <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource ChromeButtonStyle}">
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="FontFamily" Value="{StaticResource IconFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- ===================================================================================
+         Dialog chrome: dark borderless rounded card with drop shadow, custom title + close
+         button, draggable title bar. Applied by Views/Dialogs/DialogWindow (the base class of
+         every dialog except TunnelDialog); the 16px outer margin leaves room for the shadow.
+         =================================================================================== -->
+    <Style x:Key="DialogWindowStyle" TargetType="Window">
+        <Setter Property="WindowStyle" Value="None" />
+        <Setter Property="AllowsTransparency" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="ResizeMode" Value="NoResize" />
+        <Setter Property="ShowInTaskbar" Value="False" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Window">
+                    <Grid Margin="16">
+                        <!-- Shadow lives on its own layer so the content isn't rendered through
+                             the effect (which would blur text). -->
+                        <Border CornerRadius="12" Background="{StaticResource CardBackgroundBrush}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="5" Opacity="0.6" />
+                            </Border.Effect>
+                        </Border>
+                        <Border CornerRadius="12" Background="{StaticResource CardBackgroundBrush}"
+                                BorderBrush="{StaticResource BrandAccentDarkBrush}" BorderThickness="1">
+                            <DockPanel LastChildFill="True">
+                                <Grid x:Name="PART_TitleBar" DockPanel.Dock="Top" Height="40" Background="Transparent">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                                        <Ellipse Width="8" Height="8" Fill="{StaticResource BrandAccentBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{TemplateBinding Title}" Margin="10,0,0,0" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Style="{StaticResource ChromeCloseButtonStyle}" Margin="0,4,6,0"
+                                            Width="34" Height="28" ToolTip="Close" IsTabStop="False"
+                                            Command="{x:Static SystemCommands.CloseWindowCommand}">
+                                        <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" />
+                                    </Button>
+                                </Grid>
+                                <Border DockPanel.Dock="Top" Height="1" Background="{StaticResource PanelBackgroundBrush}" />
+                                <AdornerDecorator>
+                                    <ContentPresenter />
+                                </AdornerDecorator>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

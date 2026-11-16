@@ -1,0 +1,106 @@
+{
+  "manifest_version": 1,
+  "id": "minecraft-java",
+  "name": "Minecraft: Java Edition",
+  "description": "The official Minecraft Java server. Choose Vanilla (Mojang), Paper (high-performance, plugins), Fabric (mods), Purpur (Paper fork), Forge (mods), Velocity (proxy) or BungeeCord (proxy).",
+  "genres": [
+    "Sandbox",
+    "Survival"
+  ],
+  "artwork": {
+    "cover": "https://cdn2.steamgriddb.com/thumb/5810ad26c4f298db46ff65a4b8016dea.jpg",
+    "hero": "https://www.minecraft.net/content/dam/minecraftnet/franchise/logos/minecraft-creeper-face.jpg",
+    "accent": "#3FB950"
+  },
+  "install": {
+    "provider": "minecraft-java",
+    "variants": [
+      "vanilla",
+      "paper",
+      "fabric",
+      "purpur",
+      "forge",
+      "velocity",
+      "bungeecord"
+    ],
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{java}",
+    "arguments": "-Xms{ram_min_mb}M -Xmx{ram_max_mb}M -jar \u0022{server_file}\u0022 nogui",
+    "working_dir": "{server_root}",
+    "stop_command": "stop",
+    "requires": {
+      "java": 25
+    }
+  },
+  "network": {
+    "default_port": 25565,
+    "protocol": "both",
+    "query": "minecraft-java",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": true,
+    "folder": "mods",
+    "extensions": [
+      ".jar"
+    ],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Minecraft: Java Edition is the original PC version of Mojang's block-building sandbox. You can gather resources, build, explore and survive in an endless world, and it runs on Windows, macOS and Linux.\n\nRunning your own Java Edition server keeps a world online that everyone can join, even when you are not playing. You decide the rules in server.properties, including difficulty, game mode, player limit and whitelist. You can stay on Mojang's vanilla server or switch to Paper, Purpur, Fabric or Forge for plugins and mods, or to Velocity or BungeeCord to link several servers together.",
+    "developer": "Mojang Studios",
+    "release_date": "Nov 18, 2011",
+    "website": "https://www.minecraft.net/en-us/about-minecraft",
+    "store_url": "https://www.minecraft.net/en-us/store/minecraft-java-bedrock-edition-pc",
+    "docs_url": "https://minecraft.wiki/w/Server.properties",
+    "max_players": "Configurable (default 20)",
+    "features": [
+      "Official server software is free to download from minecraft.net",
+      "Vanilla server or plugin and mod platforms (Paper, Purpur, Fabric, Forge)",
+      "Proxy support (Velocity, BungeeCord) for linking multiple servers",
+      "Whitelist, operator and online-mode (account authentication) controls",
+      "Optional RCON and Query interfaces for remote admin and status tools",
+      "World and gameplay rules set in server.properties"
+    ],
+    "server_requirements": {
+      "min_ram_mb": 1024,
+      "recommended_ram_mb": 2048,
+      "notes": "From minecraft.wiki: 1 GB of RAM for the server app with 1-4 players, 2 GB for 5-10 players and 4 GB for 10+ players. The wiki also says at least 4 GB of RAM total for the server and OS combined. A CPU with strong single-core performance helps most, since the server does most of its work on one core. World saves need at least 150-200 MB. Plugins, mods and large worlds raise all of these figures."
+    },
+    "ports": [
+      {
+        "port": "25565",
+        "protocol": "TCP",
+        "purpose": "Game traffic (server-port)"
+      },
+      {
+        "port": "25565",
+        "protocol": "UDP",
+        "purpose": "Query (query.port, only when enable-query=true)"
+      },
+      {
+        "port": "25575",
+        "protocol": "TCP",
+        "purpose": "RCON remote console (rcon.port, only when enable-rcon=true)"
+      }
+    ],
+    "setup_tips": [
+      "On first start the server writes eula.txt and exits. Set eula=true in that file and start the server again.",
+      "Minecraft 26.1 and newer need Java 25 (1.20.5 through 1.21.x use Java 21). The app reads each version\u0027s Java requirement from Mojang\u0027s version metadata and downloads the matching Eclipse Temurin runtime on first start. If a server stops at launch with an UnsupportedClassVersionError, it needs a newer Java runtime.",
+      "The app sets -Xms and -Xmx from your RAM sliders. Plan on about 2 GB for 5-10 players, and more for modpacks.",
+      "In recent versions (26.3+), white-list defaults to true in server.properties. Add players with 'whitelist add <name>' in the console, or set white-list=false for an open server.",
+      "Open TCP 25565 on the Firewall Rules page, or use Connect to Tunnel, so players outside your network can join. Only open 25575 if you enable RCON, and set a strong rcon.password.",
+      "Use the 'stop' console command to shut down cleanly so the world saves. Put Fabric or Forge mod .jar files in the mods folder."
+    ],
+    "screenshots": [
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_1_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_2_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_5_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/PDP-Gallery_OV_6_16x9.jpg",
+      "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/key-art/Hero-Image_Vanilla_Standard_1200x675.jpg"
+    ]
+  }
+}

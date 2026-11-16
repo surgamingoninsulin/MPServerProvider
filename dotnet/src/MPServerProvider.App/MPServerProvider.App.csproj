@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>MPServerProvider.App</RootNamespace>
+    <AssemblyName>MPServerProvider.App</AssemblyName>
+    <ApplicationIcon>..\..\..\assets\app_icon.ico</ApplicationIcon>
+    <!-- App version: build-installer.bat reads this for "MPServerProvider Installer <version>.exe". -->
+    <Version>1.0.0</Version>
+    <Product>MP Server Provider</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2957.106" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MPServerProvider.Core\MPServerProvider.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Bundled game artwork, referenced from manifests as "asset:<file name>". -->
+  <ItemGroup>
+    <Content Include="Assets\Artwork\*.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

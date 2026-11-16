@@ -1,0 +1,100 @@
+{
+  "manifest_version": 1,
+  "id": "rust",
+  "name": "Rust Server",
+  "description": "Official Rust dedicated server from Facepunch, installed through Valve\u0027s SteamCMD (anonymous).",
+  "genres": [
+    "Survival"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/252490/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/252490/library_hero.jpg",
+    "accent": "#CE422B"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 258550,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\RustDedicated.exe",
+    "arguments": "-batchmode \u002Bserver.port {server_port} \u002Bserver.hostname \u0022{server_name}\u0022 \u002Bserver.identity \u0022main\u0022 \u002Bserver.maxplayers 50",
+    "working_dir": "{server_root}",
+    "stop_command": "quit"
+  },
+  "network": {
+    "default_port": 28015,
+    "protocol": "both",
+    "query": "a2s",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Rust is a multiplayer survival game from Facepunch Studios. Players start with almost nothing on a large island, gather resources, craft tools and weapons, build bases and deal with wildlife, the environment and other players, all of whom may be friendly or hostile.\n\nA dedicated Rust server gives you full control over the world: map seed and size, server name and description, player limit, wipe schedule and admin team. The official RustDedicated server is free to install through SteamCMD and supports remote administration over RCON and the Rust+ companion app.\n\nRust servers are fairly heavy. Facepunch's wiki lists about 12 GB of free RAM as a starting point, with more needed for larger maps and higher populations.",
+    "developer": "Facepunch Studios",
+    "publisher": "Facepunch Studios",
+    "release_date": "Feb 8, 2018",
+    "website": "https://rust.facepunch.com/",
+    "store_url": "https://store.steampowered.com/app/252490/",
+    "docs_url": "https://wiki.facepunch.com/rust/Creating-a-server",
+    "max_players": "Configurable via +server.maxplayers (this app launches with 50)",
+    "features": [
+      "Official RustDedicated server, installed anonymously via SteamCMD (app 258550)",
+      "Procedurally generated maps controlled by server.seed and server.worldsize",
+      "Remote administration over RCON (WebSocket mode with rcon.web 1)",
+      "Rust+ companion app support for players and admins",
+      "Separate server identities keep multiple worlds and configs apart",
+      "Valve Anti-Cheat enabled"
+    ],
+    "server_requirements": {
+      "min_ram_mb": 12288,
+      "disk_gb": 15,
+      "notes": "Facepunch wiki: 12 GB free RAM (larger maps such as 6k use more) and 15 GB free disk, SSD/NVMe strongly preferred. Needs grow with population and usage."
+    },
+    "ports": [
+      {
+        "port": "28015",
+        "protocol": "UDP",
+        "purpose": "Game traffic (server.port)"
+      },
+      {
+        "port": "28016",
+        "protocol": "UDP",
+        "purpose": "Server query (defaults to 1 + the higher of server.port and rcon.port)"
+      },
+      {
+        "port": "28015",
+        "protocol": "TCP",
+        "purpose": "RCON (rcon.port defaults to server.port; often set to 28016)"
+      },
+      {
+        "port": "28082",
+        "protocol": "TCP",
+        "purpose": "Rust+ companion app (app.port, defaults to game/RCON port + 67)"
+      }
+    ],
+    "setup_tips": [
+      "The app starts RustDedicated with -batchmode, +server.port 28015, +server.identity \"main\" and +server.maxplayers 50. Change these in the server's launch settings.",
+      "Open UDP 28015 (game) and UDP 28016 (query) in Firewall Rules or with Connect to Tunnel. Without the query port, the server will not show in the in-game browser.",
+      "For remote RCON, add +rcon.port 28016 +rcon.password \"<strong password>\" +rcon.web 1. The query port then moves to 28017, so open that instead.",
+      "Open TCP 28082 if you want Rust+ to work. To turn Rust+ off, launch with +app.port 1- (the wiki's workaround for -1).",
+      "Add +server.seed and +server.worldsize to fix the map. Changing either one generates a new world.",
+      "The first boot generates the map and can take several minutes. Wait for it to finish before connecting."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_271feae67943bdc141c1249aba116349397e9ba9.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_e825b087b95e51c3534383cfd75ad6e8038147c3.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_0e646f1a70e5cb8eed00efef8adb9579d40d5b2e.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/69dc23d53163b755e809a562a377bd276154c70e/ss_69dc23d53163b755e809a562a377bd276154c70e.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_1c2d0d1eefee54f0c67626c74eb21699bbb0ef52.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_d0fdacaeef5a28a7cee525fd73376adfe083c964.1920x1080.jpg"
+    ]
+  }
+}

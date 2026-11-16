@@ -1,0 +1,87 @@
+{
+  "manifest_version": 1,
+  "id": "fivem",
+  "name": "FiveM Server",
+  "description": "Cfx.re FXServer for GTA V multiplayer. txAdmin\u0027s setup wizard handles the licence key on first start \u2014 visit http://127.0.0.1:40120 after booting.",
+  "genres": [
+    "Adventure",
+    "Sandbox"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/271590/header.jpg",
+    "accent": "#F97316"
+  },
+  "install": {
+    "provider": "cfx",
+    "variants": [],
+    "anonymous": true,
+    "product": "fivem",
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\artifact\\FXServer.exe",
+    "arguments": "",
+    "working_dir": "{server_root}",
+    "stop_command": "quit"
+  },
+  "network": {
+    "default_port": 30120,
+    "protocol": "both",
+    "query": "fivem",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": true,
+    "folder": "resources",
+    "extensions": [],
+    "kind": "resource"
+  },
+  "details": {
+    "about": "Grand Theft Auto V is Rockstar's open-world crime game set in Los Santos and Blaine County. FiveM is Cfx.re's multiplayer modification for the PC version. Players connect to community-run servers that can change almost everything about the game through scripts and resources.\n\nHosting your own FiveM server (FXServer) gives you full control over game modes, maps, vehicles and scripts, from serious roleplay to racing or casual freeroam. The bundled txAdmin web panel guides you through first-time setup, deploys a starter recipe, and handles restarts, players and bans from your browser. A free license key from the Cfx.re Portal is required.",
+    "developer": "Rockstar North",
+    "publisher": "Rockstar Games",
+    "release_date": "Apr 13, 2015",
+    "website": "https://fivem.net",
+    "store_url": "https://store.steampowered.com/app/271590/",
+    "docs_url": "https://docs.fivem.net/docs/server-manual/setting-up-a-server/",
+    "max_players": "Up to 48 by default (OneSync); more with Cfx.re Element Club tiers",
+    "features": [
+      "Custom game modes, scripts, maps and vehicles through server resources",
+      "txAdmin web panel for setup, restarts, player management and bans",
+      "Recipe deployer that installs a ready-made starter server",
+      "OneSync for larger player counts",
+      "Free license key from the Cfx.re Portal"
+    ],
+    "server_requirements": {
+      "notes": "Cfx.re gives no specific numbers. It recommends an x86-64 system running Windows or Linux, a multi-core processor and decent upload bandwidth."
+    },
+    "ports": [
+      {
+        "port": "30120",
+        "protocol": "TCP+UDP",
+        "purpose": "Game traffic (endpoint_add_tcp / endpoint_add_udp)"
+      },
+      {
+        "port": "40120",
+        "protocol": "TCP",
+        "purpose": "txAdmin web panel"
+      }
+    ],
+    "setup_tips": [
+      "Register a free server license key on the Cfx.re Portal (portal.cfx.re) before the first start.",
+      "On first boot, open http://127.0.0.1:40120. Enter the PIN shown in the console, link your Cfx.re account, set an admin password, then pick the 'CFX Default FiveM' recipe and enter your license key.",
+      "Open 30120 for both TCP and UDP on the Firewall Rules page, or use Connect to Tunnel, so players can connect. Port 40120 is the admin panel and only needs to be reachable by you.",
+      "Slot counts are set with sv_maxclients. Values of 32 and above need OneSync enabled, and free servers are limited to 48 players.",
+      "Add custom resources to the resources folder and ensure them in server.cfg (txAdmin can edit server.cfg). Stop the server with the 'quit' console command.",
+      "Some txAdmin recipes need a database server. Start with 'CFX Default FiveM' if you do not have one."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/ss_32aa18ab3175e3002217862dd5917646d298ab6b.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/ss_2744f112fa060320d191a50e8b3a92441a648a56.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/ss_da39c16db175f6973770bae6b91d411251763152.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/ss_bd5db78286be0a7c6b2c62519099a9e27e6b06f3.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/ss_b1a1cb7959d6a0e6fcb2d06ebf97a66c9055cef3.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/ss_bc5fc79d3366c837372327717249a4887aa46d63.1920x1080.jpg"
+    ]
+  }
+}
