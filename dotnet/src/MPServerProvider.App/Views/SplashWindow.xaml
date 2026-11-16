@@ -9,11 +9,9 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="True">
-    <!-- Port of views_splashwindow.xaml's element tree: an outer rounded Border (atmospheric
+    <!-- An outer rounded Border (atmospheric
          background + ring/controller glyph), then rows for title/subtitle/status+progress.
-         The real background photo asset is unrecoverable (deferred BAML binary); this uses
-         SplashBackgroundBrush (a dark radial vignette) as a documented stand-in, per
-         docs/reference-screenshots/9.png and 10.png. -->
+         The background uses SplashBackgroundBrush (a dark radial vignette). -->
     <Border Background="{StaticResource SplashBackgroundBrush}"
             CornerRadius="18"
             BorderBrush="{StaticResource BrandAccentDarkBrush}"

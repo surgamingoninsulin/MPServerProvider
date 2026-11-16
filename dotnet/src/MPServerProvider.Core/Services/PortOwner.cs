@@ -4,18 +4,12 @@ using System.Runtime.InteropServices;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Finds which process is listening on a local TCP port (IPv4 or IPv6) through
-/// <c>GetExtendedTcpTable</c>, so a port conflict can name the program instead of just saying
-/// "in use". Best effort: returns <c>null</c> whenever the owner can't be determined.
-/// </summary>
 internal static class PortOwner
 {
     private const int TcpTableOwnerPidListener = 3;
     private const uint NoError = 0;
     private const uint InsufficientBuffer = 122;
 
-    /// <summary>Process name (e.g. <c>java</c>, <c>wslrelay</c>) listening on <paramref name="port"/>, or <c>null</c>.</summary>
     public static string? FindTcpListener(int port)
     {
         if (!OperatingSystem.IsWindows())

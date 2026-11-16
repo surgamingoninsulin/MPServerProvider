@@ -1,38 +1,21 @@
 using System.Text.Json;
 using JsonHelper = MPServerProvider.Core.Json.Json;
 using MPServerProvider.Core.Models;
+using MPServerProvider.Core.Services;
 using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Deserializes every real game-provider manifest under <c>data/providers/json/*.json</c> into
-/// <see cref="GameDefinition"/> and verifies a full round-trip (deserialize -&gt; serialize -&gt;
-/// deserialize again) preserves the semantically-relevant content, using the app's real
-/// <see cref="Json.Options"/> policy (snake_case naming + string enums).
-/// </summary>
 public class GameDefinitionRoundTripTests
 {
-    public static IEnumerable<object[]> ProviderJsonFiles()
-    {
-        foreach (var path in Directory.EnumerateFiles(TestPaths.ProvidersJsonDir, "*.json"))
-        {
-            yield return new object[] { path };
-        }
-    }
-
-    [Fact]
-    public void Finds_all_14_real_provider_json_files()
-    {
-        var files = Directory.EnumerateFiles(TestPaths.ProvidersJsonDir, "*.json").ToList();
-        Assert.Equal(14, files.Count);
-    }
+    public static IEnumerable<object[]> BuiltInIds()
+        => BuiltInGames.All().Select(g => new object[] { g.Id });
 
     [Theory]
-    [MemberData(nameof(ProviderJsonFiles))]
-    public void Deserializes_real_provider_json_without_loss(string path)
+    [MemberData(nameof(BuiltInIds))]
+    public void Built_in_definition_round_trips_through_manifest_json(string id)
     {
-        var originalText = File.ReadAllText(path);
+        var originalText = JsonHelper.Serialize(BuiltInGames.All().Single(g => g.Id == id));
 
         var definition = JsonHelper.Deserialize<GameDefinition>(originalText);
         Assert.NotNull(definition);
@@ -56,6 +39,7 @@ public class GameDefinitionRoundTripTests
         Assert.Equal(definition.Install.Provider, roundTripped.Install.Provider);
         Assert.Equal(definition.Install.Variants, roundTripped.Install.Variants);
         Assert.Equal(definition.Install.AppId, roundTripped.Install.AppId);
+        Assert.Equal(definition.Install.Branch, roundTripped.Install.Branch);
         Assert.Equal(definition.Install.Anonymous, roundTripped.Install.Anonymous);
         Assert.Equal(definition.Install.Product, roundTripped.Install.Product);
         Assert.Equal(definition.Runtime.Executable, roundTripped.Runtime.Executable);
@@ -72,25 +56,38 @@ public class GameDefinitionRoundTripTests
         Assert.Equal(definition.Mods.Extensions, roundTripped.Mods.Extensions);
         Assert.Equal(definition.Mods.Kind, roundTripped.Mods.Kind);
 
-        // The real on-disk files use snake_case keys exclusively; confirm the raw JSON we parsed
-        // actually matches that shape (sanity check that we're not silently ignoring fields).
+        // Manifests use snake_case keys exclusively.
         using var doc = JsonDocument.Parse(originalText);
         Assert.True(doc.RootElement.TryGetProperty("manifest_version", out _));
-        Assert.True(doc.RootElement.TryGetProperty("default_port", out _) == false || true);
+        Assert.True(doc.RootElement.GetProperty("network").TryGetProperty("default_port", out _));
     }
 }
 
-/// <summary>
-/// Deserializes the real <c>data/settings.json</c> into <see cref="AppSettings"/> and verifies
-/// a round-trip, including the nested <see cref="FirewallRuleInfo"/> list.
-/// </summary>
 public class AppSettingsRoundTripTests
 {
-    [Fact]
-    public void Deserializes_real_settings_json_without_loss()
-    {
-        var originalText = File.ReadAllText(TestPaths.SettingsJsonPath);
+    private const string SettingsJson = """
+        {
+          "start_on_boot": false,
+          "start_minimized_to_tray": false,
+          "restore_running_servers": false,
+          "news_auto_scroll": true,
+          "firewall_rules": [
+            {
+              "name": "minecraft",
+              "port": 25565,
+              "protocol": "both",
+              "active": true,
+              "created": "2026-07-15T12:43:16.9806051+02:00"
+            }
+          ],
+          "assumed_hosting_price_per_hour": 0.02
+        }
+        """;
 
+    [Fact]
+    public void Deserializes_settings_json_without_loss()
+    {
+        var originalText = SettingsJson;
         var settings = JsonHelper.Deserialize<AppSettings>(originalText);
         Assert.NotNull(settings);
         Assert.False(settings!.StartOnBoot);
@@ -116,39 +113,5 @@ public class AppSettingsRoundTripTests
         Assert.Equal(settings.FirewallRules[0].Protocol, roundTripped.FirewallRules[0].Protocol);
         Assert.Equal(settings.FirewallRules[0].Active, roundTripped.FirewallRules[0].Active);
         Assert.Equal(settings.FirewallRules[0].Created, roundTripped.FirewallRules[0].Created);
-    }
-}
-
-/// <summary>
-/// Locates the repository's shared <c>data/</c> directory regardless of build configuration
-/// (Debug/Release) or TFM, by walking up from the test binary's output directory until it finds
-/// a directory containing <c>providers/json</c> and <c>settings.json</c>.
-/// </summary>
-internal static class TestPaths
-{
-    public static readonly string DataDir = FindDataDir();
-    public static readonly string ProvidersJsonDir = Path.Combine(DataDir, "providers", "json");
-    public static readonly string SettingsJsonPath = Path.Combine(DataDir, "settings.json");
-
-    private static string FindDataDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            // Only the repo root's shipped data/ counts (it sits next to dotnet/). Running the app
-            // from a dev checkout creates a runtime dotnet/data/ that the walk would otherwise hit
-            // first, making these ground-truth tests depend on whatever the app last wrote.
-            var candidate = Path.Combine(dir.FullName, "data");
-            if (File.Exists(Path.Combine(candidate, "settings.json")) &&
-                Directory.Exists(Path.Combine(dir.FullName, "dotnet")))
-            {
-                return candidate;
-            }
-
-            dir = dir.Parent;
-        }
-
-        throw new DirectoryNotFoundException(
-            $"Could not locate the repository 'data' directory walking up from '{AppContext.BaseDirectory}'.");
     }
 }

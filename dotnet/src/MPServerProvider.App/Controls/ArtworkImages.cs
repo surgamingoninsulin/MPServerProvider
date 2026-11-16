@@ -9,22 +9,11 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Controls;
 
-/// <summary>
-/// Shared, UI-thread-friendly image loading for game artwork (Library cards, Home news cards,
-/// the Game Detail page): cache-or-fetch through <see cref="ArtworkCacheService"/>, then decode
-/// on a thread-pool thread at (roughly) display size via <see cref="BitmapImage.DecodePixelWidth"/>
-/// and <see cref="Freezable.Freeze"/> the result so it can be handed back to the UI thread.
-/// Never throws: every failure (offline, dead URL, non-image response, undecodable file) yields
-/// <c>null</c> and the caller keeps its accent fallback tile.
-/// </summary>
 internal static class ArtworkImages
 {
-    /// <summary>Cache key that is stable across processes (unlike <see cref="string.GetHashCode"/>,
-    /// which .NET randomizes per process), so cached files are actually reused between launches.</summary>
     public static string StableKey(string prefix, string url)
         => $"{prefix}_{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(url)))[..16]}";
 
-    /// <summary>Physical pixel width for <paramref name="dipWidth"/> on <paramref name="visual"/>'s monitor.</summary>
     public static int PixelWidth(Visual visual, double dipWidth)
     {
         double scale = 1.0;
@@ -40,11 +29,8 @@ internal static class ArtworkImages
         return Math.Max(1, (int)Math.Ceiling(dipWidth * Math.Max(1.0, scale)));
     }
 
-    /// <summary>Prefix for artwork bundled with the app (<c>Assets/Artwork/&lt;file&gt;</c> next to the exe).</summary>
     public const string AssetScheme = "asset:";
 
-    /// <summary>Full path of a bundled <c>asset:&lt;file&gt;</c> image, or <c>null</c> when
-    /// <paramref name="url"/> isn't one (or tries to leave the artwork folder).</summary>
     public static string? BundledAssetPath(string? url)
     {
         if (url is null || !url.StartsWith(AssetScheme, StringComparison.OrdinalIgnoreCase))
@@ -132,7 +118,6 @@ internal static class ArtworkImages
         }
     }
 
-    /// <summary>True only for absolute http/https URLs.</summary>
     public static bool TryGetWebUri(string? url, out Uri uri)
     {
         if (!string.IsNullOrWhiteSpace(url)
@@ -147,7 +132,6 @@ internal static class ArtworkImages
         return false;
     }
 
-    /// <summary>Opens an http/https URL in the default browser. Anything else is refused.</summary>
     public static bool OpenInBrowser(string? url)
     {
         if (!TryGetWebUri(url, out var uri))
@@ -159,13 +143,11 @@ internal static class ArtworkImages
         return true;
     }
 
-    /// <summary>Steam CDN screenshots come in several sizes; use the 600px one for thumbnails.</summary>
     public static string ThumbnailUrl(string url)
         => url.Contains("steamstatic.com", StringComparison.OrdinalIgnoreCase)
             ? url.Replace(".1920x1080.jpg", ".600x338.jpg", StringComparison.OrdinalIgnoreCase)
             : url;
 
-    /// <summary>Accent brush from a manifest's <c>#RRGGBB</c> string, falling back to the brand accent.</summary>
     public static Brush AccentBrush(string? hex)
     {
         if (!string.IsNullOrWhiteSpace(hex))

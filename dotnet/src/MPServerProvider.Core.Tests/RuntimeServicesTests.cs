@@ -4,12 +4,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Pure wire-protocol / string-construction tests for the OS/runtime-side services ported in
-/// this change set, mirroring the already-verified Rust port's own test suite
-/// (<c>crates/mpsp-core/src/services/{firewall,tunnel,query,rcon}.rs</c>'s <c>#[cfg(test)]</c>
-/// modules) so the same byte-level/string-shape assertions are carried over to C#.
-/// </summary>
 public class RuntimeServicesTests
 {
     // -- FirewallService --------------------------------------------------------------------

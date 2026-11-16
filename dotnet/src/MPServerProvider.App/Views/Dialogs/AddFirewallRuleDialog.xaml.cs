@@ -4,16 +4,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.AddFirewallRuleDialog</c> (decompile token 0x02000009).
-/// A modal child window: name/port(1-65535)/protocol fields, "Add Rule" calls
-/// <see cref="FirewallService.AddRuleAsync"/> then persists the new rule via
-/// <see cref="SettingsService.Update"/> itself (matching the decompiled <c>OnAdd</c>'s own call
-/// sequence — the caller, <see cref="Pages.SettingsPage"/>, just re-reads the rules list on a
-/// successful <see cref="Window.ShowDialog"/>, like the proven Rust port's
-/// <c>add_firewall_rule::show</c> callback did before being ported to a real blocking dialog here
-/// since WPF (unlike this shell's Slint predecessor) has a native modal <c>ShowDialog()</c>).
-/// </summary>
 public partial class AddFirewallRuleDialog : DialogWindow
 {
     private static readonly Regex RuleNameRegex = new(@"^[\w .()\-]{1,64}$", RegexOptions.CultureInvariant);
@@ -35,8 +25,6 @@ public partial class AddFirewallRuleDialog : DialogWindow
         Close();
     }
 
-    /// <summary>Port of <c>AddFirewallRuleDialog.OnAdd</c>'s validation
-    /// (<c>"Enter a rule name"</c> / <c>"Enter a valid port (1–65535)"</c>) followed by the add.</summary>
     private async void AddButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -62,8 +50,8 @@ public partial class AddFirewallRuleDialog : DialogWindow
                 return;
             }
 
-            // Port of the combo box's index->protocol-string mapping (ComboBoxItem order in
-            // views_addfirewallruledialog.xaml: Both, TCP, UDP).
+            // Combo box index -> protocol string (ComboBoxItem order in
+            // AddFirewallRuleDialog.xaml: Both, TCP, UDP).
             var protocol = ProtocolCombo.SelectedIndex switch
             {
                 1 => "tcp",

@@ -5,7 +5,6 @@ using JsonHelper = MPServerProvider.Core.Json.Json;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>Restore-running-servers tracking (#31) and the portable export format (#2).</summary>
 public class RestoreAndExportTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"mpsp-restore-{Guid.NewGuid():N}");

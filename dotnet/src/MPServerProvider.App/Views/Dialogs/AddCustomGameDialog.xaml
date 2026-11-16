@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
         Title="Add Custom Game" Height="700" Width="492">
-    <!-- Port of views_addcustomgamedialog.xaml's "Add to Library" flow (OnAddCustomGame):
+    <!-- "Add to Library" flow:
          builds a GameDefinition from the form and writes it to {GamesDir}/{id}.json, the same
          on-disk shape GameLibraryService.Reload() reads back, then reloads the catalog.
          Chrome comes from DialogWindow; the form scrolls (wheel) while the header and the

@@ -5,24 +5,11 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.JavaRuntimeProvider</c> (decompile token
-/// 0x02000021). Despite the name and namespace, this does <b>not</b> implement
-/// <see cref="IInstallProvider"/> — per the already-proven Rust port's finding (see
-/// <c>crates/mpsp-core/src/providers/mod.rs</c>), its methods are <c>ResolveAsync</c>/
-/// <c>FindProvisioned</c>/<c>SystemJavaMatches</c>/<c>ProvisionTemurinAsync</c>, none of which
-/// match <see cref="IInstallProvider"/>'s members. It resolves a working <c>java</c>/<c>java.exe</c>
-/// for a requested major version — checking a previously-provisioned copy under
-/// <c>data/tools/java/&lt;major&gt;/</c>, then the system <c>java</c> on <c>PATH</c>, and finally
-/// downloading an Eclipse Temurin JRE — and is consumed by <see cref="MinecraftJavaProvider"/>.
-/// </summary>
 public sealed partial class JavaRuntimeProvider
 {
-    /// <summary>Port of <c>_resolved</c>: memoizes <c>ResolveAsync</c> results per major version.</summary>
     private readonly Dictionary<int, string> _resolved = new();
     private readonly object _lock = new();
 
-    /// <summary>Port of <c>ResolveAsync(int majorVersion, IProgress&lt;InstallProgress&gt;, CancellationToken)</c>.</summary>
     public async Task<string> ResolveAsync(int majorVersion, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         lock (_lock)
@@ -45,22 +32,12 @@ public sealed partial class JavaRuntimeProvider
         return path;
     }
 
-    /// <summary>
-    /// Port of <c>FindProvisioned(int major) -&gt; string</c>: looks for a previously downloaded
-    /// JRE under <c>{ToolsDir}/java/{major}/</c>.
-    /// </summary>
     private static string? FindProvisioned(int major)
     {
         var dir = Path.Combine(DownloadHelper.ToolsDir(), "java", major.ToString());
         return !Directory.Exists(dir) ? null : WalkForJavaExe(dir);
     }
 
-    /// <summary>
-    /// Port of <c>SystemJavaMatches(int major, out string path) -&gt; bool</c>: runs
-    /// <c>java -version</c>, parses the <c>version "&lt;major&gt;[.&lt;minor&gt;]..."</c> banner
-    /// (both legacy <c>"1.8.0_xxx"</c> and modern <c>"17.0.1"</c> forms), and reports whether it
-    /// matches the requested major version.
-    /// </summary>
     private static async Task<string?> SystemJavaMatchesAsync(int major)
     {
         string banner;
@@ -120,10 +97,6 @@ public sealed partial class JavaRuntimeProvider
     [GeneratedRegex("version \"(\\d+)(?:\\.(\\d+))?")]
     private static partial Regex JavaVersionRegex();
 
-    /// <summary>
-    /// Port of <c>ProvisionTemurinAsync(int major, IProgress&lt;InstallProgress&gt;, CancellationToken)</c>:
-    /// downloads an Eclipse Temurin JRE from Adoptium for the requested major version.
-    /// </summary>
     private static async Task<string> ProvisionTemurinAsync(int major, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         progress.Report(InstallProgress.Indeterminate($"Resolving Temurin JRE {major} from Adoptium…"));
@@ -180,11 +153,6 @@ public sealed partial class JavaRuntimeProvider
 
     private const string AdoptiumApi = "https://api.adoptium.net/v3";
 
-    /// <summary>
-    /// The Windows x64 Temurin package for exactly <paramref name="major"/> (JRE preferred, JDK
-    /// otherwise), or <c>null</c> if Adoptium publishes neither (unknown majors 404 or return an
-    /// empty list).
-    /// </summary>
     private static async Task<(string Link, string? Sha256, int Major)?> FindTemurinPackageAsync(int major, CancellationToken ct)
     {
         foreach (var imageType in new[] { "jre", "jdk" })
@@ -220,7 +188,6 @@ public sealed partial class JavaRuntimeProvider
         return null;
     }
 
-    /// <summary>Reads Adoptium's <c>/info/available_releases</c> and picks a fallback major.</summary>
     private static async Task<int?> PickFallbackFromAdoptiumAsync(int major, CancellationToken ct)
     {
         try
@@ -255,11 +222,6 @@ public sealed partial class JavaRuntimeProvider
         return result;
     }
 
-    /// <summary>
-    /// When Temurin doesn't publish <paramref name="requested"/>: the lowest published LTS above
-    /// it, else the lowest published release above it, else <c>null</c> (never an OLDER Java:
-    /// that can't run newer class files).
-    /// </summary>
     internal static int? PickFallbackMajor(int requested, IEnumerable<int> available, IEnumerable<int> lts)
     {
         var newerLts = lts.Where(v => v > requested).OrderBy(v => v).ToList();
@@ -272,10 +234,6 @@ public sealed partial class JavaRuntimeProvider
         return newer.Count > 0 ? newer[0] : null;
     }
 
-    /// <summary>
-    /// Reads <c>binary.package.link</c> and <c>binary.package.checksum</c> (SHA-256 hex) from one
-    /// Adoptium <c>/v3/assets/latest</c> entry.
-    /// </summary>
     internal static (string? Link, string? Sha256) ParseAdoptiumPackage(JsonElement asset)
     {
         if (asset.ValueKind != JsonValueKind.Object
@@ -290,11 +248,6 @@ public sealed partial class JavaRuntimeProvider
         return (link, string.IsNullOrWhiteSpace(checksum) ? null : checksum);
     }
 
-    /// <summary>
-    /// Recursively searches <paramref name="dir"/> for a file named <c>java.exe</c>
-    /// (case-insensitive), mirroring
-    /// <c>Directory.EnumerateFiles(dir, "java.exe", SearchOption.AllDirectories).FirstOrDefault()</c>.
-    /// </summary>
     internal static string? WalkForJavaExe(string dir)
     {
         if (!Directory.Exists(dir))

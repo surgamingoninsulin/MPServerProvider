@@ -9,7 +9,7 @@
         <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <conv:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibility" />
     </UserControl.Resources>
-    <!-- Port of views_modspage.xaml: Show: game dropdown + Import from Folder toolbar, scrollable
+    <!-- "Show:" game dropdown + Import from Folder toolbar, scrollable
          mod card list / empty state, and a right-hand "Filters" sidebar (keyword box + per-game
          checkboxes), per docs/reference-screenshots/3.png. -->
     <Grid Margin="28">

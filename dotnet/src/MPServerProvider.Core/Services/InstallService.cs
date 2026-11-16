@@ -3,13 +3,6 @@ using MPServerProvider.Core.Providers;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.InstallService</c> (decompile token
-/// 0x0200000e). Orchestrates: pick the right <see cref="IInstallProvider"/> by the game's
-/// <c>Install.Provider</c> field, drive the provider's install, deploy any configured Steam
-/// Workshop items, then build and persist the resulting <see cref="ServerInstance"/> via
-/// <see cref="ServerRepository"/>.
-/// </summary>
 public class InstallService
 {
     private readonly Dictionary<string, IInstallProvider> _providers;
@@ -17,12 +10,6 @@ public class InstallService
     private readonly JavaRuntimeProvider _javaRuntime;
     private readonly WorkshopService _workshop;
 
-    /// <summary>
-    /// Port of <c>.ctor(AppPaths, ServerRepository, DownloadService)</c>. Builds every concrete
-    /// <see cref="IInstallProvider"/> and indexes them by <see cref="IInstallProvider.Id"/>,
-    /// mirroring the decompiled ctor's <c>.ToDictionary(p =&gt; p.Id)</c> over a fixed array of 7
-    /// provider instances.
-    /// </summary>
     public InstallService(AppPaths paths, ServerRepository servers)
     {
         _servers = servers;
@@ -36,6 +23,7 @@ public class InstallService
             new SteamCmdProvider(),
             new UrlProvider(),
             new ManualProvider(),
+            new HytaleProvider(),
         };
         _providers = providers.ToDictionary(p => p.Id);
 
@@ -43,18 +31,10 @@ public class InstallService
         _javaRuntime = new JavaRuntimeProvider();
     }
 
-    /// <summary>Port of <c>get_JavaRuntime()</c>.</summary>
     public JavaRuntimeProvider JavaRuntime => _javaRuntime;
 
-    /// <summary>Port of <c>get_Workshop()</c>.</summary>
     public WorkshopService Workshop => _workshop;
 
-    /// <summary>
-    /// Port of <c>ProviderFor(GameDefinition) -&gt; IInstallProvider</c>: looks up
-    /// <c>game.Install.Provider</c> in the provider map, falling back to the <c>"url"</c>
-    /// provider (matching the decompiled body's <c>TryGetValue(...) ?? _providers["url"]</c>-shaped
-    /// fallback) when the field is unset or names an unknown provider.
-    /// </summary>
     public IInstallProvider ProviderFor(GameDefinition game)
     {
         var id = game.Install.Provider ?? "url";
@@ -66,21 +46,9 @@ public class InstallService
         return _providers["url"];
     }
 
-    /// <summary>Port of <c>GetVersionsAsync(GameDefinition, string?, CancellationToken)</c>.</summary>
     public Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct = default)
         => ProviderFor(game).GetVersionsAsync(game, variant, ct);
 
-    /// <summary>
-    /// Port of <c>InstallAsync(GameDefinition, string variant, string version, string serverName,
-    /// int port, int ramMin, int ramMax, string description, bool eulaAccepted,
-    /// IProgress&lt;InstallProgress&gt;, CancellationToken) -&gt; Task&lt;ServerInstance&gt;</c>.
-    /// <para>
-    /// Resolves a fresh target directory via <see cref="ServerRepository.NewServerDir"/>, builds
-    /// an <see cref="InstallRequest"/>, hands it to <see cref="ProviderFor"/>'s provider, deploys
-    /// any configured Steam Workshop items, then <see cref="BuildInstance"/>s and
-    /// <see cref="ServerRepository.Save"/>s the result.
-    /// </para>
-    /// </summary>
     public async Task<ServerInstance> InstallAsync(
         GameDefinition game,
         string? variant,
@@ -92,7 +60,8 @@ public class InstallService
         string? description,
         bool eulaAccepted,
         IProgress<InstallProgress> progress,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        SteamLogin? steamLogin = null)
     {
         if (ServerRepository.ValidateServerName(serverName) is { } nameError)
         {
@@ -109,7 +78,7 @@ public class InstallService
 
         try
         {
-            return await InstallIntoAsync(game, variant, version, serverName, port, ramMinMb, ramMaxMb, description, eulaAccepted, targetDir, progress, ct)
+            return await InstallIntoAsync(game, variant, version, serverName, port, ramMinMb, ramMaxMb, description, eulaAccepted, targetDir, steamLogin, progress, ct)
                 .ConfigureAwait(false);
         }
         catch
@@ -133,6 +102,7 @@ public class InstallService
         string? description,
         bool eulaAccepted,
         string targetDir,
+        SteamLogin? steamLogin,
         IProgress<InstallProgress> progress,
         CancellationToken ct)
     {
@@ -148,6 +118,7 @@ public class InstallService
             RamMaxMb = ramMaxMb,
             Description = description,
             EulaAccepted = eulaAccepted,
+            SteamLogin = steamLogin,
         };
 
         var provider = ProviderFor(game);
@@ -164,12 +135,6 @@ public class InstallService
         return instance;
     }
 
-    /// <summary>
-    /// Server config files an update must never replace: game archives/depots ship default
-    /// copies of these (Bedrock's zip contains server.properties/permissions.json/allowlist.json,
-    /// 7 Days to Die's depot contains serverconfig.xml), and extracting over the folder would
-    /// silently reset the user's settings. They are restored byte-for-byte after the update.
-    /// </summary>
     internal static readonly string[] PreservedOnUpdate =
     {
         "server.properties", "eula.txt", "ops.json", "whitelist.json", "allowlist.json", "permissions.json",
@@ -178,13 +143,7 @@ public class InstallService
         "server.cfg", "ServerConfig.toml", "serverconfig.xml", "serveradmin.xml",
     };
 
-    /// <summary>
-    /// Updates an installed server in place to <paramref name="version"/> (the provider's newest
-    /// when null): runs the same provider install into the server's own folder, keeps worlds,
-    /// mods and every file in <see cref="PreservedOnUpdate"/>, then records the new version /
-    /// server file / start command. The caller must stop the server first.
-    /// </summary>
-    public async Task<ServerInstance> UpdateAsync(ServerInstance server, GameDefinition game, string? version, IProgress<InstallProgress> progress, CancellationToken ct = default)
+    public async Task<ServerInstance> UpdateAsync(ServerInstance server, GameDefinition game, string? version, IProgress<InstallProgress> progress, CancellationToken ct = default, SteamLogin? steamLogin = null)
     {
         if (game.Install.Provider == "manual")
         {
@@ -226,6 +185,7 @@ public class InstallService
             RamMaxMb = server.RamMaxMb,
             Description = server.ServerDescription,
             EulaAccepted = true,
+            SteamLogin = steamLogin,
         };
 
         InstallResult result;
@@ -292,10 +252,6 @@ public class InstallService
         return server;
     }
 
-    /// <summary>
-    /// Removes a half-created server folder after a failed/cancelled install. Retries briefly
-    /// (a just-killed installer process may still hold handles for a moment); best-effort.
-    /// </summary>
     private static void TryDeleteDirectory(string dir)
     {
         for (var attempt = 0; attempt < 5; attempt++)
@@ -329,10 +285,6 @@ public class InstallService
         }
     }
 
-    /// <summary>
-    /// Port of <c>BuildInstance(GameDefinition, InstallRequest, InstallResult, string) -&gt;
-    /// ServerInstance</c>.
-    /// </summary>
     internal static ServerInstance BuildInstance(GameDefinition game, InstallRequest request, InstallResult result)
     {
         // FIX: this used to default to $"\"{result.ServerFile}\" {game.Runtime.Arguments}" when a
@@ -376,13 +328,6 @@ public class InstallService
         };
     }
 
-    /// <summary>
-    /// Port of <c>ModsFolderFor(GameDefinition, string? variant) -&gt; string?</c>.
-    /// <c>minecraft-java</c>'s proxy/plugin variants (<c>paper</c>, <c>purpur</c>,
-    /// <c>velocity</c>, <c>bungeecord</c>) use a <c>plugins</c> folder instead of the manifest's
-    /// default <c>mods</c> folder; <c>fabric</c>/<c>forge</c> (and an unset variant, i.e.
-    /// vanilla) keep <c>mods</c>.
-    /// </summary>
     public static string? ModsFolderFor(GameDefinition game, string? variant)
     {
         if (!game.Mods.Supported)

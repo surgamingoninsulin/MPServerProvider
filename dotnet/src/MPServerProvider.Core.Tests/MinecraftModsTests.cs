@@ -6,13 +6,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Jar metadata parsing (<see cref="MinecraftJarReader"/>), version-range matching
-/// (<see cref="MinecraftVersionRange"/>), the server/mod compatibility rules
-/// (<see cref="ModCompatibility"/>) and the Core-level install gate in
-/// <see cref="ModLibraryService.AssignToServer"/>. Jars are built in memory with
-/// <see cref="ZipArchive"/>.
-/// </summary>
 public class MinecraftModsTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"mpsp-mcmods-{Guid.NewGuid():N}");

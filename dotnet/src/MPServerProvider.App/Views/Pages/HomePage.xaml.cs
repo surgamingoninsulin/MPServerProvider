@@ -11,13 +11,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Views.Pages;
 
-/// <summary>
-/// Port of <c>views_homepage.xaml</c>'s real data wiring: hero banner CTAs navigate the shell,
-/// stat tiles pull from the real Core services (<see cref="ServerProcessService"/> for
-/// uptime/running counts, <see cref="ModLibraryService"/> for installed mod count, a best-effort
-/// live query pass for total players), and the news carousel rides on the real
-/// <see cref="NewsService.Load"/> feed instead of the wave-1 placeholder rows.
-/// </summary>
 public partial class HomePage : UserControl, INavigationAware
 {
     public HomePage()
@@ -76,11 +69,6 @@ public partial class HomePage : UserControl, INavigationAware
 
     private ServerInstance? _lastInstalled;
 
-    /// <summary>
-    /// "Servers installed" count (with a per-game breakdown) and the most recently installed
-    /// server. Servers carry no install timestamp, so the creation time of their
-    /// <c>server.json</c> (written once, at install) is used.
-    /// </summary>
     private void RefreshInstalledServers(AppServices services, IReadOnlyList<ServerInstance> servers)
     {
         InstalledCountText.Text = servers.Count.ToString();
@@ -188,13 +176,6 @@ public partial class HomePage : UserControl, INavigationAware
         }
     }
 
-    /// <summary>
-    /// Best-effort live player-count query across every running server, matching the proven
-    /// Rust port's judgment that a per-server A2S/Minecraft/RakNet query (via
-    /// <see cref="QueryService.QueryAsync"/>) is the only real source of truth for this stat
-    /// (nothing in <see cref="ServerStats"/> tracks concurrent players). Failures for any one
-    /// server are swallowed so a single unreachable server can't blank out the whole tile.
-    /// </summary>
     private async Task RefreshPlayerCountAsync(AppServices services, List<ServerInstance> running)
     {
         var total = 0;
@@ -225,16 +206,6 @@ public partial class HomePage : UserControl, INavigationAware
         PlayersStat.Text = total.ToString();
     }
 
-    /// <summary>
-    /// Port of <c>NewsCardVm.LoadCoverAsync</c>: resolves the news item's associated game's
-    /// cover art the same way <c>LibraryPage.LoadCoverAsync</c> does (same <c>{id}_header</c>
-    /// cache key, so the file is shared), so the sliding news carousel shows real game artwork
-    /// per card — the real app's own news row (see <c>docs/reference-screenshots/1.png</c>)
-    /// always shows the associated game's banner. Falls back to <see cref="NewsItem.Image"/>
-    /// (cached under a stable SHA-256-derived key, not the per-process-randomized
-    /// <see cref="string.GetHashCode"/>) when there's no matching game. Decoded off the UI
-    /// thread at card width; on any failure the card keeps its accent tile.
-    /// </summary>
     private async Task LoadNewsCoverAsync(NewsCardViewModel card, AppServices services)
     {
         try
@@ -263,7 +234,6 @@ public partial class HomePage : UserControl, INavigationAware
     private void NewsCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         => _pressedNewsCard = (sender as FrameworkElement)?.DataContext;
 
-    /// <summary>Clicking a news card opens the Game Detail page of the game it announces.</summary>
     private void NewsCard_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         try
@@ -307,8 +277,6 @@ public partial class HomePage : UserControl, INavigationAware
         }
     }
 
-    /// <summary>Bindable wrapper exposing <see cref="NewsItem"/>'s title/summary plus a
-    /// lazily-resolved <see cref="CoverImage"/> for the carousel's <c>Image</c> binding.</summary>
     private sealed partial class NewsCardViewModel : ObservableObject
     {
         public NewsCardViewModel(NewsItem item, GameDefinition? game)
@@ -320,7 +288,6 @@ public partial class HomePage : UserControl, INavigationAware
 
         public NewsItem Item { get; }
 
-        /// <summary>The catalog game this item announces, if <see cref="NewsItem.GameId"/> resolves.</summary>
         public GameDefinition? Game { get; }
 
         public bool CanOpen => Game is not null;

@@ -8,7 +8,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>One row in the per-server Mods tab (installed on the server, or available from the library).</summary>
 public sealed partial class ServerModRowViewModel : ObservableObject
 {
     public ServerModRowViewModel(string key, ModItem item)
@@ -40,8 +39,6 @@ public sealed partial class ServerModRowViewModel : ObservableObject
 
     public bool HasReason => !string.IsNullOrEmpty(Reason);
 
-    /// <summary>A folder in the server's mods/plugins folder (on Minecraft: a plugin's data and
-    /// config). Shown with Open (into the File Manager) instead of a compatibility verdict.</summary>
     public bool IsFolder => Item.IsDirectory;
 
     partial void OnItemChanged(ModItem value) => OnPropertyChanged(nameof(IsFolder));
@@ -61,18 +58,6 @@ public sealed partial class ServerModRowViewModel : ObservableObject
     }
 }
 
-/// <summary>
-/// The per-server Mods tab inside <see cref="ServerDetailViewModel"/>: what's installed in this
-/// server's mods/plugins folder and which library items fit it. For Minecraft Java only jars
-/// matching the server variant (Paper → plugins, Fabric → Fabric mods, …) and its Minecraft
-/// version are offered; incompatible ones are hidden unless "Show incompatible" is on, and then
-/// shown disabled with the reason.
-/// <para>
-/// Loads only when the tab becomes visible, when the shown server changes while it is visible,
-/// after an install/remove, or on Refresh — never from the detail view's 800 ms poll — and does
-/// all disk and jar reading on a worker thread. Lists are diffed in place so they don't jump.
-/// </para>
-/// </summary>
 public sealed partial class ServerModsTabViewModel : ObservableObject
 {
     private readonly AppServices _services;
@@ -99,7 +84,6 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
     [ObservableProperty]
     private string _summary = string.Empty;
 
-    /// <summary>Shown instead of the lists when this server can't take anything (vanilla).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNotice))]
     private string? _notice;
@@ -123,7 +107,6 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
 
     partial void OnShowIncompatibleChanged(bool value) => ApplyAvailableFilter();
 
-    /// <summary>Called by the view when the Mods panel is shown/hidden.</summary>
     public void SetActive(bool active)
     {
         _active = active;
@@ -153,7 +136,6 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
         List<(ModItem Item, string Title, string Subtitle, IReadOnlyList<string> Tags, ModCompatibilityResult Verdict)> Installed,
         List<(ModItem Item, string Title, string Subtitle, IReadOnlyList<string> Tags, ModCompatibilityResult Verdict)> Available);
 
-    /// <summary>Re-reads the server folder and library off the UI thread; coalesces overlapping calls.</summary>
     public async void Reload()
     {
         if (_loading)
@@ -298,7 +280,6 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
         IsAvailableEmpty = Available.Count == 0;
     }
 
-    /// <summary>In-place diff (remove / move / insert) so the lists keep their scroll position.</summary>
     private static void Sync(ObservableCollection<ServerModRowViewModel> target, IReadOnlyList<ServerModRowViewModel> wanted)
     {
         var wantedSet = new HashSet<ServerModRowViewModel>(wanted);
@@ -354,7 +335,6 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
         }
     }
 
-    /// <summary>Opens a folder row in the File Manager tab.</summary>
     [RelayCommand]
     private void OpenFolder(ServerModRowViewModel? row)
     {
@@ -367,8 +347,6 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
     [ObservableProperty]
     private bool _isInstallingDrop;
 
-    /// <summary>Installs files dropped from Explorer onto the Mods tab (same compatibility
-    /// rules as installing from the library).</summary>
     public async Task InstallDroppedAsync(IReadOnlyList<string> paths)
     {
         if (_owner.Current is not { } server || paths.Count == 0 || IsInstallingDrop)

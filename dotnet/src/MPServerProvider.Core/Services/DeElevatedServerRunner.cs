@@ -7,29 +7,12 @@ using MPServerProvider.Core.Native;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// <see cref="IServerRunner"/> for a server launched as the unelevated desktop user while this
-/// app runs elevated (supersedes the old PID-only <c>DeElevatedProcess</c>, which left such
-/// servers untracked: Stop didn't stop them, exits went unnoticed, the console stayed empty and
-/// they outlived the app). It behaves exactly like <see cref="ProcessServerRunner"/>:
-/// <list type="bullet">
-/// <item>stdin/stdout/stderr are anonymous pipes (<c>STARTF_USESTDHANDLES</c>), so the console
-/// shows output and Send/stop commands reach the server;</item>
-/// <item>exit is detected with a thread-pool wait on the process handle, registered before the
-/// (suspended) process is resumed, and raises <see cref="Exited"/> exactly once;</item>
-/// <item>the process is put in a <see cref="KillOnCloseJob"/> before it runs, so <see cref="Kill"/>
-/// takes down the whole tree and the server dies with the app if the app crashes;</item>
-/// <item><see cref="ProcessId"/> is the real PID, so CPU/RAM metrics work.</item>
-/// </list>
-/// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class DeElevatedServerRunner : IServerRunner
 {
     private const uint WAIT_OBJECT_0 = 0;
     private const uint STILL_ACTIVE = 259;
 
-    /// <summary>How long exit notification waits for the output pipes to drain (a grandchild
-    /// that inherited them can keep them open indefinitely).</summary>
     private static readonly TimeSpan OutputDrainTimeout = TimeSpan.FromSeconds(2);
 
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -94,12 +77,6 @@ public sealed class DeElevatedServerRunner : IServerRunner
 
     public event EventHandler? Exited;
 
-    /// <summary>
-    /// Launches <paramref name="executable"/> as the unelevated desktop user (or, for
-    /// diagnostics, with <paramref name="tokenSource"/>). <paramref name="onExited"/> is wired
-    /// before the process runs, so even an instant exit is reported. Throws when the launch fails;
-    /// nothing is left running in that case.
-    /// </summary>
     public static DeElevatedServerRunner Start(
         string executable,
         string arguments,
@@ -311,8 +288,6 @@ public sealed class DeElevatedServerRunner : IServerRunner
         }
     }
 
-    /// <summary>Waitable view of a process handle (signaled when the process exits). Does not
-    /// own the handle.</summary>
     private sealed class ProcessWaitHandle : WaitHandle
     {
         private readonly SafeProcessHandle _process;
@@ -337,8 +312,6 @@ public sealed class DeElevatedServerRunner : IServerRunner
     }
 }
 
-/// <summary><see cref="IServerRunnerFactory"/> that launches every server through
-/// <see cref="DeElevatedServerRunner"/> (as the unelevated desktop user).</summary>
 [SupportedOSPlatform("windows")]
 public sealed class DeElevatedServerRunnerFactory : IServerRunnerFactory
 {

@@ -1,8 +1,7 @@
 <UserControl x:Class="MPServerProvider.App.Views.Pages.LibraryPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- Port of views_librarypage.xaml (SearchBox/GenreChips/CardsHost/CountText), real data:
-         search box + genre filter pills + a real game-card grid from AppServices.Games.All(),
+    <!-- Search box + genre filter pills + a real game-card grid from AppServices.Games.All(),
          cover art loaded async via AppServices.Artwork, "+ Add Custom Game" opens
          AddCustomGameDialog, each card's Install button opens InstallServerDialog/
          ManualInstallDialog. Genre pills and cards are built in code-behind (LibraryPage.xaml.cs)

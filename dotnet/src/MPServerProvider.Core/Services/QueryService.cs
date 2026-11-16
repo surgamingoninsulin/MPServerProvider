@@ -4,60 +4,17 @@ using System.Text.Json;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Result of a successful server query. Mirrors the original's
-/// <c>(int Players, int MaxPlayers)?</c> return shape (a <c>ValueTuple&lt;int,int&gt;?</c> in
-/// the decompile).
-/// </summary>
 public readonly record struct QueryResult(int Players, int MaxPlayers);
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.QueryService</c> (decompile token 0x02000011,
-/// see <c>docs/decompile-report/report/MPServerProvider.Core.dll/MPServerProvider.Core.Services/
-/// 0x02000011_QueryService.md</c>).
-///
-/// <para>
-/// Decompile evidence confirms the dispatcher shape (<c>QueryAsync(game, host, port)</c>
-/// fanning out to <c>QueryA2SAsync</c>/<c>QueryMinecraftJavaAsync</c>/<c>QueryBedrockAsync</c>/
-/// <c>QueryFiveMAsync</c>), a <c>RakNetMagic</c> static byte array field (confirming a real
-/// RakNet unconnected-ping for Bedrock), and <c>BuildA2SInfo</c> which prepends the literal
-/// ASCII string <c>"Source Engine Query\0"</c> to the <c>0xFFFFFFFF</c> prefix + <c>0x54</c>
-/// (<c>'T'</c>) request byte — the standard A2S_INFO request. <c>WriteVarInt</c>/
-/// <c>ReadVarIntAsync</c> confirm a real Minecraft varint-prefixed packet framer.
-/// </para>
-/// <para>
-/// Each protocol below is implemented to its public specification (A2S, Minecraft Java Server
-/// List Ping, RakNet unconnected ping for Bedrock, and the FiveM/txAdmin <c>getinfo</c>
-/// out-of-band UDP query) rather than guessed, since all four are externally standardized — the
-/// same approach the already-verified Rust port took
-/// (<c>crates/mpsp-core/src/services/query.rs</c>).
-/// </para>
-/// </summary>
 public static class QueryService
 {
-    /// <summary>
-    /// Default per-attempt timeout, matching the original's static <c>Timeout</c> field.
-    /// INFERRED exact duration: the literal wasn't recoverable from metadata; 5s is the
-    /// conventional query timeout.
-    /// </summary>
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
 
-    /// <summary>
-    /// RakNet's fixed "offline message data ID", used to mark unconnected (pre-handshake)
-    /// packets. Matches the original's <c>RakNetMagic</c> static field.
-    /// </summary>
     public static readonly byte[] RakNetMagic =
     {
         0x00, 0xff, 0xff, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0xfd, 0xfd, 0xfd, 0xfd, 0x12, 0x34, 0x56, 0x78,
     };
 
-    /// <summary>
-    /// Dispatcher. Port of <c>QueryService.QueryAsync(string game, string host, int port)</c>.
-    /// <paramref name="kind"/> is matched case-insensitively against well-known query-kind
-    /// keywords (the original's actual dispatch presumably keys off
-    /// <c>GameDefinition.Network.Query</c> — kept as a plain string here so this module stays
-    /// decoupled from catalog-loading).
-    /// </summary>
     public static Task<QueryResult?> QueryAsync(string kind, string host, int port, CancellationToken ct = default)
     {
         return kind.ToLowerInvariant() switch
@@ -72,12 +29,6 @@ public static class QueryService
         };
     }
 
-    /// <summary>
-    /// Builds the A2S_INFO request payload. Port of <c>QueryService.BuildA2SInfo(byte[])</c>:
-    /// <c>0xFF 0xFF 0xFF 0xFF</c> (the UDP out-of-band prefix every A2S packet uses) + <c>0x54</c>
-    /// (<c>'T'</c>, the A2S_INFO request type) + the literal ASCII string
-    /// <c>"Source Engine Query\0"</c>.
-    /// </summary>
     public static byte[] BuildA2SInfoRequest()
     {
         var buf = new List<byte> { 0xFF, 0xFF, 0xFF, 0xFF, 0x54 };
@@ -85,12 +36,6 @@ public static class QueryService
         return buf.ToArray();
     }
 
-    /// <summary>
-    /// Port of <c>QueryService.QueryA2SAsync(string host, int port)</c>. Sends A2S_INFO; if the
-    /// server replies with an S2C_CHALLENGE (<c>0x41</c>) instead of an A2S_INFO response
-    /// (<c>0x49</c>), re-sends the request with the 4-byte challenge appended, per the
-    /// documented A2S challenge handshake required by all post-2020 Source servers.
-    /// </summary>
     public static async Task<QueryResult?> QueryA2SAsync(string host, int port, CancellationToken ct = default)
     {
         using var client = new UdpClient();
@@ -112,12 +57,6 @@ public static class QueryService
         return ParseA2SInfoResponse(response);
     }
 
-    /// <summary>
-    /// Parses an A2S_INFO response body (including the <c>0xFFFFFFFF</c> prefix and <c>0x49</c>
-    /// type byte) per the published format:
-    /// <c>header(4) | type(1)=0x49 | protocol(1) | name(cstr) | map(cstr) | folder(cstr) |
-    /// game(cstr) | app_id(i16 LE) | players(u8) | max_players(u8) | bots(u8) | ...</c>.
-    /// </summary>
     internal static QueryResult? ParseA2SInfoResponse(byte[] data)
     {
         if (data.Length < 6 || data[4] != 0x49)
@@ -152,7 +91,6 @@ public static class QueryService
     // Minecraft Java Server List Ping (varint-framed)
     // ---------------------------------------------------------------------------------------
 
-    /// <summary>Port of <c>QueryService.WriteVarInt(Stream, int)</c>: standard protobuf-style LEB128 varint.</summary>
     public static void WriteVarInt(List<byte> output, int value)
     {
         var unsigned = unchecked((uint)value);
@@ -172,7 +110,6 @@ public static class QueryService
         }
     }
 
-    /// <summary>Port of <c>QueryService.ReadVarIntAsync(Stream, CancellationToken)</c>.</summary>
     public static (int Value, int Consumed) ReadVarInt(ReadOnlySpan<byte> data)
     {
         var value = 0;
@@ -207,10 +144,6 @@ public static class QueryService
         output.AddRange(bytes);
     }
 
-    /// <summary>
-    /// Builds a length-prefixed Minecraft packet: <c>varint(len) | varint(packet_id) | data...</c>.
-    /// Port of <c>QueryService.WritePacketAsync(Stream, byte[], CancellationToken)</c>.
-    /// </summary>
     public static byte[] BuildMcPacket(int packetId, byte[] payload)
     {
         var body = new List<byte>();
@@ -223,12 +156,6 @@ public static class QueryService
         return framed.ToArray();
     }
 
-    /// <summary>
-    /// Port of <c>QueryService.QueryMinecraftJavaAsync(string host, int port)</c>: the standard
-    /// Server List Ping handshake (Handshake packet with state=1 "status", then an empty Status
-    /// Request packet), reading the Status Response packet and pulling
-    /// <c>players.online</c>/<c>players.max</c> from its JSON body.
-    /// </summary>
     public static async Task<QueryResult?> QueryMinecraftJavaAsync(string host, int port, CancellationToken ct = default)
     {
         using var client = new TcpClient();
@@ -289,14 +216,8 @@ public static class QueryService
         return new QueryResult(online, max);
     }
 
-    /// <summary>Largest Minecraft status packet accepted (real ones are a few KB, favicon included).</summary>
     public const int MaxStatusPacketLength = 1 << 20;
 
-    /// <summary>
-    /// Rejects a server-supplied packet length that is non-positive or larger than
-    /// <see cref="MaxStatusPacketLength"/>, so a broken/malicious server can't make the app
-    /// allocate gigabytes (or throw an <see cref="OverflowException"/> for a negative length).
-    /// </summary>
     internal static void ValidatePacketLength(int packetLength)
     {
         if (packetLength is <= 0 or > MaxStatusPacketLength)
@@ -323,10 +244,6 @@ public static class QueryService
     // Minecraft Bedrock (RakNet unconnected ping)
     // ---------------------------------------------------------------------------------------
 
-    /// <summary>
-    /// Builds a RakNet <c>ID_UNCONNECTED_PING</c> packet: <c>0x01 | timestamp(i64 BE) |
-    /// magic(16 bytes) | client_guid(i64 BE)</c>.
-    /// </summary>
     public static byte[] BuildUnconnectedPing(long timestamp, long clientGuid)
     {
         var buf = new List<byte>(1 + 8 + 16 + 8) { 0x01 };
@@ -346,13 +263,6 @@ public static class QueryService
         return bytes;
     }
 
-    /// <summary>
-    /// Port of <c>QueryService.QueryBedrockAsync(string host, int port)</c>. Bedrock's
-    /// <c>ID_UNCONNECTED_PONG</c> response carries a semicolon-separated "extended server info"
-    /// string whose 5th/6th fields (0-indexed 4/5) are current/max player counts, per the
-    /// de-facto Bedrock server status format
-    /// (<c>MCPE;name;protocol;version;players;maxPlayers;...</c>).
-    /// </summary>
     public static async Task<QueryResult?> QueryBedrockAsync(string host, int port, CancellationToken ct = default)
     {
         using var client = new UdpClient();
@@ -402,13 +312,6 @@ public static class QueryService
     // FiveM / txAdmin
     // ---------------------------------------------------------------------------------------
 
-    /// <summary>
-    /// Port of <c>QueryService.QueryFiveMAsync(string host, int port)</c>. FiveM servers answer
-    /// the GameSpy-derived out-of-band UDP query <c>"\xFF\xFF\xFF\xFFgetinfo xxx"</c> with
-    /// <c>"\xFF\xFF\xFF\xFFinfoResponse\n"</c> followed by a flat <c>\x01key\x00value\x00...</c>
-    /// dictionary that includes <c>clients</c>/<c>sv_maxclients</c> — the same query documented
-    /// by the CitizenFX/FiveM server query protocol.
-    /// </summary>
     public static async Task<QueryResult?> QueryFiveMAsync(string host, int port, CancellationToken ct = default)
     {
         using var client = new UdpClient();

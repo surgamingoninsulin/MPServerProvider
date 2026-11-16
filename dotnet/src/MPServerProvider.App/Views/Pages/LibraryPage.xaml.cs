@@ -11,25 +11,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Views.Pages;
 
-/// <summary>
-/// Port of <c>views_librarypage.xaml</c>/<c>LibraryPage</c> (decompile token 0x0200000e) +
-/// <c>GameCardVm</c> (0x0200000a): search box + genre filter pills over
-/// <see cref="GameLibraryService.Games"/>, a real card grid with async cover-art loading, and
-/// "Install"/"+ Add Custom Game" wiring the three install-flow dialogs. Genre pills and cards are
-/// built programmatically since their content is fully catalog-driven (see
-/// <c>crates/mpsp-app/src/pages/library.rs</c>'s <c>apply_filter</c>/<c>to_card</c>, the proven
-/// reference for this page's data flow).
-/// <para>
-/// Performance: the catalog is NOT reloaded from disk on every visit (AppServices.Initialize and
-/// AddCustomGameDialog already reload it); cards are built once per <see cref="GameDefinition"/>
-/// instance and cached, filtering only toggles their visibility, the search box is debounced,
-/// and covers are decoded once, off the UI thread, at card size.
-/// </para>
-/// <para>
-/// Each card shows a 2-line trimmed description; clicking the card body (anything but the
-/// Install button) opens <see cref="GameDetailPage"/> via <see cref="MainWindow.ShowGameDetail"/>.
-/// </para>
-/// </summary>
 public partial class LibraryPage : UserControl, INavigationAware
 {
     private const double CardWidth = 280;
@@ -59,10 +40,6 @@ public partial class LibraryPage : UserControl, INavigationAware
 
     private static Brush Res(string key) => (Brush)Application.Current.Resources[key];
 
-    /// <summary>
-    /// Syncs the cached cards with the service's current catalog. Cheap when nothing changed
-    /// (same <see cref="GameDefinition"/> instances): only the filter is re-applied.
-    /// </summary>
     private void Refresh()
     {
         try
@@ -207,7 +184,6 @@ public partial class LibraryPage : UserControl, INavigationAware
         _searchDebounce.Start();
     }
 
-    /// <summary>Filters the cached cards in place by toggling their visibility.</summary>
     private void ApplyFilter()
     {
         var search = SearchBox.Text?.Trim() ?? string.Empty;
@@ -456,11 +432,6 @@ public partial class LibraryPage : UserControl, INavigationAware
         }
     }
 
-    /// <summary>
-    /// Port of <c>GameCardVm.LoadCoverAsync</c>: resolves the game's cover art (cache-or-fetch
-    /// via <see cref="ArtworkCacheService.GetLocalPathAsync"/>, decoded off the UI thread at card
-    /// width) and swaps the card's fallback accent tile for the real image once it resolves.
-    /// </summary>
     private async Task LoadCoverAsync(GameCard card, AppServices services)
     {
         try
@@ -483,7 +454,6 @@ public partial class LibraryPage : UserControl, INavigationAware
         }
     }
 
-    /// <summary>A built card plus the image/fallback elements its cover load swaps.</summary>
     private sealed record GameCard(GameDefinition Game, Border Root, Image Image, Border Fallback, CardBadge Badge);
 
     private sealed record CardBadge(Border Root, System.Windows.Shapes.Ellipse StatusDot, TextBlock StatusText, System.Windows.Shapes.Ellipse UpdateDot);

@@ -8,8 +8,7 @@
     <Window.Resources>
         <conv:IntZeroToVisibilityConverter x:Key="LengthZeroToVisibility" />
     </Window.Resources>
-    <!-- Port of views_licensekeydialog.xaml: a single licence-key field + explanatory note,
-         matching the recovered XAML's element tree. Chrome comes from DialogWindow. -->
+    <!-- A single licence-key field + explanatory note. Chrome comes from DialogWindow. -->
     <StackPanel Margin="24,18,24,24">
         <TextBlock Text="Licence Key Required" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
         <TextBlock Text="Cfx.re servers (FiveM/RedM) can't start without a licence key in server.cfg."

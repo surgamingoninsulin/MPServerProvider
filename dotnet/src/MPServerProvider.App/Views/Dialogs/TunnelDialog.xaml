@@ -8,8 +8,8 @@
         FontFamily="{StaticResource AppFontFamily}">
     <!--
         Connect to Tunnel, in the app's dark borderless chrome (rounded card, custom title bar,
-        draggable, own close button) instead of a native title bar. Layout follows the original's
-        dialog: server picker, "UPnP Port Forward" / "playit.gg Agent" tabs, Remove Mapping /
+        draggable, own close button) instead of a native title bar. Layout:
+        server picker, "UPnP Port Forward" / "playit.gg Agent" tabs, Remove Mapping /
         Forward Port, Close. Styles that Theme.xaml doesn't have (dark ComboBox, TextBox, CheckBox)
         live here so the shared theme stays untouched.
     -->

@@ -7,11 +7,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Imports an existing server folder as a server of <see cref="GameDefinition"/>: shows what
-/// <see cref="ServerImportService.Detect"/> found, then copies the folder into the servers folder
-/// (default) or registers it in place. Can't be closed while files are being copied.
-/// </summary>
 public partial class ImportServerDialog : DialogWindow
 {
     private readonly AppServices _services;
@@ -87,7 +82,6 @@ public partial class ImportServerDialog : DialogWindow
         ImportButton.IsEnabled = true;
     }
 
-    /// <summary>The folder name, made unique against existing servers ("Survival", "Survival 2", …).</summary>
     private string SuggestName(string folderName)
     {
         var baseName = string.IsNullOrWhiteSpace(folderName) || ServerRepository.ValidateServerName(folderName) is not null

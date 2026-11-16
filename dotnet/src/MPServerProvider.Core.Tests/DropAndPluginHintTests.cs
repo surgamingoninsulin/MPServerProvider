@@ -6,12 +6,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Drag-and-drop installs (<see cref="ModLibraryService.InstallFilesToServer"/>,
-/// <see cref="ModLibraryService.ImportFilesToLibrary"/>, <see cref="FileDrop"/>), the console's
-/// plugin linkage-error hint (<see cref="PluginErrorHint"/>) and the mcstatus.io response parser
-/// (<see cref="ReachabilityCheck"/>).
-/// </summary>
 public class DropAndPluginHintTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"mpsp-drop-{Guid.NewGuid():N}");

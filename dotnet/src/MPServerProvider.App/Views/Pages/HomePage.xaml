@@ -24,8 +24,7 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    <!-- Port of views_homepage.xaml's named elements (PlayersStat/UptimeStat/
-         ServersShortcutText/ModsShortcutText/NewsHost-NewsScroller): hero banner + stat tiles +
+    <!-- Hero banner + stat tiles +
          the real NewsService feed on the auto-scrolling AutoScrollingItemsControl. Each news
          card shows the game's banner, title and a 2-line trimmed summary; clicking one opens
          that game's Game Detail page (HomePage.xaml.cs NewsCard_MouseLeftButtonUp). -->

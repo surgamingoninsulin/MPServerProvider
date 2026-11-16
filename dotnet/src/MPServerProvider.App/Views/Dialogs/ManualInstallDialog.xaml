@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
         Title="Create Server" Width="472" SizeToContent="Height">
-    <!-- Port of views_manualinstalldialog.xaml: used for "manual"-provider games (no downloadable
+    <!-- Used for "manual"-provider games (no downloadable
          artifact), the user points at an already-extracted server folder on disk; that folder
-         path rides through ManualProvider via InstallRequest.Version, mirroring the proven Rust
-         reference's dialogs/manual_install.rs. Chrome comes from DialogWindow. -->
+         path rides through ManualProvider via InstallRequest.Version. Chrome comes from
+         DialogWindow. -->
     <Grid Margin="24,18,24,24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

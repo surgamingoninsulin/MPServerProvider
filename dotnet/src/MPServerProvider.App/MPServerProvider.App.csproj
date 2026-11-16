@@ -9,6 +9,9 @@
     <RootNamespace>MPServerProvider.App</RootNamespace>
     <AssemblyName>MPServerProvider.App</AssemblyName>
     <ApplicationIcon>..\..\..\assets\app_icon.ico</ApplicationIcon>
+    <!-- App version: build-installer.bat reads this for "MPServerProvider Installer <version>.exe". -->
+    <Version>1.0.0</Version>
+    <Product>MP Server Provider</Product>
   </PropertyGroup>
 
   <ItemGroup>

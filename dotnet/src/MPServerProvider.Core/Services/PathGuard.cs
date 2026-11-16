@@ -1,21 +1,7 @@
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Path-containment checks for anything that reads, writes or deletes files on a user's behalf
-/// inside a server's root folder (the Server Detail File Manager + built-in editor). Every
-/// operation must resolve to a path strictly inside the server root: no <c>..</c> traversal, no
-/// sibling-prefix tricks (<c>C:\servers\abc</c> vs <c>C:\servers\abcdef</c>), and no hops through
-/// a symlink/junction (reparse point) below the root that could point somewhere else on disk.
-/// </summary>
 public static class PathGuard
 {
-    /// <summary>
-    /// Pure string check: does <paramref name="candidate"/> resolve (via
-    /// <see cref="Path.GetFullPath(string)"/>) to <paramref name="root"/> itself or a path below
-    /// it? Comparison is case-insensitive (Windows file systems) and always uses a trailing
-    /// separator on the root so <c>root2</c> is never treated as being inside <c>root</c>.
-    /// Does not touch the disk.
-    /// </summary>
     public static bool IsInsideRoot(string root, string candidate, bool allowRootItself = false)
     {
         if (string.IsNullOrWhiteSpace(root) || string.IsNullOrWhiteSpace(candidate))
@@ -48,14 +34,6 @@ public static class PathGuard
         return candidateNoSep.StartsWith(rootWithSep, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// <see cref="IsInsideRoot"/> plus an on-disk check that no existing component between the
-    /// root (exclusive) and <paramref name="candidate"/> (inclusive) is a reparse point
-    /// (symlink/junction/mount point), which could otherwise redirect a "contained" path to an
-    /// arbitrary location. The root itself may be a reparse point (e.g. a server folder that
-    /// lives on a junctioned drive) — that's the user's own choice of location, not an escape.
-    /// Returns the normalized full path on success.
-    /// </summary>
     public static bool TryResolveInsideRoot(string root, string candidate, out string fullPath, bool allowRootItself = false)
     {
         fullPath = string.Empty;
@@ -93,10 +71,6 @@ public static class PathGuard
         return true;
     }
 
-    /// <summary>
-    /// Throwing variant of <see cref="TryResolveInsideRoot"/> for call sites that already report
-    /// exceptions to the user (e.g. as a toast).
-    /// </summary>
     public static string EnsureInsideRoot(string root, string candidate, bool allowRootItself = false)
     {
         if (!TryResolveInsideRoot(root, candidate, out var fullPath, allowRootItself))

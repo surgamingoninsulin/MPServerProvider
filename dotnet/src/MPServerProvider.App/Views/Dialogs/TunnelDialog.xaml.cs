@@ -7,11 +7,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.TunnelDialog</c> (decompile token 0x0200001d): a
-/// borderless, draggable modal in the app's dark chrome. The view model does the work; this
-/// code-behind only handles tabs, dragging, clipboard and closing.
-/// </summary>
 public partial class TunnelDialog : Window
 {
     private readonly ToastService _toasts;

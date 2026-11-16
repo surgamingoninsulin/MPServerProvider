@@ -5,15 +5,8 @@ using System.Windows.Input;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>One row in <see cref="FolderBrowserDialog"/>: a drive, quick place or folder.</summary>
 public sealed record FolderEntry(string Name, string Path, string Icon, string Detail);
 
-/// <summary>
-/// The app's own folder picker (themed like the rest of the app instead of the Windows folder
-/// dialog). Drives and quick places on the left; double-click / Enter opens a folder; "Select"
-/// returns the highlighted folder, or the current one when nothing is highlighted. Listing runs
-/// on a worker thread, hides hidden/system folders and never follows junctions or symlinks.
-/// </summary>
 public partial class FolderBrowserDialog : DialogWindow
 {
     private const string FolderIcon = "";
@@ -44,10 +37,8 @@ public partial class FolderBrowserDialog : DialogWindow
         };
     }
 
-    /// <summary>The selected folder, or <c>null</c> when cancelled.</summary>
     public string? SelectedFolder { get; private set; }
 
-    /// <summary>Shows the picker modally and returns the chosen folder (or <c>null</c>).</summary>
     public static string? Pick(Window? owner, string title, string? startFolder = null)
     {
         var dialog = new FolderBrowserDialog(title, startFolder);

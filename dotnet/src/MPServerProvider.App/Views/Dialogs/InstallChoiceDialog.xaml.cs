@@ -4,12 +4,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// First step of a server install: "Install new server" (the existing
-/// <see cref="InstallServerDialog"/>, or <see cref="ManualInstallDialog"/> for manual-provider
-/// games) next to "Import existing server" (<see cref="FolderBrowserDialog"/> then
-/// <see cref="ImportServerDialog"/>). Use <see cref="Run"/>.
-/// </summary>
 public partial class InstallChoiceDialog : DialogWindow
 {
     private enum Choice
@@ -33,7 +27,6 @@ public partial class InstallChoiceDialog : DialogWindow
         Loaded += (_, _) => NewCard.Focus();
     }
 
-    /// <summary>Shows the choice, then the dialog for what was picked.</summary>
     public static void Run(AppServices services, ToastService? toasts, GameDefinition game, Window? owner)
     {
         var choice = new InstallChoiceDialog(game) { Owner = owner };

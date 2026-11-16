@@ -3,24 +3,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.AppServices</c> (decompile token 0x02000005): a composition
-/// root holding one instance of every Core service, constructed once at startup and shared for
-/// the lifetime of the application. The original is a static service-locator (static
-/// get/set-backed fields written once from <c>Initialize()</c>); this port uses plain instance
-/// properties on a singleton instance (<see cref="Instance"/>) instead of statics, which is more
-/// testable while preserving the same "construct once, hand to everything" shape.
-/// <para>
-/// Construction order mirrors the decompiled <c>Initialize()</c> call sequence: AppPaths -&gt;
-/// SettingsService -&gt; GameLibraryService -&gt; ServerRepository -&gt; InstallService -&gt;
-/// ServerProcessService -&gt; QueryService (stateless, nothing to construct) -&gt; ModLibraryService
-/// -&gt; WorkshopService -&gt; RconService -&gt; FirewallService -&gt; SystemMetricsService -&gt;
-/// ArtworkCacheService -&gt; TunnelService -&gt; NewsService, followed by
-/// <c>GameLibraryService.Reload()</c>. This is the same order the already-proven Rust port
-/// (<c>crates/mpsp-app/src/app_services.rs</c>) uses, cross-referenced against the decompile's
-/// call-edge list in <c>0x02000005_AppServices.md</c>.
-/// </para>
-/// </summary>
 public sealed class AppServices
 {
     public AppPaths Paths { get; }
@@ -38,7 +20,6 @@ public sealed class AppServices
     public TunnelService Tunnel { get; }
     public NewsService News { get; }
 
-    /// <summary>Remembers which servers were running, for the restore-on-launch setting.</summary>
     public RunningServerTracker RunningTracker { get; }
 
     private AppServices(
@@ -75,11 +56,6 @@ public sealed class AppServices
         RunningTracker = runningTracker;
     }
 
-    /// <summary>
-    /// Port of <c>AppServices.Initialize()</c>. Builds every Core service instance in the
-    /// decompiled construction order and reloads the game library at the end, exactly like the
-    /// original and the proven Rust port.
-    /// </summary>
     public static AppServices Initialize()
     {
         var paths = new AppPaths();
@@ -109,8 +85,7 @@ public sealed class AppServices
         tunnel.AttachAutomation(processes, server => games.Find(server.ServerGame)?.Network?.Protocol, servers);
         var news = new NewsService();
 
-        // Port of the trailing `GameLibraryService.Reload()` call at the end of Initialize():
-        // seeds built-in games on first run and merges any on-disk manifests.
+        // Seeds built-in games on first run and merges any on-disk manifests.
         games.Reload();
 
         return new AppServices(
@@ -118,14 +93,6 @@ public sealed class AppServices
             mods, workshop, rcon, firewall, metrics, artwork, tunnel, news, runningTracker);
     }
 
-    /// <summary>
-    /// Adapter: implements <see cref="IServerPersistence"/> on top of the real
-    /// <see cref="ServerRepository"/> so <see cref="ServerProcessService"/> can persist
-    /// uptime/crash stats without Core needing a direct dependency on the process-management
-    /// layer's trait. Same trick the Rust port uses (<c>ServerRepositoryPersistence</c> in
-    /// <c>app_services.rs</c>), since Core itself doesn't implement these small App-side
-    /// interfaces for its repository/catalog types.
-    /// </summary>
     private sealed class ServerRepositoryPersistence(ServerRepository repository) : IServerPersistence
     {
         public void Save(ServerInstance server) => repository.Save(server);
@@ -133,11 +100,6 @@ public sealed class AppServices
         public bool UpdateStats(string serverName, Action<ServerStats> mutate) => repository.UpdateStats(serverName, mutate);
     }
 
-    /// <summary>
-    /// Adapter: implements <see cref="IGameLookup"/> on top of the real
-    /// <see cref="GameLibraryService"/> so <see cref="ServerProcessService"/> can resolve a
-    /// server's <see cref="GameDefinition"/> without a direct Core trait implementation.
-    /// </summary>
     private sealed class GameLibraryLookup(GameLibraryService games) : IGameLookup
     {
         public GameDefinition? Find(string gameId) => games.Find(gameId);

@@ -2,19 +2,8 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.ManualProvider</c> (decompile token
-/// 0x02000022). "Installs" by copying an already-downloaded/extracted server folder
-/// (<see cref="InstallRequest.Version"/>, repurposed to carry the source path) into
-/// <see cref="InstallRequest.TargetDir"/>.
-/// </summary>
 public sealed class ManualProvider : IInstallProvider
 {
-    /// <summary>
-    /// Well-known dedicated-server executable names the decompiled <c>InstallAsync</c> body's
-    /// string-literal array searches for, in priority order, after copying a user-selected
-    /// source folder.
-    /// </summary>
     private static readonly string[] KnownServerExeNames =
     {
         "server.exe",
@@ -31,11 +20,6 @@ public sealed class ManualProvider : IInstallProvider
     public Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct)
         => Task.FromResult(new List<string> { "manual" });
 
-    /// <remarks>
-    /// The (potentially multi-GB) copy runs on a thread-pool thread — it used to run
-    /// synchronously on the caller's (UI) thread and freeze the window — and honours
-    /// <paramref name="ct"/> between files.
-    /// </remarks>
     public Task<InstallResult> InstallAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
         => Task.Run(() => Install(request, progress, ct), ct);
 
@@ -64,9 +48,8 @@ public sealed class ManualProvider : IInstallProvider
 
         CopyDirRecursive(source, source, request.TargetDir, ct);
 
-        // Matches the original's call into `DownloadService.FlattenSingleRootFolder` right
-        // after copying (handles a source folder that itself wraps everything in one
-        // subfolder, e.g. a previously-extracted zip).
+        // Flatten right after copying (handles a source folder that itself wraps everything
+        // in one subfolder, e.g. a previously-extracted zip).
         DownloadHelper.FlattenSingleRootFolder(request.TargetDir);
 
         var serverFile = FindKnownServerExe(request.TargetDir) ?? string.Empty;
@@ -80,13 +63,6 @@ public sealed class ManualProvider : IInstallProvider
         };
     }
 
-    /// <summary>
-    /// Recursively copies the contents of <paramref name="sourceRoot"/> into
-    /// <paramref name="destRoot"/>, mirroring the decompiled body's
-    /// <c>EnumerateDirectories</c>/<c>EnumerateFiles</c> walk plus
-    /// <c>Path.GetRelativePath</c>/<c>File.Copy</c>, checking cancellation before each file copy
-    /// (<c>ct.ThrowIfCancellationRequested()</c>).
-    /// </summary>
     private static void CopyDirRecursive(string sourceRoot, string dir, string destRoot, CancellationToken ct)
     {
         Directory.CreateDirectory(destRoot);
@@ -115,11 +91,6 @@ public sealed class ManualProvider : IInstallProvider
         }
     }
 
-    /// <summary>
-    /// Finds the first file under <paramref name="dir"/> (recursively) whose name matches one of
-    /// <see cref="KnownServerExeNames"/>, case-insensitively, in priority order, and returns its
-    /// path relative to <paramref name="dir"/>.
-    /// </summary>
     internal static string? FindKnownServerExe(string dir)
     {
         var allFiles = new List<string>();

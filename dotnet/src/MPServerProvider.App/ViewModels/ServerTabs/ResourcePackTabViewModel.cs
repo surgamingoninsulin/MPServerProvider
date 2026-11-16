@@ -8,13 +8,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>
-/// Resource Pack tab (Minecraft Java only): hosts a server resource pack through mcpacks.dev
-/// (embedded by <c>Views/ServerTabs/ResourcePackTab</c>) and writes the result into
-/// <c>server.properties</c> via <see cref="ResourcePackProperties"/>, which only touches the
-/// four resource-pack keys. Values captured from the site only fill the form; nothing is written
-/// until the user presses Apply.
-/// </summary>
 public sealed partial class ResourcePackTabViewModel : ObservableObject
 {
     public const string SiteUrl = "https://mcpacks.dev/";
@@ -22,8 +15,6 @@ public sealed partial class ResourcePackTabViewModel : ObservableObject
     private readonly AppServices _services;
     private readonly ToastService _toasts;
 
-    /// <summary>The prompt JSON as read from disk: written back unchanged when the user didn't
-    /// edit the prompt text, so styled components (colors, children) aren't flattened.</summary>
     private string _loadedPromptJson = string.Empty;
     private string _loadedPromptText = string.Empty;
 
@@ -35,7 +26,6 @@ public sealed partial class ResourcePackTabViewModel : ObservableObject
 
     public ServerInstance? Current { get; private set; }
 
-    /// <summary>Tab visibility: Minecraft Java servers only (Bedrock packs work differently).</summary>
     [ObservableProperty]
     private bool _isAvailable;
 
@@ -82,7 +72,6 @@ public sealed partial class ResourcePackTabViewModel : ObservableObject
     [ObservableProperty]
     private string _currentPromptText = "—";
 
-    /// <summary>Set after Apply/Remove: Minecraft only reads <c>server.properties</c> at startup.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowRestartButton))]
     private bool _isRestartNeeded;
@@ -91,11 +80,6 @@ public sealed partial class ResourcePackTabViewModel : ObservableObject
 
     partial void OnIsServerRunningChanged(bool value) => OnPropertyChanged(nameof(ShowRestartButton));
 
-    /// <summary>
-    /// Called on every <c>ServerDetailViewModel.Show</c> (the poll re-sends fresh instances of
-    /// the same server): reload the form only when the selection is a different server, so the
-    /// user's unsaved edits survive the refresh.
-    /// </summary>
     public void SetServer(ServerInstance? server)
     {
         var isSame = server is not null && Current?.ServerName == server.ServerName;
@@ -115,7 +99,6 @@ public sealed partial class ResourcePackTabViewModel : ObservableObject
         RefreshLive();
     }
 
-    /// <summary>Cheap per-tick refresh (running state, version hint).</summary>
     public void RefreshLive()
     {
         if (Current is not { } server)
@@ -130,8 +113,6 @@ public sealed partial class ResourcePackTabViewModel : ObservableObject
             : string.Empty;
     }
 
-    /// <summary>Called by the view when mcpacks.dev shows an uploaded pack (upload result or
-    /// pack details page).</summary>
     public void OnPackCaptured(HostedPackInfo pack)
     {
         if (string.Equals(PackUrl.Trim(), pack.DownloadUrl, StringComparison.Ordinal) &&

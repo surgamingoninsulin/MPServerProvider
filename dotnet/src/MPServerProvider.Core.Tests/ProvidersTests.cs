@@ -4,13 +4,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Ports of the proven Rust port's pure-logic provider tests
-/// (<c>crates/mpsp-core/src/providers/{vdf,steamcmd,cfx,beammp,java_runtime,manual}.rs</c>) to
-/// C# equivalents against the real, restored provider types. These are the main correctness
-/// signal for the <see cref="MPServerProvider.Core.Providers"/> port, since most provider
-/// methods otherwise talk to real network endpoints.
-/// </summary>
 public class VdfTests
 {
     private const string Sample = """

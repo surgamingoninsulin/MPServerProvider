@@ -12,14 +12,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.TunnelDialog</c> (decompile token 0x0200001d), driving
-/// <see cref="TunnelService"/>: UPnP forwarding of the selected server's ports (per the game's
-/// TCP/UDP protocol plus extra ports), the playit.gg agent (install/start/stop, claim link,
-/// tunnel addresses), and the per-server "enable when this server starts" preference stored in
-/// <see cref="ServerInstance.Tunnel"/>. All service work is awaited off the UI thread; every
-/// command catches its own exceptions, and service events are marshalled to the dispatcher.
-/// </summary>
 public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposable
 {
     private const int MaxOutputChars = 40_000;
@@ -153,7 +145,6 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
 
     public bool IsInstalling => PlayitState == PlayitState.Installing;
 
-    /// <summary>"ok", "warn", "error" or "idle", for the status dot color.</summary>
     public string PlayitStateKey => PlayitState switch
     {
         PlayitState.Connected => "ok",
@@ -369,8 +360,6 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
 
     private bool CanUsePlayitPort() => PlayitSuggestedPort is not null && SelectedServer is not null;
 
-    /// <summary>Moves the selected server onto the port its playit tunnel forwards to (restarting
-    /// it if it is running, so Minecraft's server.properties picks the new port up).</summary>
     [RelayCommand(CanExecute = nameof(CanUsePlayitPort))]
     private async Task UsePlayitPort()
     {
@@ -450,7 +439,6 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
 
     public bool HasReachabilityText => ReachabilityText.Length > 0;
 
-    /// <summary>The internet check uses mcstatus.io, which only knows Minecraft.</summary>
     public bool CanTestReachability => ReachabilityCheck.IsSupported(SelectedServer?.ServerGame);
 
     [RelayCommand(CanExecute = nameof(CanRunReachabilityTest))]
@@ -646,10 +634,6 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
     [RelayCommand]
     private void OpenDashboard() => OpenPlayitUrl(DashboardUrl);
 
-    /// <summary>
-    /// Opens a playit.gg link in the default browser, only if it's https on playit.gg. When the
-    /// app is elevated the browser is started through Explorer with the user's normal token.
-    /// </summary>
     private void OpenPlayitUrl(string url)
     {
         if (!PlayitOutputParser.IsTrustedPlayitUrl(url))

@@ -3,21 +3,8 @@ using System.Text;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>Outcome of <see cref="ExternalProcess.RunAsync"/>.</summary>
 internal sealed record ExternalProcessResult(int ExitCode, string Output);
 
-/// <summary>
-/// Shared "run a helper tool to completion" primitive for installers (SteamCMD, the Forge
-/// installer, Workshop downloads). Unlike a bare <c>Process.Start</c> + <c>WaitForExitAsync</c>:
-/// <list type="bullet">
-/// <item>stdout/stderr are read continuously (no pipe-buffer deadlock) and forwarded line by line
-/// to <c>onLine</c> as they arrive, so progress can be reported live;</item>
-/// <item>stdin is redirected and closed, so an unexpected interactive prompt (Steam Guard,
-/// password) sees EOF instead of hanging forever;</item>
-/// <item>cancellation and the timeout both kill the whole process tree before returning, so a
-/// cancelled install never keeps writing into a folder that is about to be cleaned up.</item>
-/// </list>
-/// </summary>
 internal static class ExternalProcess
 {
     public static async Task<ExternalProcessResult> RunAsync(

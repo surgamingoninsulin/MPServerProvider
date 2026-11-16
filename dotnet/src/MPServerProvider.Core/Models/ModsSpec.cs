@@ -1,9 +1,5 @@
 namespace MPServerProvider.Core.Models;
 
-/// <summary>
-/// Mod/addon support description for a game.
-/// Ported from <c>MPServerProvider.Core.Models.ModsSpec</c> (decompile token 0x0200002e).
-/// </summary>
 public class ModsSpec
 {
     public bool Supported { get; set; }

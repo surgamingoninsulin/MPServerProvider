@@ -9,10 +9,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// A fault returned by a router's UPnP control endpoint (an HTTP 500 carrying a
-/// <c>&lt;UPnPError&gt;</c> element), or a transport-level failure talking to it.
-/// </summary>
 public sealed class UpnpSoapException : Exception
 {
     public UpnpSoapException(string action, int? errorCode, string? errorDescription, int httpStatus)
@@ -33,23 +29,17 @@ public sealed class UpnpSoapException : Exception
     public int HttpStatus { get; }
 }
 
-/// <summary>What kind of address a router reports as its WAN ("external") address.</summary>
 public enum ExternalIpKind
 {
-    /// <summary>A normal public address: port forwarding can work.</summary>
     Public,
 
-    /// <summary>RFC 1918 private range: another router sits in front of this one (double NAT).</summary>
     Private,
 
-    /// <summary>RFC 6598 shared range (100.64.0.0/10): the ISP uses carrier-grade NAT.</summary>
     CarrierGradeNat,
 
-    /// <summary>Missing, unspecified (0.0.0.0) or unparseable.</summary>
     Unknown,
 }
 
-/// <summary>A local IPv4 address and the adapter it belongs to, used to pick the LAN IP to forward to.</summary>
 public sealed record LocalInterfaceInfo(
     string Name,
     string Description,
@@ -58,10 +48,6 @@ public sealed record LocalInterfaceInfo(
     IPAddress Mask,
     IReadOnlyList<IPAddress> Gateways);
 
-/// <summary>
-/// A port mapping this app created on a router. Persisted so that only mappings the app made
-/// are ever removed, including ones left over after a crash.
-/// </summary>
 public sealed class OwnedPortMapping
 {
     public string ServerName { get; set; } = string.Empty;
@@ -70,7 +56,6 @@ public sealed class OwnedPortMapping
 
     public int InternalPort { get; set; }
 
-    /// <summary><c>"TCP"</c> or <c>"UDP"</c>.</summary>
     public string Protocol { get; set; } = "TCP";
 
     public string InternalClient { get; set; } = string.Empty;
@@ -81,7 +66,6 @@ public sealed class OwnedPortMapping
 
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>0 for a permanent mapping, otherwise the lease in seconds (renewed while the server runs).</summary>
     public int LeaseSeconds { get; set; }
 
     public DateTimeOffset CreatedUtc { get; set; }
@@ -89,7 +73,6 @@ public sealed class OwnedPortMapping
     public override string ToString() => $"{ExternalPort}/{Protocol}";
 }
 
-/// <summary>Outcome of forwarding a server's ports.</summary>
 public sealed record UpnpForwardResult(
     bool Success,
     string Message,
@@ -101,16 +84,12 @@ public sealed record UpnpForwardResult(
 
 public sealed partial class TunnelService
 {
-    /// <summary>Every mapping description starts with this, so the app can recognise its own entries.</summary>
     public const string MappingDescriptionPrefix = "MPServerProvider";
 
-    /// <summary>Lease used when a router refuses permanent (lease 0) mappings; renewed at half-life.</summary>
     public const int FallbackLeaseSeconds = 3600;
 
-    /// <summary>How long a successful discovery result is reused before searching again.</summary>
     public static readonly TimeSpan DeviceCacheLifetime = TimeSpan.FromMinutes(10);
 
-    /// <summary>Per-request timeout for device-description fetches and SOAP calls.</summary>
     public static readonly TimeSpan SoapTimeout = TimeSpan.FromSeconds(8);
 
     private static readonly string[] SsdpSearchTargets =
@@ -122,7 +101,6 @@ public sealed partial class TunnelService
         "urn:schemas-upnp-org:service:WANPPPConnection:1",
     };
 
-    /// <summary>Supported WAN connection services, most preferred first.</summary>
     internal static readonly string[] SupportedServiceTypes =
     {
         "urn:schemas-upnp-org:service:WANIPConnection:2",
@@ -149,7 +127,6 @@ public sealed partial class TunnelService
 
     // -- Public UPnP API ----------------------------------------------------------------------
 
-    /// <summary>The mappings this app currently holds for <paramref name="serverName"/>.</summary>
     public IReadOnlyList<OwnedPortMapping> MappingsFor(string serverName)
     {
         lock (_ownedLock)
@@ -158,7 +135,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>The last external address seen while forwarding <paramref name="serverName"/>, if any.</summary>
     public (string? Ip, ExternalIpKind Kind) ExternalIpFor(string serverName)
     {
         lock (_ownedLock)
@@ -167,12 +143,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>
-    /// Forwards every port <paramref name="server"/> needs (its main port plus
-    /// <see cref="TunnelSpec.ExtraPorts"/>, over TCP and/or UDP per <paramref name="gameProtocol"/>)
-    /// on the first UPnP router that accepts them. Never throws for router/network problems: the
-    /// result says what happened in words a user can act on.
-    /// </summary>
     public async Task<UpnpForwardResult> ForwardServerPortsAsync(ServerInstance server, string? gameProtocol, CancellationToken ct = default)
     {
         var wanted = BuildPortMappings(server.ServerPort, gameProtocol, server.Tunnel?.ExtraPorts ?? new List<string>());
@@ -252,10 +222,6 @@ public sealed partial class TunnelService
             new(false, message, null, ExternalIpKind.Unknown, null, Array.Empty<OwnedPortMapping>(), new[] { message });
     }
 
-    /// <summary>
-    /// Removes the mappings this app created for <paramref name="serverName"/> (never anyone
-    /// else's) and stops renewing them. Returns a user-facing summary.
-    /// </summary>
     public async Task<string> RemoveServerPortsAsync(string serverName, CancellationToken ct = default)
     {
         await _upnpLock.WaitAsync(ct).ConfigureAwait(false);
@@ -312,10 +278,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>
-    /// Removes every mapping this app recorded, including leftovers from a previous run that
-    /// crashed. Used at startup (nothing can be running yet) and at exit.
-    /// </summary>
     public async Task RemoveAllOwnedMappingsAsync(CancellationToken ct = default)
     {
         List<string> servers;
@@ -342,25 +304,14 @@ public sealed partial class TunnelService
 
     // -- Discovery ----------------------------------------------------------------------------
 
-    /// <summary>Thrown when no usable UPnP router answers; the message is meant for the user.</summary>
     public sealed class UpnpDiscoveryException(string message) : Exception(message);
 
-    /// <summary>
-    /// Port of <c>TunnelService.DiscoverRouterAsync()</c>, kept for compatibility: returns the
-    /// best router found by <see cref="DiscoverRoutersAsync"/>.
-    /// </summary>
     public async Task<UpnpDevice> DiscoverRouterAsync(CancellationToken ct = default)
     {
         var devices = await DiscoverRoutersAsync(ct).ConfigureAwait(false);
         return devices[0];
     }
 
-    /// <summary>
-    /// SSDP discovery on every active IPv4 interface (several search targets, repeated because
-    /// SSDP is unreliable UDP), then each responder's device description is fetched and its WAN
-    /// connection services collected. Routers that are the default gateway of a local adapter
-    /// come first. Throws <see cref="UpnpDiscoveryException"/> when nothing usable answers.
-    /// </summary>
     public async Task<IReadOnlyList<UpnpDevice>> DiscoverRoutersAsync(CancellationToken ct = default)
     {
         var interfaces = GetLocalInterfaces();
@@ -463,10 +414,6 @@ public sealed partial class TunnelService
         && IPAddress.TryParse(uri.Host, out var host)
         && gateways.Contains(host);
 
-    /// <summary>
-    /// Accepts an SSDP reply only when it was sent by one of this PC's default gateways and its
-    /// <c>LOCATION</c> URL is an http(s) URL on that same address.
-    /// </summary>
     internal static bool IsAcceptableSsdpResponder(IPAddress source, string location, ISet<IPAddress> gateways)
     {
         if (source.IsIPv4MappedToIPv6)
@@ -563,7 +510,6 @@ public sealed partial class TunnelService
         "MX: 2\r\n" +
         $"ST: {searchTarget}\r\n\r\n";
 
-    /// <summary>Extracts the <c>LOCATION</c> header (http/https only) from an SSDP response.</summary>
     internal static string? ParseSsdpLocation(string response)
     {
         foreach (var line in response.Split('\n'))
@@ -612,11 +558,6 @@ public sealed partial class TunnelService
             .ToList();
     }
 
-    /// <summary>
-    /// Parses an IGD device description: every WAN connection service of a supported type, with
-    /// its control URL made absolute (relative to <c>URLBase</c> when present, else to
-    /// <paramref name="location"/>). Namespace-agnostic, since routers are sloppy about it.
-    /// </summary>
     internal static IReadOnlyList<(string ServiceType, string ControlUrl, string? FriendlyName)> ParseDeviceDescription(string xml, string location)
     {
         var doc = XDocument.Parse(xml);
@@ -658,7 +599,6 @@ public sealed partial class TunnelService
 
         public List<string> Failures { get; } = new();
 
-        /// <summary>The router answered but refuses for a reason another router won't fix.</summary>
         public bool Fatal { get; set; }
     }
 
@@ -953,11 +893,6 @@ public sealed partial class TunnelService
 
     // -- SOAP ---------------------------------------------------------------------------------
 
-    /// <summary>
-    /// Port of <c>TunnelService.MapPortAsync(PortMapping mapping, string description)</c>: one
-    /// AddPortMapping call (lease 0, falling back to a finite lease). Not recorded as owned;
-    /// <see cref="ForwardServerPortsAsync"/> is the tracked path the app uses.
-    /// </summary>
     public async Task<UpnpResult> MapPortAsync(UpnpDevice device, PortMapping mapping, string description, CancellationToken ct = default)
     {
         try
@@ -980,13 +915,11 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>Port of <c>TunnelService.UnmapPortAsync(PortMapping mapping)</c>.</summary>
     public async Task UnmapPortAsync(UpnpDevice device, PortMapping mapping, CancellationToken ct = default)
     {
         await SendSoapAsync(device, "DeletePortMapping", BuildDeletePortMappingEnvelope(device, mapping), ct).ConfigureAwait(false);
     }
 
-    /// <summary>The router's WAN address via <c>GetExternalIPAddress</c>.</summary>
     public async Task<string> GetExternalIpAsync(UpnpDevice device, CancellationToken ct = default)
     {
         var body = $"<u:GetExternalIPAddress xmlns:u=\"{device.ServiceType}\"></u:GetExternalIPAddress>";
@@ -1070,7 +1003,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>Reads <c>errorCode</c>/<c>errorDescription</c> out of a UPnP SOAP fault body.</summary>
     internal static (int? Code, string? Description) ParseSoapFault(string body)
     {
         if (string.IsNullOrEmpty(body))
@@ -1082,7 +1014,6 @@ public sealed partial class TunnelService
         return (int.TryParse(codeText, out var code) ? code : null, description);
     }
 
-    /// <summary>A sentence the user can act on for a UPnP error code.</summary>
     internal static string FriendlySoapError(int? code, string? description, int port, string protocol, string? conflictingClient)
     {
         var what = $"Port {port}/{protocol}";
@@ -1117,11 +1048,6 @@ public sealed partial class TunnelService
 
     // -- Address helpers ----------------------------------------------------------------------
 
-    /// <summary>
-    /// Classifies a router-reported WAN address: RFC 1918 (10/8, 172.16/12, 192.168/16) and
-    /// RFC 6598 carrier-grade NAT (100.64/10) mean the router itself is behind another NAT, so
-    /// a forwarded port can't be reached from the internet.
-    /// </summary>
     public static ExternalIpKind ClassifyIp(string? ip)
     {
         if (string.IsNullOrWhiteSpace(ip) || !IPAddress.TryParse(ip.Trim(), out var address)
@@ -1145,7 +1071,6 @@ public sealed partial class TunnelService
         return ExternalIpKind.Public;
     }
 
-    /// <summary>The warning to show for a non-public WAN address, or null when it's public.</summary>
     public static string? ExternalIpWarning(ExternalIpKind kind, string? ip) => kind switch
     {
         ExternalIpKind.Private =>
@@ -1159,11 +1084,6 @@ public sealed partial class TunnelService
         _ => null,
     };
 
-    /// <summary>
-    /// Picks the LAN address to forward to: an IPv4 address on a physical adapter whose subnet
-    /// contains <paramref name="gateway"/> (the router). Adapters that list the router as their
-    /// default gateway win; virtual/VPN/loopback adapters are only used as a last resort.
-    /// </summary>
     public static IPAddress? SelectLanIp(IEnumerable<LocalInterfaceInfo> interfaces, IPAddress gateway)
     {
         var candidates = interfaces
@@ -1233,7 +1153,6 @@ public sealed partial class TunnelService
         return true;
     }
 
-    /// <summary>Active IPv4 addresses of this PC (no loopback), with their masks and gateways.</summary>
     public static IReadOnlyList<LocalInterfaceInfo> GetLocalInterfaces()
     {
         var list = new List<LocalInterfaceInfo>();
@@ -1278,13 +1197,6 @@ public sealed partial class TunnelService
 
     // -- Port list ----------------------------------------------------------------------------
 
-    /// <summary>
-    /// Every mapping a server needs: <paramref name="serverPort"/> over the game's protocol(s)
-    /// (<c>"tcp"</c>, <c>"udp"</c>, anything else = both, same rule as the firewall rules) plus
-    /// each valid <paramref name="extraPorts"/> entry (<c>"27015"</c>, <c>"27015/udp"</c>,
-    /// <c>"8080/tcp"</c>, <c>"7777/both"</c>, ranges like <c>"27015-27017/udp"</c> up to 16 ports).
-    /// Duplicates and out-of-range ports are dropped.
-    /// </summary>
     public static IReadOnlyList<PortMapping> BuildPortMappings(int serverPort, string? gameProtocol, IEnumerable<string> extraPorts)
     {
         var result = new List<PortMapping>();
@@ -1320,7 +1232,6 @@ public sealed partial class TunnelService
         return result;
     }
 
-    /// <summary>Parses <c>"port[-port][/tcp|udp|both]"</c>; ranges are limited to 16 ports.</summary>
     public static bool TryParseExtraPort(string? raw, out int from, out int to, out string? protocol)
     {
         from = to = 0;
@@ -1340,7 +1251,6 @@ public sealed partial class TunnelService
         return from is >= 1 and <= 65535 && to >= from && to <= 65535 && to - from < 16;
     }
 
-    /// <summary>The mapping description routers show: <c>"MPServerProvider &lt;server name&gt;"</c>.</summary>
     public static string MappingDescription(string serverName)
     {
         var name = Regex.Replace(serverName ?? string.Empty, @"[\x00-\x1F]", " ").Trim();
@@ -1370,11 +1280,6 @@ public sealed partial class TunnelService
         $"<NewProtocol>{mapping.SoapProtocol}</NewProtocol>" +
         "</u:DeletePortMapping>";
 
-    /// <summary>
-    /// Extracts <c>&lt;controlURL&gt;</c> from the <c>&lt;service&gt;</c> whose type contains
-    /// <paramref name="serviceName"/> (kept for compatibility; discovery uses
-    /// <see cref="ParseDeviceDescription"/>).
-    /// </summary>
     internal static string? ExtractControlUrl(string xml, string serviceName)
     {
         var marker = $":{serviceName}:";
@@ -1382,17 +1287,12 @@ public sealed partial class TunnelService
         return idx < 0 ? null : ExtractXmlTag(xml[idx..], "controlURL");
     }
 
-    /// <summary>First <c>&lt;tag&gt;…&lt;/tag&gt;</c> value, ignoring any namespace prefix.</summary>
     internal static string? ExtractXmlTag(string xml, string tag)
     {
         var match = Regex.Match(xml, $@"<(?:[A-Za-z0-9_]+:)?{tag}(?:\s[^>]*)?>(.*?)</(?:[A-Za-z0-9_]+:)?{tag}\s*>", RegexOptions.Singleline);
         return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 
-    /// <summary>
-    /// "Which local address would the OS use to reach the internet" (a UDP connect sends
-    /// nothing). Last-resort fallback when an SSDP socket was bound to the wildcard address.
-    /// </summary>
     private static IPAddress? LocalLanIp()
     {
         try

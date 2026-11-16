@@ -2,16 +2,8 @@ using System.Text.Json;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>Result of <see cref="ReachabilityCheck"/>: whether the server answered from the
-/// internet, plus a one-line description for the tunnel dialog.</summary>
 public sealed record ReachabilityResult(bool Online, string Text);
 
-/// <summary>
-/// Asks mcstatus.io (the service people paste their address into) to ping a public Minecraft
-/// address from the internet. Testing the public address from inside the home network says
-/// little: many routers (e.g. the Ziggo/Compal Connect Box) don't support NAT loopback, so the
-/// connection fails locally even when friends outside can join.
-/// </summary>
 public static class ReachabilityCheck
 {
     public static bool IsSupported(string? gameId)
@@ -27,7 +19,6 @@ public static class ReachabilityCheck
         return Parse(json, address.Trim());
     }
 
-    /// <summary>Parses an mcstatus.io v2 status response.</summary>
     public static ReachabilityResult Parse(string json, string address)
     {
         using var doc = JsonDocument.Parse(json);

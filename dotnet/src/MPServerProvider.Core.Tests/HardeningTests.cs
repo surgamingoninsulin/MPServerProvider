@@ -11,9 +11,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Regression tests for the security/robustness audit fixes (item numbers refer to the audit).
-/// </summary>
 public class HardeningTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"mpsp-hardening-{Guid.NewGuid():N}");

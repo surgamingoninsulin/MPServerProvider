@@ -5,15 +5,6 @@ using MPServerProvider.App.ViewModels;
 
 namespace MPServerProvider.App.Views.Pages;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.ModsPage</c> (decompile token 0x02000014): game filter
-/// dropdown + per-game checkbox sidebar, keyword search, "Import from Folder" (WPF's built-in
-/// <see cref="Microsoft.Win32.OpenFolderDialog"/>), and per-mod "Add to Server ▾"/assignment-chip
-/// removal context menus, wired against the real <see cref="AppServices.Mods"/> API. State lives
-/// in <see cref="ModsPageViewModel"/>; this code-behind only builds the dynamic context menus the
-/// decompiled page's own code-behind built (no clean declarative XAML equivalent for a
-/// per-row popup whose item count varies per mod).
-/// </summary>
 public partial class ModsPage : UserControl, INavigationAware
 {
     private ModsPageViewModel? _viewModel;
@@ -28,11 +19,6 @@ public partial class ModsPage : UserControl, INavigationAware
         InitializeComponent();
     }
 
-    /// <summary>
-    /// Lazily builds the view model on first navigation: <see cref="MainWindow"/> constructs every
-    /// page from its own constructor, before the window (and its <see cref="MainWindow.Toasts"/>)
-    /// is reachable, so the view model can only be built once the shell has navigated here.
-    /// </summary>
     public void OnNavigatedTo()
     {
         if (_viewModel is null && Application.Current is App { Services: { } services } &&
@@ -45,10 +31,6 @@ public partial class ModsPage : UserControl, INavigationAware
         _viewModel?.Initialize();
     }
 
-    /// <summary>
-    /// Builds the "Add to Server ▾" menu: compatible servers first, then incompatible ones
-    /// disabled with the reason in the header (e.g. "Survival — Needs MC 1.20.x, server is 26.3").
-    /// </summary>
     private void AddToServerButton_Click(object sender, RoutedEventArgs e)
     {
         try

@@ -8,13 +8,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.MainWindow</c> (decompile token 0x02000010): the
-/// borderless-chrome shell. Navigation mechanism: each sidebar <c>RadioButton</c>'s
-/// <c>Tag</c> names a page key; <see cref="NavButton_Checked"/> swaps <see cref="PageHost"/>'s
-/// content to a cached page instance and calls <see cref="INavigationAware.OnNavigatedTo"/> on
-/// it if it implements that interface, mirroring the decompiled nav-aware page lifecycle.
-/// </summary>
 public partial class MainWindow : Window
 {
     private readonly Dictionary<string, UserControl> _pages = new();
@@ -47,7 +40,6 @@ public partial class MainWindow : Window
         NavigateTo("home");
     }
 
-    /// <summary>Selects <paramref name="serverName"/> on the My Servers page (navigate there first).</summary>
     public void SelectServer(string serverName)
     {
         if (_pages.TryGetValue("servers", out var page) && page is MyServersPage servers)
@@ -65,12 +57,6 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Shows the Game Detail page for <paramref name="game"/> in the page host. The nav pill of
-    /// <paramref name="returnToPageKey"/> (e.g. <c>"library"</c> or <c>"home"</c>) stays
-    /// selected, since the detail page is a drill-down of that section; its Back button returns
-    /// there via <see cref="NavigateToPage"/>.
-    /// </summary>
     public void ShowGameDetail(GameDefinition game, string returnToPageKey)
     {
         try
@@ -88,10 +74,6 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Navigates to one of the cached top-level pages by key and keeps the nav pills in sync
-    /// (used by the Game Detail page's Back button).
-    /// </summary>
     public void NavigateToPage(string key)
     {
         var pill = Nav.Children.OfType<RadioButton>().FirstOrDefault(r => r.Tag as string == key);
@@ -126,8 +108,6 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Swaps the hosted page, telling the page being left (so it can stop its poll
-    /// timers) via <see cref="INavigationAware.OnNavigatedFrom"/>.</summary>
     private void SetPage(UserControl page)
     {
         var previous = PageHost.Content;
@@ -151,12 +131,6 @@ public partial class MainWindow : Window
     private bool _closeAllowed;
     private bool _stoppingServers;
 
-    /// <summary>
-    /// If servers are running, the close is postponed: a "Stopping servers…" overlay is shown
-    /// while every server gets its graceful stop (in parallel, ~30 s each at most), the tunnel
-    /// forwards are removed, and only then does the window really close. Nothing here blocks the
-    /// UI thread.
-    /// </summary>
     protected override void OnClosing(CancelEventArgs e)
     {
         base.OnClosing(e);

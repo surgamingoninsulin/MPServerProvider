@@ -6,7 +6,7 @@
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
     </UserControl.Resources>
-    <!-- Port of views_settingspage.xaml: Storage Management / Startup & Behavior / System
+    <!-- Storage Management / Startup & Behavior / System
          Resources / System Specifications / Firewall Rules, per
          docs/reference-screenshots/6.png and 7.png. -->
     <ScrollViewer VerticalScrollBarVisibility="Auto">

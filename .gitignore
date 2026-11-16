@@ -1,0 +1,74 @@
+# ---- .NET / Visual Studio build output ---------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm64/
+publish/
+artifacts/
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+
+# ---- IDE / user-specific files -----------------------------------------------
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.DotSettings.user
+launchSettings.local.json
+
+# ---- Tests / coverage --------------------------------------------------------
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+
+# ---- App runtime data (servers, mods, caches, user settings) -----------------
+# The dev build keeps all runtime data in dotnet/data; never commit it.
+dotnet/data/
+# User settings written by the app at runtime.
+data/settings.json
+# Downloaded/cached runtime files anywhere under a data folder.
+**/data/cache/
+**/data/servers/
+**/data/mods/
+**/data/tools/
+**/data/tunnel/
+data/
+installer/output/
+installer/publish/
+# ---- Local scratch files ------------------------------------------------------
+_wt/
+dotnet/*_check.png
+*.log
+*.tmp
+*.bak
+*.orig
+
+# ---- OS files ----------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ---- Secrets -----------------------------------------------------------------
+.env
+.env.*
+*.pfx
+*.snk
+secrets.json
+
+# ---- Installer build output (build-installer.bat) -------------------------
+installer/publish/
+installer/Output/

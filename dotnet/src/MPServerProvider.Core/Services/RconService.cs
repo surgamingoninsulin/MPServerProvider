@@ -4,17 +4,8 @@ using System.Text;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// A decoded RCON packet. Port of the anonymous tuple the original's <c>ReadPacketAsync</c>
-/// returns (a <c>(int Id, int Type, string Body)</c>-shaped record, per the decompile).
-/// </summary>
 public sealed record RconPacket(int Id, int PacketType, string Body)
 {
-    /// <summary>
-    /// Port of <c>RconService.BuildPacket(int type, string body)</c>. Encodes
-    /// <c>(size, id, type, body, "\0", "\0")</c> with <c>size</c> covering everything after the
-    /// size field itself: <c>4 (id) + 4 (type) + body.Length + 1 (body NUL) + 1 (trailing NUL)</c>.
-    /// </summary>
     public static byte[] Encode(int id, int packetType, string body)
     {
         var bodyBytes = Encoding.UTF8.GetBytes(body);
@@ -29,9 +20,6 @@ public sealed record RconPacket(int Id, int PacketType, string Body)
         return output;
     }
 
-    /// <summary>
-    /// Decodes a single packet's payload (everything *after* the leading size <c>int32</c>).
-    /// </summary>
     public static RconPacket DecodePayload(ReadOnlySpan<byte> payload)
     {
         if (payload.Length < 10)
@@ -52,7 +40,6 @@ public sealed record RconPacket(int Id, int PacketType, string Body)
         return new RconPacket(id, packetType, body);
     }
 
-    /// <summary>Reads one full RCON packet (size prefix + payload) from <paramref name="stream"/>.</summary>
     public static async Task<RconPacket> ReadAsync(NetworkStream stream, CancellationToken ct = default)
     {
         var sizeBuf = new byte[4];
@@ -89,32 +76,17 @@ public sealed record RconPacket(int Id, int PacketType, string Body)
     }
 }
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.RconService</c> (decompile token 0x02000012,
-/// see <c>docs/decompile-report/report/MPServerProvider.Core.dll/MPServerProvider.Core.Services/
-/// 0x02000012_RconService.md</c>): the Source Engine RCON protocol
-/// (<see href="https://developer.valvesoftware.com/wiki/Source_RCON_Protocol"/>), implemented to
-/// spec since it's externally standardized. The decompile confirms the shape: a
-/// <c>TcpClient</c>/<c>Stream</c> pair, a <c>BuildPacket(int type, string body)</c> helper using
-/// a little-endian <c>BinaryWriter</c>, and <c>ReadPacketAsync</c>/<c>ConnectAsync</c>/
-/// <c>SendCommandAsync</c>/<c>SendCommandMultiAsync</c>.
-/// </summary>
 public sealed class RconService : IDisposable
 {
-    /// <summary><c>SERVERDATA_AUTH</c> — client -&gt; server, authenticate with the RCON password.</summary>
     public const int ServerDataAuth = 3;
-    /// <summary><c>SERVERDATA_EXECCOMMAND</c> — client -&gt; server, run a console command.</summary>
     public const int ServerDataExecCommand = 2;
-    /// <summary><c>SERVERDATA_AUTH_RESPONSE</c> — server -&gt; client, reply to an auth packet.</summary>
     public const int ServerDataAuthResponse = 2;
-    /// <summary><c>SERVERDATA_RESPONSE_VALUE</c> — server -&gt; client, command output.</summary>
     public const int ServerDataResponseValue = 0;
 
     private TcpClient? _client;
     private NetworkStream? _stream;
     private int _nextRequestId = 1;
 
-    /// <summary>Port of <c>RconService.get_Connected()</c>.</summary>
     public bool Connected { get; private set; }
 
     private int AllocId()
@@ -124,19 +96,6 @@ public sealed class RconService : IDisposable
         return id;
     }
 
-    /// <summary>
-    /// Port of <c>RconService.ConnectAsync(string host, int port, string password, ...)</c>:
-    /// opens the TCP connection, sends <c>SERVERDATA_AUTH</c>, and verifies the
-    /// <c>SERVERDATA_AUTH_RESPONSE</c> echoes the same request id (a response with
-    /// <c>id == -1</c> means the password was rejected, per spec). Skips any empty
-    /// <c>SERVERDATA_RESPONSE_VALUE</c> some Source RCON implementations send before the real
-    /// auth response.
-    /// </summary>
-    /// <remarks>
-    /// HARDENING: any previous connection is disposed first; the whole handshake (connect, auth
-    /// write and auth reply) is bounded by <paramref name="connectTimeout"/> (a silent server used
-    /// to hang the auth read forever); and every failure path disposes the socket.
-    /// </remarks>
     public async Task ConnectAsync(string host, int port, string password, TimeSpan connectTimeout, CancellationToken ct = default)
     {
         Disconnect();
@@ -185,10 +144,6 @@ public sealed class RconService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Reads packets until one answering request <paramref name="id"/> arrives, discarding late
-    /// replies to earlier (timed-out) commands so they are never reported as this command's output.
-    /// </summary>
     private static async Task<RconPacket> ReadResponseAsync(NetworkStream stream, int id, CancellationToken ct)
     {
         while (true)
@@ -201,7 +156,6 @@ public sealed class RconService : IDisposable
         }
     }
 
-    /// <summary>Port of <c>RconService.SendCommandAsync(string command, ...)</c>.</summary>
     public async Task<string> SendCommandAsync(string command, TimeSpan responseTimeout, CancellationToken ct = default)
     {
         if (!Connected || _stream is null)
@@ -233,13 +187,6 @@ public sealed class RconService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Port of <c>RconService.SendCommandMultiAsync(string command, TimeSpan[] delays, ...)</c>:
-    /// sends the command once, then waits for *multiple* response packets (some servers
-    /// fragment long responses across several <c>SERVERDATA_RESPONSE_VALUE</c> packets), waiting
-    /// up to each entry in <paramref name="delays"/> between reads and concatenating everything
-    /// received.
-    /// </summary>
     public async Task<string> SendCommandMultiAsync(string command, IReadOnlyList<TimeSpan> delays, CancellationToken ct = default)
     {
         if (!Connected || _stream is null)
@@ -284,7 +231,6 @@ public sealed class RconService : IDisposable
         return combined.ToString();
     }
 
-    /// <summary>Port of <c>RconService.Disconnect()</c>.</summary>
     public void Disconnect()
     {
         Connected = false;

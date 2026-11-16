@@ -3,13 +3,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.MinecraftJavaProvider</c> (decompile token
-/// 0x02000023). Dispatches on <see cref="GameDefinition"/>/<see cref="InstallRequest.Variant"/>
-/// across 6 server flavors (paper/fabric/purpur/velocity/bungeecord/forge) plus a vanilla
-/// fallback, each hitting a different upstream API (see each <c>Install*Async</c> method's doc
-/// comment for the exact decompiled string-literal evidence).
-/// </summary>
 public sealed class MinecraftJavaProvider : IInstallProvider
 {
     private const string MojangManifest = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
@@ -23,23 +16,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
 
     public string Id => "minecraft-java";
 
-    /// <summary>
-    /// Port of <c>GuessJavaMajor(string mcVersion) -&gt; int</c>.
-    /// <para>
-    /// INFERRED: the decompiled body's own thresholds weren't captured as string evidence (it
-    /// builds a lookup via <c>RuntimeHelpers.InitializeArray</c> + a split/parse loop over the
-    /// dotted version, with <c>max_stack=4</c> suggesting a small inline table), so this
-    /// reconstructs commonly-known/documented Mojang Java requirements by Minecraft version
-    /// instead of the decompiled table itself: Java 25 for the year-numbered releases (26.1+,
-    /// per Mojang's per-version <c>javaVersion.majorVersion</c>), Java 21 for 1.20.5 - 1.21.x,
-    /// Java 17 for 1.18+, Java 16 for 1.17.x, Java 8 otherwise.
-    /// </para>
-    /// <para>
-    /// This is only a FALLBACK: installs read the real requirement from the chosen version's own
-    /// metadata first (Mojang's per-version JSON, or PaperMC's Fill API), see
-    /// <see cref="ReadMojangJavaMajor"/>.
-    /// </para>
-    /// </summary>
     internal static int GuessJavaMajor(string mcVersion)
     {
         var parts = mcVersion
@@ -73,11 +49,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return 8;
     }
 
-    /// <summary>
-    /// Port of <c>WriteCommonFiles(InstallRequest)</c>: writes <c>eula.txt</c> and seeds
-    /// <c>server.properties</c> (port + motd), only when missing — verbatim from the decompiled
-    /// interpolated-string literals.
-    /// </summary>
     private static void WriteCommonFiles(InstallRequest request)
     {
         if (request.EulaAccepted)
@@ -98,10 +69,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         }
     }
 
-    /// <summary>
-    /// Port of <c>InstallVanillaAsync</c>: resolves the exact build from Mojang's version
-    /// manifest and downloads <c>server.jar</c> directly.
-    /// </summary>
     private static async Task<InstallResult> InstallVanillaAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         progress.Report(InstallProgress.Indeterminate("Resolving version from Mojang…"));
@@ -165,10 +132,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>
-    /// Port of <c>InstallPaperAsync</c>: resolves the latest Paper build for
-    /// <see cref="InstallRequest.Version"/> via PaperMC's Fill API and downloads it.
-    /// </summary>
     private static async Task<InstallResult> InstallPaperAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         progress.Report(InstallProgress.Indeterminate("Resolving latest Paper build…"));
@@ -208,8 +171,8 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         }
         catch
         {
-            // Fall back to the heuristic on any shape/network failure, matching the original's
-            // tolerant `?? GuessJavaMajor(...)` fallback.
+            // Fall back to the heuristic on any shape/network failure
+            // (tolerant `?? GuessJavaMajor(...)` fallback).
         }
 
         return new InstallResult
@@ -221,7 +184,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>Port of <c>InstallPurpurAsync</c>.</summary>
     private static async Task<InstallResult> InstallPurpurAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         var mcVersion = request.Version ?? string.Empty;
@@ -251,7 +213,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>Port of <c>InstallVelocityAsync</c>.</summary>
     private static async Task<InstallResult> InstallVelocityAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         progress.Report(InstallProgress.Indeterminate("Resolving latest Velocity build…"));
@@ -286,7 +247,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>Port of <c>InstallBungeeCordAsync</c>: a single fixed "last stable build" jar.</summary>
     private static async Task<InstallResult> InstallBungeeCordAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         progress.Report(InstallProgress.Indeterminate("Downloading BungeeCord…"));
@@ -302,18 +262,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>
-    /// Port of <c>InstallForgeAsync</c>: resolves a Forge version for
-    /// <see cref="InstallRequest.Version"/> (first via the recommended/latest "promotions" feed,
-    /// falling back to scraping Maven metadata XML for the newest matching version), then
-    /// downloads the installer jar.
-    /// <para>
-    /// FIX: the original only downloaded <c>forge-installer.jar</c> and then "started" the
-    /// installer as if it were the server. This now runs
-    /// <c>java -jar forge-installer.jar --installServer</c> and points the server at the
-    /// generated launch files (see <see cref="DetectForgeLaunch"/>).
-    /// </para>
-    /// </summary>
     private static async Task<InstallResult> InstallForgeAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         var mcVersion = request.Version ?? string.Empty;
@@ -416,20 +364,8 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>Upper bound for the Forge installer (it downloads every library from Maven).</summary>
     internal static readonly TimeSpan ForgeInstallerTimeout = TimeSpan.FromMinutes(30);
 
-    /// <summary>
-    /// After <c>--installServer</c>: returns the server file and start command for the generated
-    /// layout, or <c>null</c> if nothing runnable was produced.
-    /// <list type="bullet">
-    /// <item>Forge 1.17+ writes <c>libraries/net/minecraftforge/forge/&lt;mc&gt;-&lt;forge&gt;/win_args.txt</c>
-    /// (plus <c>user_jvm_args.txt</c>) and is launched with <c>@</c> argument files, exactly like
-    /// its generated <c>run.bat</c>.</item>
-    /// <item>Older Forge writes <c>forge-&lt;mc&gt;-&lt;forge&gt;[-universal].jar</c>, launched with the
-    /// game definition's default <c>-jar "{server_file}"</c> template (start command <c>null</c>).</item>
-    /// </list>
-    /// </summary>
     internal static (string ServerFile, string? StartCommand)? DetectForgeLaunch(string targetDir, string mcVersion, string forgeVersion)
     {
         var argsRel = Path.Combine("libraries", "net", "minecraftforge", "forge", $"{mcVersion}-{forgeVersion}", "win_args.txt");
@@ -461,11 +397,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return fallback is null ? null : (fallback, null);
     }
 
-    /// <summary>
-    /// Picks the newest of several dotted version strings, comparing each dot/dash-separated
-    /// segment numerically (so <c>47.2.10</c> beats <c>47.2.9</c>, which an ordinal string
-    /// comparison got wrong).
-    /// </summary>
     internal static string? PickNewestVersion(IEnumerable<string> versions)
     {
         string? best = null;
@@ -480,7 +411,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return best;
     }
 
-    /// <summary>Segment-wise numeric version comparison (non-numeric segments compare ordinally).</summary>
     internal static int CompareVersions(string a, string b)
     {
         var pa = a.Split('.', '-');
@@ -508,13 +438,11 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return 0;
     }
 
-    /// <summary>Version strings end up in URLs and file paths: letters, digits, <c>.</c>, <c>-</c>, <c>_</c>, <c>+</c> only.</summary>
     private static bool IsSafeVersionToken(string value)
         => value.Length is > 0 and <= 64 && value.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_' or '+');
 
     private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max] + "…";
 
-    /// <summary>A Fill-API <c>download.name</c>, reduced to a safe plain file name.</summary>
     private static string SafeJarName(JsonElement download, string fallback)
     {
         var raw = download.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == JsonValueKind.String ? nameEl.GetString() : null;
@@ -522,17 +450,12 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ? name : fallback;
     }
 
-    /// <summary>PaperMC Fill v3 <c>download.checksums.sha256</c>, when present.</summary>
     private static string? FillSha256(JsonElement download)
         => download.TryGetProperty("checksums", out var sums) && sums.ValueKind == JsonValueKind.Object
             && sums.TryGetProperty("sha256", out var sha) && sha.ValueKind == JsonValueKind.String
             ? sha.GetString()
             : null;
 
-    /// <summary>
-    /// Port of <c>InstallFabricAsync</c>: resolves the latest loader + installer versions from
-    /// Fabric's meta API and downloads the bundled server launcher.
-    /// </summary>
     private static async Task<InstallResult> InstallFabricAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         var mcVersion = request.Version ?? string.Empty;
@@ -582,12 +505,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         };
     }
 
-    /// <summary>
-    /// Shared helper for <see cref="InstallVanillaAsync"/> and <see cref="InstallFabricAsync"/>:
-    /// looks up <paramref name="mcVersion"/> in Mojang's manifest and reads the server download's
-    /// <c>javaVersion.majorVersion</c>, returning <see langword="null"/> on any network/shape
-    /// failure so callers can fall back to <see cref="GuessJavaMajor"/>.
-    /// </summary>
     private static async Task<int?> FetchVanillaJavaMajorAsync(string mcVersion, CancellationToken ct)
     {
         try
@@ -626,14 +543,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         }
     }
 
-    /// <summary>
-    /// Reads the Java major version Mojang publishes for one Minecraft version: the ROOT-level
-    /// <c>javaVersion.majorVersion</c> of the per-version JSON (e.g. <c>{"component":
-    /// "java-runtime-epsilon", "majorVersion": 25}</c> for 26.1+). FIX: this used to be read from
-    /// <c>downloads.server.javaVersion</c>, which never exists (that object only holds
-    /// <c>sha1</c>/<c>size</c>/<c>url</c>), so every install silently fell back to
-    /// <see cref="GuessJavaMajor"/> — which returned Java 8 for the year-numbered 26.x releases.
-    /// </summary>
     internal static int? ReadMojangJavaMajor(JsonElement versionRoot)
     {
         static int? Read(JsonElement owner)
@@ -661,11 +570,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
             : null;
     }
 
-    /// <summary>
-    /// Port of <c>GetVersionsAsync(GameDefinition, string variant, CancellationToken)</c>:
-    /// dispatches on <paramref name="variant"/> to the matching upstream API's version list,
-    /// falling back to Mojang's manifest for vanilla.
-    /// </summary>
     public async Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct)
     {
         switch (variant)
@@ -763,13 +667,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         }
     }
 
-    /// <summary>
-    /// Flattens a PaperMC Fill v3 project's <c>versions</c> map (<c>{"1.21": ["1.21.11", ...],
-    /// ...}</c>, newest group first) into one newest-first list. Fill v2 returned a flat array,
-    /// which <see cref="ExtractStringArray"/> handled; reading v3 that way yielded an empty
-    /// list, and installing with no version then requested <c>/versions//builds/latest</c>,
-    /// which Fill rejects with 400 Bad Request.
-    /// </summary>
     internal static List<string> FillVersions(JsonElement root, bool stableOnly)
     {
         var result = new List<string>();
@@ -809,10 +706,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return result;
     }
 
-    /// <summary>
-    /// Resolves an empty/<c>"latest"</c> requested version to the newest one a Fill v3 project
-    /// lists, so an install never requests <c>/versions//builds/latest</c>.
-    /// </summary>
     private static async Task<string> ResolveFillVersionAsync(string api, string? requested, bool stableOnly, CancellationToken ct)
     {
         if (!string.IsNullOrWhiteSpace(requested) && !requested.Equals("latest", StringComparison.OrdinalIgnoreCase))
@@ -842,10 +735,6 @@ public sealed class MinecraftJavaProvider : IInstallProvider
         return result;
     }
 
-    /// <summary>
-    /// Port of <c>InstallAsync</c>: creates the target dir, dispatches to the matching
-    /// <c>Install&lt;Variant&gt;Async</c>, then calls <c>WriteCommonFiles</c>.
-    /// </summary>
     public async Task<InstallResult> InstallAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         Directory.CreateDirectory(request.TargetDir);

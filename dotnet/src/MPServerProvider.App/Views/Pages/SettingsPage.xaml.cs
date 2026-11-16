@@ -6,15 +6,6 @@ using MPServerProvider.App.Views.Dialogs;
 
 namespace MPServerProvider.App.Views.Pages;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.SettingsPage</c> (decompile token 0x0200001b). Storage
-/// Management / Startup &amp; Behavior / System Resources / System Specifications / Firewall
-/// Rules live in <see cref="SettingsPageViewModel"/>; this code-behind only owns the live-metrics
-/// polling timer (a <see cref="DispatcherTimer"/> ticking every 2 seconds, per the task brief —
-/// WPF's dispatcher makes this trivial compared to the proven Rust port's
-/// <c>std::thread::spawn</c> + <c>invoke_from_event_loop</c> dance) and opening
-/// <see cref="AddFirewallRuleDialog"/>, which isn't a plain command (it's a modal child window).
-/// </summary>
 public partial class SettingsPage : UserControl, INavigationAware
 {
     private readonly DispatcherTimer _liveTimer;
@@ -39,11 +30,6 @@ public partial class SettingsPage : UserControl, INavigationAware
         Unloaded += (_, _) => _liveTimer.Stop();
     }
 
-    /// <summary>
-    /// Lazily builds the view model on first navigation: <see cref="MainWindow"/> constructs every
-    /// page from its own constructor, before the window (and its <see cref="MainWindow.Toasts"/>)
-    /// is reachable, so the view model can only be built once the shell has navigated here.
-    /// </summary>
     public void OnNavigatedTo()
     {
         try
@@ -66,9 +52,6 @@ public partial class SettingsPage : UserControl, INavigationAware
         }
     }
 
-    /// <summary>Port of <c>SettingsPage.OnAddRule</c>: opens <see cref="AddFirewallRuleDialog"/>,
-    /// which performs the actual <c>FirewallService.AddRuleAsync</c> + settings persistence
-    /// itself, then refreshes the rules list on a successful add.</summary>
     private void AddRuleButton_Click(object sender, RoutedEventArgs e)
     {
         try

@@ -7,11 +7,6 @@ using System.Windows.Input;
 
 namespace MPServerProvider.App.Controls;
 
-/// <summary>
-/// A clickable card <see cref="Border"/> that also works without a mouse: it takes keyboard
-/// focus (Enter/Space open it) and exposes a UI Automation Invoke pattern, so screen readers
-/// and automation tools can open it like a button.
-/// </summary>
 internal sealed class InvokableCard : Border
 {
     public InvokableCard()
@@ -20,7 +15,6 @@ internal sealed class InvokableCard : Border
         FocusVisualStyle = null;
     }
 
-    /// <summary>Raised when the card is activated from the keyboard or UI Automation.</summary>
     public event EventHandler? Invoked;
 
     internal void RaiseInvoked() => Invoked?.Invoke(this, EventArgs.Empty);

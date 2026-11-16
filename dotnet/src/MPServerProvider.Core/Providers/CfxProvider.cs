@@ -4,49 +4,22 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.CfxProvider</c> (decompile token 0x0200001e).
-/// Installs the Cfx.re "FXServer" dedicated server (FiveM/RedM).
-/// <para>
-/// Cfx.re retired the browsable artifact index the original scraped
-/// (<c>runtime.fivem.net/artifacts/.../master/</c> now 301-redirects to
-/// <c>docs.fivem.net/docs/server-download/</c>), which left the version list empty. Builds are
-/// now collected from two sources: the changelog API (the recommended/latest/optional/critical
-/// channels, each with its own download link) and the download page, which embeds direct links
-/// to every build Cfx.re still offers. The artifact files themselves still live at the same
-/// <c>runtime.fivem.net</c> paths, so the download step is unchanged.
-/// </para>
-/// </summary>
 public sealed partial class CfxProvider : IInstallProvider
 {
-    /// <summary><c>ChangelogApi</c> field.</summary>
     private const string ChangelogApi = "https://changelogs-live.fivem.net/api/changelog/versions/win32/server";
 
-    /// <summary><c>ArtifactBase</c> field.</summary>
     private const string ArtifactBase = "https://runtime.fivem.net/artifacts/fivem/build_server_windows/master/";
 
-    /// <summary>Cfx.re's server download page, which embeds links to every offered Windows build.</summary>
     private const string DownloadPage = "https://docs.fivem.net/docs/server-download/?platform=legacy&os=windows";
 
-    /// <summary>Sub-folder of the server root the FXServer artifact is extracted into.</summary>
     internal const string ArtifactFolder = "artifact";
 
-    /// <summary>Channel names reported by the changelog API, in the order they are listed.</summary>
     private static readonly string[] Channels = { "recommended", "latest", "optional", "critical" };
 
     public string Id => "cfx";
 
-    /// <summary>Port of <c>CfxProvider.ArtifactLink()</c>.</summary>
     private static string ArtifactLink() => ArtifactBase;
 
-    /// <summary>
-    /// Port of <c>CfxProvider.ParseArtifactIndex(string html) -&gt; Dictionary&lt;string, string&gt;</c>:
-    /// maps each build number to its artifact directory name (<c>1234-&lt;commit sha&gt;</c>, the
-    /// part needed to build the <c>.../&lt;dir&gt;/server.zip</c> download URL). Accepts both the
-    /// old Apache-style listing (<c>&lt;a href="16000-abcdef/"&gt;</c>) and the full
-    /// <c>.../build_server_windows/master/16000-abcdef/server.7z</c> links on the current
-    /// download page.
-    /// </summary>
     internal static SortedDictionary<string, string> ParseArtifactIndex(string html)
     {
         var map = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -63,14 +36,8 @@ public sealed partial class CfxProvider : IInstallProvider
     [GeneratedRegex("(?:href=\"|build_server_windows/master/)((\\d+)-[0-9a-fA-F]+)/")]
     private static partial Regex ArtifactIndexRegex();
 
-    /// <summary>One channel from the changelog API: its build number and artifact directory.</summary>
     internal sealed record Channel(string Name, string Build, string? ArtifactDir);
 
-    /// <summary>
-    /// Port of <c>CfxProvider.GetChannelsAsync</c>, extended to every channel the changelog API
-    /// reports. Each <c>&lt;channel&gt;_download</c> URL carries the build's artifact directory,
-    /// so these builds stay installable even when the download page can't be read.
-    /// </summary>
     internal static List<Channel> ParseChannels(string json)
     {
         var channels = new List<Channel>();
@@ -107,10 +74,6 @@ public sealed partial class CfxProvider : IInstallProvider
         }
     }
 
-    /// <summary>
-    /// Port of <c>CfxProvider.GetIndexAsync(CancellationToken)</c>: build number -&gt; artifact
-    /// directory for every build the download page links, plus the changelog channels.
-    /// </summary>
     private static async Task<(SortedDictionary<string, string> Index, List<Channel> Channels)> GetIndexAsync(CancellationToken ct)
     {
         var channelsTask = GetChannelsAsync(ct);
@@ -137,11 +100,6 @@ public sealed partial class CfxProvider : IInstallProvider
         return (index, channels);
     }
 
-    /// <summary>
-    /// Builds the version list: channel builds first ("build 38435 (recommended)"), then every
-    /// other build newest first. A build that is several channels at once is labelled with all
-    /// of them.
-    /// </summary>
     internal static List<string> BuildVersionList(SortedDictionary<string, string> index, IReadOnlyList<Channel> channels)
     {
         var output = new List<string>();
@@ -184,8 +142,8 @@ public sealed partial class CfxProvider : IInstallProvider
         progress.Report(InstallProgress.Indeterminate("Resolving Cfx.re server artifact…"));
 
         // "build 1234 (recommended)" / "build 1234" / "1234" -> "1234"
-        // (first run of ASCII digits in request.Version, matching the proven Rust port's
-        // split-on-non-digit + first-non-empty-segment semantics)
+        // (first run of ASCII digits in request.Version: split on non-digits, take the first
+        // non-empty segment)
         var requestedBuild = ExtractFirstDigitRun(request.Version ?? string.Empty);
 
         var (index, channels) = await GetIndexAsync(ct).ConfigureAwait(false);
@@ -287,7 +245,7 @@ public sealed partial class CfxProvider : IInstallProvider
         }
         catch
         {
-            // Best-effort cleanup, matching the original's fire-and-forget delete.
+            // Best-effort, fire-and-forget cleanup.
         }
     }
 }

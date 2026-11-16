@@ -3,19 +3,12 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.BedrockProvider</c> (decompile token
-/// 0x0200001d). Installs the official Minecraft Bedrock dedicated server by resolving the
-/// current download URL from Mojang's links API and extracting the zip.
-/// </summary>
 public sealed class BedrockProvider : IInstallProvider
 {
-    /// <summary><c>LinksApi</c> field: Mojang's "latest Bedrock dedicated server download" endpoint.</summary>
     private const string LinksApi = "https://net-secondary.web.minecraft-services.net/api/v1.0/download/links";
 
     public string Id => "minecraft-bedrock";
 
-    /// <summary><c>GetVersionsAsync</c> just does <c>Task.FromResult(new List&lt;string&gt; { "latest" })</c>.</summary>
     public Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct)
         => Task.FromResult(new List<string> { "latest" });
 
@@ -34,11 +27,9 @@ public sealed class BedrockProvider : IInstallProvider
         string? downloadUrl = null;
         if (links.ValueKind == JsonValueKind.Array)
         {
-            // INFERRED: the decompiled `<>c.<InstallAsync>b__6_0` predicate body wasn't
-            // captured (only its call edge via `Enumerable.FirstOrDefault`), so the exact
-            // field/value it filters on is reconstructed from Mojang's publicly documented
-            // links-API shape: each entry has a `downloadType` discriminator, and the
-            // Windows dedicated server's is `"serverBedrockWindows"`.
+            // Per Mojang's publicly documented links-API shape, each entry has a
+            // `downloadType` discriminator, and the Windows dedicated server's is
+            // `"serverBedrockWindows"`.
             foreach (var link in links.EnumerateArray())
             {
                 if (link.TryGetProperty("downloadType", out var dt) && dt.GetString() == "serverBedrockWindows")
@@ -89,7 +80,7 @@ public sealed class BedrockProvider : IInstallProvider
             }
             catch
             {
-                // Matches the original's best-effort rewrite: a failure here isn't fatal.
+                // Best-effort rewrite: a failure here isn't fatal.
             }
         }
 
@@ -110,7 +101,7 @@ public sealed class BedrockProvider : IInstallProvider
         }
         catch
         {
-            // Best-effort cleanup, matching the original's fire-and-forget delete.
+            // Best-effort, fire-and-forget cleanup.
         }
     }
 }

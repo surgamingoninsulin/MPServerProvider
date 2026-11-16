@@ -7,15 +7,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Port of <c>InstallServerDialog</c>/<c>OnVariantChanged</c>/<c>OnInstallClick</c>
-/// (0x0200000d): pick a variant -&gt; <see cref="Services.InstallService.GetVersionsAsync"/>
-/// repopulates the version list -&gt; Install runs <see cref="Services.InstallService.InstallAsync"/>
-/// on a background task, reporting <see cref="InstallProgress"/> back into
-/// <see cref="ProgressPanel"/> -&gt; success closes the dialog and shows a toast (Library's card
-/// grid refreshes itself right after <c>ShowDialog()</c> returns, same as the proven Rust
-/// reference's <c>pages::library::refresh</c> call after a successful install).
-/// </summary>
 public partial class InstallServerDialog : DialogWindow
 {
     private readonly AppServices _services;
@@ -78,11 +69,6 @@ public partial class InstallServerDialog : DialogWindow
         EulaPanel.Visibility = isMinecraft ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>
-    /// Default server name: the game's own name when it already says "Server" (e.g. "7 Days to
-    /// Die Dedicated Server" stays as is instead of "... Dedicated Server Server"), otherwise
-    /// "{game} Server"; de-duplicated with " (2)", " (3)", ... against existing servers.
-    /// </summary>
     internal static string DefaultServerName(string gameName, Func<string, bool> nameTaken)
     {
         var trimmed = (gameName ?? string.Empty).Trim();
@@ -145,11 +131,6 @@ public partial class InstallServerDialog : DialogWindow
         Close();
     }
 
-    /// <summary>
-    /// Closing (X / Escape) while an install is running cancels it and keeps the window open
-    /// until the install task has actually unwound, then closes — so a late success never tries
-    /// to set <see cref="Window.DialogResult"/> on a closed window.
-    /// </summary>
     protected override void OnClosing(CancelEventArgs e)
     {
         if (_cts is { } cts)
@@ -209,6 +190,12 @@ public partial class InstallServerDialog : DialogWindow
     private async Task RunInstallAsync(string name, int port, int ramMin, int ramMax, bool eulaAccepted,
         string? variant, string? version, string? description)
     {
+        var steamLogin = SteamLoginDialog.Ask(this, _game, _services.Settings, out var loginCancelled);
+        if (loginCancelled)
+        {
+            return;
+        }
+
         InstallButton.IsEnabled = false;
         ProgressPanel.Visibility = Visibility.Visible;
         ProgressStatusText.Text = "Preparing…";
@@ -224,6 +211,7 @@ public partial class InstallServerDialog : DialogWindow
                 return;
             }
             ProgressStatusText.Text = p.Status;
+            ShowProgressLink(p.Link);
             if (p.Percent > 0)
             {
                 ProgressBarControl.IsIndeterminate = false;
@@ -236,7 +224,7 @@ public partial class InstallServerDialog : DialogWindow
         {
             var instance = await _services.Installer.InstallAsync(
                 _game, variant, version, name, port, ramMin, ramMax, description,
-                eulaAccepted, progress, cts.Token);
+                eulaAccepted, progress, cts.Token, steamLogin);
 
             succeeded = true;
             _toasts?.Success($"Installed '{instance.ServerName}'.");
@@ -273,4 +261,21 @@ public partial class InstallServerDialog : DialogWindow
             Close();
         }
     }
+
+    private string? _progressLink;
+
+    private void ShowProgressLink(string? link)
+    {
+        if (link is null || link == _progressLink)
+        {
+            return;
+        }
+
+        _progressLink = link;
+        ProgressLinkButton.Visibility = Visibility.Visible;
+        Controls.ArtworkImages.OpenInBrowser(link);
+    }
+
+    private void ProgressLinkButton_Click(object sender, RoutedEventArgs e)
+        => Controls.ArtworkImages.OpenInBrowser(_progressLink);
 }

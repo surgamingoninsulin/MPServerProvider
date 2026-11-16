@@ -7,28 +7,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.ModsPage</c>'s code-behind state
-/// (<c>0x02000014_ModsPage.md</c>) as a CommunityToolkit.Mvvm view model: game filter combo
-/// ("Show:"), per-game checkbox sidebar filters, keyword search, mod card list, import, and
-/// per-mod assign/remove/delete — cross-checked against the already-proven Rust reference
-/// (<c>crates/mpsp-app/src/pages/mods.rs</c>) for the filtering/assignment call sequencing.
-/// <para>
-/// Smoothness rules (the page used to hang and "randomly update"):
-/// <list type="bullet">
-/// <item>All disk work — the library scan, jar metadata, each server's mods folder, the
-/// compatibility verdicts, and assign/remove/delete copies — runs on a worker thread. Filtering
-/// is pure in-memory work over that snapshot (previously every filter pass probed every
-/// server's mods folder per card on the UI thread).</item>
-/// <item><see cref="Cards"/> is diffed in place (cards keyed by library path and updated, moved,
-/// inserted or removed individually) instead of Clear + re-add, so scroll position and focus
-/// survive a refresh, and a refresh that finds nothing new changes nothing on screen.</item>
-/// <item>Overlapping refresh requests coalesce into one follow-up scan; the filter lists are only
-/// rebuilt when the set of moddable games actually changed (rebuilding them on every visit reset
-/// the "Show:" combo and fired several redundant re-filters).</item>
-/// </list>
-/// </para>
-/// </summary>
 public sealed partial class ModsPageViewModel : ObservableObject
 {
     private const string AllGamesLabel = "All Games";
@@ -65,7 +43,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
     [ObservableProperty]
     private string _filterSummary = "Filters (0)";
 
-    /// <summary>Delay after the last keystroke before the search box re-filters.</summary>
     private static readonly TimeSpan SearchDebounce = TimeSpan.FromMilliseconds(300);
 
     private readonly System.Windows.Threading.DispatcherTimer _searchDebounce;
@@ -95,18 +72,12 @@ public sealed partial class ModsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Debounced: every keystroke used to re-walk the whole mod library (sizes + per-server
-    /// assignment checks) on the UI thread. Now typing only restarts a 300 ms timer, and the
-    /// filter runs over the cached scan.
-    /// </summary>
     partial void OnKeywordChanged(string value)
     {
         _searchDebounce.Stop();
         _searchDebounce.Start();
     }
 
-    /// <summary>Port of the <c>.ctor</c>/<c>OnNavigatedTo</c> combo: sync filters, then refresh.</summary>
     public void Initialize()
     {
         try
@@ -121,11 +92,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         Refresh();
     }
 
-    /// <summary>
-    /// Port of <c>ModsPage.BuildFilters()</c> + <c>get_ModdableGames()</c>. A no-op when the
-    /// moddable game list is unchanged, so revisiting the page keeps the "Show:" selection and the
-    /// sidebar checkboxes exactly as they were.
-    /// </summary>
     private void BuildFilters()
     {
         var moddable = _services.Games.Games
@@ -187,11 +153,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         ApplyFilters();
     }
 
-    /// <summary>
-    /// Port of <c>ModsPage.Refresh()</c>: re-scans the mod library and builds every card's data
-    /// on a worker thread, then re-applies the filters (diffing the visible cards in place). A
-    /// refresh requested while one is running is coalesced into a single follow-up scan.
-    /// </summary>
     public async void Refresh()
     {
         if (_scanRunning)
@@ -224,7 +185,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Everything a card shows, computed off the UI thread.</summary>
     private sealed record CardData(
         string Key,
         ModItem Item,
@@ -234,7 +194,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         string? Warning,
         IReadOnlyList<ModServerTarget> Targets);
 
-    /// <summary>Worker thread: scan + jar metadata + per-server folders + compatibility.</summary>
     private List<CardData> BuildSnapshot()
     {
         var mods = _services.Mods.Scan(_services.Workshop, readMetadata: true);
@@ -308,7 +267,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
             .ToList();
     }
 
-    /// <summary>Filters the cached snapshot (cheap, in-memory) into <see cref="Cards"/>.</summary>
     private void ApplyFilters()
     {
         try
@@ -371,8 +329,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         FilterSummary = $"Filters ({activeFilters})";
     }
 
-    /// <summary>Makes <see cref="Cards"/> equal <paramref name="wanted"/> with the fewest
-    /// collection changes (remove / move / insert), never Clear.</summary>
     private void SyncCards(List<ModCardViewModel> wanted)
     {
         var wantedSet = new HashSet<ModCardViewModel>(wanted);
@@ -475,8 +431,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
     [ObservableProperty]
     private bool _isImportingDrop;
 
-    /// <summary>The game files dropped on the page are imported for: the "Show" filter's game,
-    /// or Minecraft Java when "All Games" is selected and every dropped file is a jar.</summary>
     public string? DropTargetGameId(IReadOnlyList<string> paths)
     {
         if (SelectedGameIndex > 0 && SelectedGameIndex < _gameFilterIds.Count)
@@ -489,8 +443,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
             : null;
     }
 
-    /// <summary>Imports files dropped from Explorer into the library (same filters as
-    /// Import from Folder).</summary>
     public async Task ImportDroppedAsync(IReadOnlyList<string> paths)
     {
         if (paths.Count == 0 || IsImportingDrop)
@@ -533,8 +485,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>ModsPage.OnAddToServer</c>'s menu-item click handler. The copy runs
-    /// off the UI thread; Core refuses incompatible items (surfaced as a warning toast).</summary>
     public async Task AssignToServerAsync(ModCardViewModel card, string serverName)
     {
         try
@@ -560,7 +510,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of the "Remove from {server}" menu item in <c>OnDeleteMod</c>.</summary>
     public async Task RemoveAssignmentAsync(ModCardViewModel card, string serverName)
     {
         try
@@ -582,7 +531,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of the "Delete from library…" menu item in <c>OnDeleteMod</c>.</summary>
     [RelayCommand]
     private async Task DeleteMod(ModCardViewModel? card)
     {
@@ -614,7 +562,6 @@ public sealed partial class ModsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>DownloadService.FormatBytes</c> as used by <c>ModCardVm.get_DetailText()</c>.</summary>
     public static string FormatBytes(long bytes)
     {
         string[] units = { "B", "KB", "MB", "GB", "TB" };

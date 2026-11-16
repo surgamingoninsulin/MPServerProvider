@@ -3,31 +3,16 @@ using MPServerProvider.Core.Providers;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// A layout-preserving editor for Java <c>.properties</c> files (Minecraft Java's
-/// <c>server.properties</c>). Unlike <c>java.util.Properties.store</c>, which rewrites the whole
-/// file (dropping comments and reordering keys), this only rewrites the lines of the keys that
-/// are <see cref="Set"/>: every other line (comments, blank lines, unknown keys, odd spacing,
-/// multi-line continuations) is written back byte-for-byte, with the original line endings and
-/// text encoding. That matters because users (and plugins) hand-edit this file and expect their
-/// comments and ordering to survive.
-/// </summary>
 public sealed class JavaPropertiesFile
 {
-    /// <summary>One logical line: a comment/blank line, or a <c>key=value</c> entry that may
-    /// span several physical lines via trailing-backslash continuations.</summary>
     private sealed class Segment
     {
-        /// <summary>The exact original text, including its line terminator(s).</summary>
         public required string Raw { get; set; }
 
-        /// <summary>The terminator of the segment's last physical line ("" at end of file).</summary>
         public required string Terminator { get; set; }
 
-        /// <summary>Unescaped key, or <c>null</c> for comments and blank lines.</summary>
         public string? Key { get; set; }
 
-        /// <summary>Unescaped value (only meaningful when <see cref="Key"/> is set).</summary>
         public string Value { get; set; } = string.Empty;
     }
 
@@ -41,18 +26,10 @@ public sealed class JavaPropertiesFile
         _newLine = DetectNewLine(text);
     }
 
-    /// <summary>The encoding the file was read with (and is saved with).</summary>
     public Encoding Encoding { get; }
 
-    /// <summary>Parses <paramref name="text"/> (an empty string for a file that doesn't exist yet).</summary>
     public static JavaPropertiesFile Parse(string text) => new(text, new UTF8Encoding(false));
 
-    /// <summary>
-    /// Reads <paramref name="path"/>, or starts an empty document when it doesn't exist (Minecraft
-    /// fills in every missing key with its default on the next start). Modern servers read the
-    /// file as UTF-8 and fall back to ISO-8859-1, so the same detection is used here; a UTF-8 BOM
-    /// is kept when present.
-    /// </summary>
     public static JavaPropertiesFile Load(string path)
     {
         if (!File.Exists(path))
@@ -76,12 +53,9 @@ public sealed class JavaPropertiesFile
         }
     }
 
-    /// <summary>Every key in file order (duplicates included once, at their first position).</summary>
     public IReadOnlyList<string> Keys =>
         _segments.Where(s => s.Key is not null).Select(s => s.Key!).Distinct(StringComparer.Ordinal).ToList();
 
-    /// <summary>Unescaped value of <paramref name="key"/> (the last occurrence wins, as in Java),
-    /// or <c>null</c> when the key isn't present.</summary>
     public string? Get(string key)
     {
         for (var i = _segments.Count - 1; i >= 0; i--)
@@ -95,11 +69,6 @@ public sealed class JavaPropertiesFile
         return null;
     }
 
-    /// <summary>
-    /// Sets <paramref name="key"/> to <paramref name="value"/> (escaped for the properties
-    /// format). Existing occurrences are rewritten in place (all of them, so a duplicate can't
-    /// silently override the new value); a missing key is appended at the end.
-    /// </summary>
     public void Set(string key, string value)
     {
         var line = key + "=" + EscapeValue(value);
@@ -131,7 +100,6 @@ public sealed class JavaPropertiesFile
         _segments.Add(new Segment { Raw = line + _newLine, Terminator = _newLine, Key = key, Value = value });
     }
 
-    /// <summary>The document text: untouched lines verbatim, changed keys rewritten.</summary>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -143,10 +111,6 @@ public sealed class JavaPropertiesFile
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Writes the document to <paramref name="path"/> through a temporary file + replace, so a
-    /// crash or full disk mid-write can't leave the server with a truncated <c>server.properties</c>.
-    /// </summary>
     public void Save(string path)
     {
         var temp = path + ".mpsp-tmp";
@@ -162,19 +126,12 @@ public sealed class JavaPropertiesFile
         File.Move(temp, path, overwrite: true);
     }
 
-    /// <summary>
-    /// Escapes a value for the properties format: <see cref="ConfigText.JavaPropertiesValue"/>
-    /// (backslash, <c>=</c>, <c>:</c>, <c>#</c>, <c>!</c>, control and non-ASCII characters),
-    /// plus a leading space, which <c>Properties.load</c> would otherwise strip.
-    /// </summary>
     public static string EscapeValue(string? value)
     {
         var escaped = ConfigText.JavaPropertiesValue(value);
         return escaped.StartsWith(' ') ? "\\" + escaped : escaped;
     }
 
-    /// <summary>Resolves <c>\uXXXX</c>, <c>\t</c>/<c>\n</c>/<c>\r</c>/<c>\f</c> and
-    /// "backslash + any other character = that character", like <c>Properties.load</c>.</summary>
     public static string Unescape(string text)
     {
         if (!text.Contains('\\'))
@@ -264,9 +221,6 @@ public sealed class JavaPropertiesFile
         return count % 2 == 1;
     }
 
-    /// <summary>Splits a logical line into its unescaped key and value: the key ends at the first
-    /// unescaped <c>=</c>, <c>:</c> or whitespace; one <c>=</c>/<c>:</c> separator and the
-    /// whitespace around it are skipped.</summary>
     private static (string Key, string Value) SplitEntry(string line)
     {
         var i = 0;

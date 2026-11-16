@@ -5,15 +5,6 @@ using MPServerProvider.Core.Native;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Abstraction over "a launched server process" used by <see cref="ServerProcessService"/>.
-/// Not evidenced in the decompile by this exact shape — introduced purely so the service's
-/// start/stop/send-command/exit-handling logic can be unit-tested without spawning real OS
-/// processes, mirroring how the Rust port's <c>ToolDownloader</c>/<c>ToolPaths</c> traits kept
-/// its <c>tunnel</c> module testable against small fakes. <see cref="ProcessServerRunner"/> (normal
-/// launch) and <see cref="DeElevatedServerRunner"/> (launch as the unelevated desktop user while
-/// the app is elevated) are the real implementations; the service treats both identically.
-/// </summary>
 public interface IServerRunner : IDisposable
 {
     int ProcessId { get; }
@@ -22,44 +13,22 @@ public interface IServerRunner : IDisposable
 
     int ExitCode { get; }
 
-    /// <summary><c>true</c> when the process runs as the unelevated desktop user although this
-    /// app is elevated.</summary>
     bool IsDeElevated => false;
 
-    /// <summary>Raised once when the underlying process exits, on or off the main thread.</summary>
     event EventHandler? Exited;
 
     Task WriteLineAsync(string line, CancellationToken ct = default);
 
-    /// <summary>
-    /// Sends Ctrl+C (or Ctrl+Break) to the process's console — the graceful stop for servers
-    /// without a stdin stop command. Returns <c>false</c> when it couldn't be sent.
-    /// </summary>
     bool TrySendInterrupt(bool ctrlBreak = false) => false;
 
-    /// <summary>Terminates the process and everything it started. Never throws.</summary>
     void Kill();
 }
 
-/// <summary>Creates <see cref="IServerRunner"/>s. See <see cref="IServerRunner"/>'s doc comment.</summary>
 public interface IServerRunnerFactory
 {
-    /// <summary>
-    /// Starts <paramref name="executable"/> with <paramref name="arguments"/> in
-    /// <paramref name="workingDirectory"/>, forwarding stdout/stderr lines through
-    /// <paramref name="onOutputLine"/> as they arrive. <paramref name="onExited"/> is subscribed
-    /// BEFORE the process starts, so even a process that exits within milliseconds is reported
-    /// (exactly once). Throws if the process could not be started.
-    /// </summary>
     IServerRunner Start(string executable, string arguments, string workingDirectory, Action<string> onOutputLine, Action onExited);
 }
 
-/// <summary>
-/// Default, real <see cref="IServerRunner"/>: a plain <see cref="Process"/> with redirected
-/// stdin/stdout/stderr, matching the original's direct <c>ProcessStartInfo</c>-based spawn for
-/// the case where the app isn't elevated (so there is nothing to drop). The process is put into a
-/// <see cref="KillOnCloseJob"/> so it can't outlive the app.
-/// </summary>
 public sealed class ProcessServerRunner : IServerRunner
 {
     private readonly Process _process;
@@ -151,7 +120,6 @@ public sealed class ProcessServerRunner : IServerRunner
         _process.Dispose();
     }
 
-    /// <summary>Puts the (started) process into a kill-on-close job. Best-effort.</summary>
     internal void AttachJob()
     {
         if (!OperatingSystem.IsWindows())
@@ -187,7 +155,6 @@ public sealed class ProcessServerRunner : IServerRunner
     }
 }
 
-/// <summary>Production <see cref="IServerRunnerFactory"/> backed by <see cref="Process"/>.</summary>
 public sealed class ProcessServerRunnerFactory : IServerRunnerFactory
 {
     public IServerRunner Start(string executable, string arguments, string workingDirectory, Action<string> onOutputLine, Action onExited)
@@ -261,14 +228,6 @@ public sealed class ProcessServerRunnerFactory : IServerRunnerFactory
     }
 }
 
-/// <summary>
-/// The factory the app uses. When this app is elevated (it must be, to edit firewall rules),
-/// EVERY server is launched as the unelevated desktop user through
-/// <see cref="DeElevatedServerRunner"/> — no per-game exceptions. If dropping elevation fails the
-/// start is aborted with a clear error; a server is never silently started as administrator.
-/// When the app isn't elevated, there is nothing to drop and <see cref="ProcessServerRunnerFactory"/>
-/// is used.
-/// </summary>
 public sealed class DefaultServerRunnerFactory : IServerRunnerFactory
 {
     private readonly Func<bool> _isElevated;
@@ -308,8 +267,6 @@ public sealed class DefaultServerRunnerFactory : IServerRunnerFactory
         }
     }
 
-    /// <summary>When elevation can't be determined, assume elevated: the de-elevated path is the
-    /// safe one.</summary>
     private static bool IsElevatedFailClosed()
     {
         try
@@ -333,46 +290,18 @@ public sealed class DefaultServerRunnerFactory : IServerRunnerFactory
     }
 }
 
-/// <summary>
-/// Minimal persistence interface this module needs.
-/// </summary>
 public interface IServerPersistence
 {
     void Save(ServerInstance server);
 
-    /// <summary>
-    /// Changes only the statistics of the stored server named <paramref name="serverName"/> and
-    /// persists them (see <see cref="ServerRepository.UpdateStats"/>). Returns <c>false</c> when
-    /// no such server is stored. Never re-saves a stale captured instance, so settings saved while
-    /// the server ran survive its exit.
-    /// </summary>
     bool UpdateStats(string serverName, Action<ServerStats> mutate);
 }
 
-/// <summary>
-/// Minimal game-catalog lookup this module needs.
-/// // TODO: reconcile with Services.GameLibraryService once that lands.
-/// </summary>
 public interface IGameLookup
 {
     GameDefinition? Find(string gameId);
 }
 
-/// <summary>
-/// One tracked running (or recently-exited-but-not-yet-reaped) server. Port of the original's
-/// internal <c>RunningServer</c> helper type (evidenced in the decompile via
-/// <c>RunningServer.get_State</c>/<c>get_Process</c>/<c>get_StartedAt</c>/<c>get_StdIn</c>/
-/// <c>ConsoleSnapshot</c>/<c>Append</c>/<c>RegisterCrashForRestart</c> call edges from
-/// <see cref="ServerProcessService"/>'s own methods).
-/// <para>
-/// HARDENING: the console is a lock-guarded ring buffer (it is written from the stdout and stderr
-/// threads and the log tail while the UI snapshots it); <see cref="Process"/> is swapped
-/// atomically so exactly one exit path disposes it; <see cref="Lifetime"/> ends background work
-/// (the log tail) when the process exits or a start is cancelled; and <see cref="Exit"/> completes
-/// once the exit has been fully processed, which is what <see cref="ServerProcessService.StopAsync"/>
-/// awaits.
-/// </para>
-/// </summary>
 public sealed class RunningServer
 {
     private const int MaxConsoleLines = 2000;
@@ -408,29 +337,20 @@ public sealed class RunningServer
 
     public int ConsecutiveCrashes { get; set; }
 
-    /// <summary>Classes already explained by a plugin-error hint this run (one hint each).</summary>
     internal HashSet<string> HintedErrorClasses { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>Set before a stop is requested, so the exit is recorded as a stop, not a crash.</summary>
     internal volatile bool StopRequested;
 
-    /// <summary>Cancelled when the process exits or a pending start is aborted.</summary>
     internal CancellationTokenSource Lifetime { get; } = new();
 
-    /// <summary>Opened once the start finished (successfully or not); exit processing waits for
-    /// it so it never races the start path.</summary>
     internal TaskCompletionSource StartGate { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    /// <summary>Completed once the process exit (or failed start) has been fully processed.</summary>
     internal TaskCompletionSource Exit { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    /// <summary>Atomically takes ownership of <see cref="Process"/> (the caller disposes it).</summary>
     internal IServerRunner? TakeProcess() => Interlocked.Exchange(ref _process, null);
 
-    /// <summary><c>true</c> for the first caller only: exit is processed exactly once.</summary>
     internal bool TryMarkExitHandled() => Interlocked.Exchange(ref _exitHandled, 1) == 0;
 
-    /// <summary><c>true</c> for the first caller only: one stop sequence at a time.</summary>
     internal bool TryBeginStop() => Interlocked.Exchange(ref _stopBegun, 1) == 0;
 
     internal bool IsAutoRestartPending
@@ -447,7 +367,6 @@ public sealed class RunningServer
         }
     }
 
-    /// <summary>Ends the pending auto-restart; returns <c>false</c> if it was cancelled.</summary>
     internal bool EndAutoRestart()
     {
         lock (_restartLock)
@@ -460,7 +379,6 @@ public sealed class RunningServer
         }
     }
 
-    /// <summary>Cancels a pending auto-restart (manual Start/Stop supersede it).</summary>
     internal void CancelAutoRestart()
     {
         lock (_restartLock)
@@ -469,7 +387,6 @@ public sealed class RunningServer
         }
     }
 
-    /// <summary>Port of <c>RunningServer.Append(string)</c>: a capped, thread-safe ring buffer.</summary>
     public void Append(string line)
     {
         lock (_consoleLock)
@@ -487,7 +404,6 @@ public sealed class RunningServer
         }
     }
 
-    /// <summary>Port of <c>RunningServer.ConsoleSnapshot()</c>.</summary>
     public IReadOnlyList<string> ConsoleSnapshot()
     {
         lock (_consoleLock)
@@ -502,66 +418,23 @@ public sealed class RunningServer
         }
     }
 
-    /// <summary>Port of <c>RunningServer.RegisterCrashForRestart()</c>.</summary>
     public int RegisterCrashForRestart() => ++ConsecutiveCrashes;
 }
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.ServerProcessService</c> (decompile token
-/// 0x02000014, see <c>docs/decompile-report/report/MPServerProvider.Core.dll/
-/// MPServerProvider.Core.Services/0x02000014_ServerProcessService.md</c>).
-///
-/// <para>
-/// Decompile evidence confirms the overall shape: a dictionary keyed by server name (case
-/// insensitive — <c>StringComparer.OrdinalIgnoreCase</c>), a shared <see cref="RconService"/>,
-/// <c>StateChanged</c>/<c>OutputReceived</c> events, and the method set
-/// <c>StartAsync</c>/<c>StopAsync</c>/<c>RestartAsync</c>/<c>StopAllAsync</c>/
-/// <c>SendCommand</c>/<c>StateOf</c>/<c>UptimeOf</c>/<c>ConsoleOf</c>/<c>Dispose</c>, plus the
-/// de-elevation integration (<see cref="DefaultServerRunnerFactory"/>), RCON wiring
-/// (<c>ConnectRconAsync</c>/<c>PollRconAsync</c>/<c>SetRconPassword</c>), and log-tailing
-/// (<c>StartLogTail</c>, which probes <c>console.log</c>, <c>logs/latest.log</c>,
-/// <c>server.log</c>, <c>log/server.log</c> under the server's root — string literals confirmed
-/// verbatim in the decompile) with crash-restart bookkeeping (<c>OnExited</c>/
-/// <c>RecordUptime</c>, <c>AutoRestartOnCrash</c>, a logged "restarting in 5 s…" message).
-/// </para>
-/// <para>
-/// HARDENING: every launch (elevated or not) goes through one <see cref="IServerRunnerFactory"/>,
-/// whose exit callback is wired before the process starts; exit processing runs exactly once and
-/// is the only place that disposes the process and records uptime/crash stats (through
-/// <see cref="IServerPersistence.UpdateStats"/>, never a stale instance); Stop awaits that
-/// processing instead of polling; a crash is reported (<see cref="ServerState.Crashed"/>) before
-/// any auto-restart, the consecutive-crash counter survives restarts and only resets after a
-/// stable run; and no exception escapes an event or fire-and-forget path.
-/// </para>
-/// </summary>
 public sealed partial class ServerProcessService : IDisposable
 {
-    /// <summary>
-    /// Max consecutive crashes before auto-restart is suspended, matching the original's
-    /// "Crashed repeatedly — auto-restart suspended." behavior. INFERRED: the exact threshold
-    /// literal wasn't recoverable from metadata; 3 is a conventional "stop flapping" cutoff.
-    /// </summary>
     public const int MaxConsecutiveCrashes = 3;
 
-    /// <summary>
-    /// Default graceful window for Stop (stop command / Ctrl+C) before the process tree is
-    /// killed. Generous: a big world can take a while to save.
-    /// </summary>
     public static readonly TimeSpan DefaultStopTimeout = TimeSpan.FromSeconds(30);
 
-    /// <summary>Extra time given to a second, harder signal (Ctrl+C after a stop command, or
-    /// Ctrl+Break after Ctrl+C) before the kill.</summary>
     internal TimeSpan SecondSignalTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>How long to wait for the exit notification after a kill.</summary>
     private static readonly TimeSpan KillConfirmTimeout = TimeSpan.FromSeconds(10);
 
     private static readonly string[] LogFileCandidates = { "console.log", "logs/latest.log", "server.log", "log/server.log" };
 
     private readonly ConcurrentDictionary<string, RunningServer> _running = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The last finished run of each server, so its console stays readable after Stop
-    /// (finished runs are removed from <see cref="_running"/>).</summary>
     private readonly ConcurrentDictionary<string, RunningServer> _finished = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly object _startLock = new();
@@ -569,6 +442,7 @@ public sealed partial class ServerProcessService : IDisposable
     private readonly IGameLookup _games;
     private readonly IServerRunnerFactory _runnerFactory;
     private readonly Func<int, IProgress<InstallProgress>, CancellationToken, Task<string>> _resolveJava;
+    private readonly Func<int, IProgress<InstallProgress>, CancellationToken, Task<string>> _resolveDotNet;
     private readonly RconService _rcon = new();
     private string? _rconPassword;
 
@@ -576,7 +450,8 @@ public sealed partial class ServerProcessService : IDisposable
         IServerPersistence repository,
         IGameLookup games,
         IServerRunnerFactory? runnerFactory = null,
-        Func<int, IProgress<InstallProgress>, CancellationToken, Task<string>>? javaResolver = null)
+        Func<int, IProgress<InstallProgress>, CancellationToken, Task<string>>? javaResolver = null,
+        Func<int, IProgress<InstallProgress>, CancellationToken, Task<string>>? dotNetResolver = null)
     {
         _repository = repository;
         _games = games;
@@ -588,40 +463,28 @@ public sealed partial class ServerProcessService : IDisposable
         }
 
         _resolveJava = javaResolver;
+        _resolveDotNet = dotNetResolver ?? new Providers.DotNetRuntimeProvider().ResolveAsync;
     }
 
-    /// <summary>
-    /// Delay before an auto-restart, matching the decompiled "auto_restart_on_crash is on —
-    /// restarting in 5 s…" message.
-    /// </summary>
     public TimeSpan AutoRestartDelay { get; init; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>A run that lasted at least this long before crashing counts as stable: the
-    /// consecutive-crash counter starts over.</summary>
     public TimeSpan CrashCounterResetUptime { get; init; } = TimeSpan.FromSeconds(60);
 
-    /// <summary>Port of <c>add_StateChanged</c>/<c>remove_StateChanged</c>.</summary>
     public event Action<ServerInstance, ServerState>? StateChanged;
 
-    /// <summary>Port of <c>add_OutputReceived</c>/<c>remove_OutputReceived</c>.</summary>
     public event Action<ServerInstance, string>? OutputReceived;
 
-    /// <summary>Port of <c>ServerProcessService.StateOf(ServerInstance)</c>.</summary>
     public ServerState StateOf(ServerInstance server) =>
         _running.TryGetValue(server.ServerName, out var r) ? r.State : ServerState.Stopped;
 
-    /// <summary><c>true</c> while a crashed server waits for its automatic restart.</summary>
     public bool IsAutoRestartPending(ServerInstance server) =>
         _running.TryGetValue(server.ServerName, out var r) && r.IsAutoRestartPending;
 
-    /// <summary>Port of <c>ServerProcessService.UptimeOf(ServerInstance)</c>.</summary>
     public TimeSpan UptimeOf(ServerInstance server) =>
         _running.TryGetValue(server.ServerName, out var r) && r.StartedAt is { } startedAt
             ? DateTimeOffset.Now - startedAt
             : TimeSpan.Zero;
 
-    /// <summary>Port of <c>ServerProcessService.ConsoleOf(ServerInstance)</c>. After a server
-    /// stopped, its last run's console stays available until it is started again.</summary>
     public IReadOnlyList<string> ConsoleOf(ServerInstance server)
     {
         if (_running.TryGetValue(server.ServerName, out var r) || _finished.TryGetValue(server.ServerName, out r))
@@ -632,30 +495,18 @@ public sealed partial class ServerProcessService : IDisposable
         return Array.Empty<string>();
     }
 
-    /// <summary>Port of <c>ServerProcessService.ProcessOf(ServerInstance)</c>.</summary>
     public IServerRunner? ProcessOf(ServerInstance server) =>
         _running.TryGetValue(server.ServerName, out var r) ? r.Process : null;
 
-    /// <summary>Port of <c>ServerProcessService.get_RunningCount()</c>.</summary>
     public int RunningCount =>
         _running.Values.Count(r => r.State is ServerState.Running or ServerState.Starting);
 
-    /// <summary>
-    /// Servers that still need stopping before the app exits: running, starting, stopping, or
-    /// crashed with an auto-restart pending.
-    /// </summary>
     public IReadOnlyList<ServerInstance> ActiveServers =>
         _running.Values
             .Where(r => r.State is ServerState.Running or ServerState.Starting or ServerState.Stopping || r.IsAutoRestartPending)
             .Select(r => r.Server)
             .ToList();
 
-    /// <summary>
-    /// <c>true</c> when the game's console is read from a log file because stdout isn't usable.
-    /// Every launch captures stdout/stderr, so log tailing is only needed (and only done) for
-    /// <c>console_method: "logfile"</c> games — tailing alongside stdout showed every line twice
-    /// (Minecraft writes everything to both).
-    /// </summary>
     internal static bool UsesLogFileConsole(GameDefinition game)
     {
         var method = game.Network?.ConsoleMethod;
@@ -663,23 +514,6 @@ public sealed partial class ServerProcessService : IDisposable
                || string.Equals(method, "log", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.BuildCommandAsync(ServerInstance)</c>: resolves the
-    /// executable, argument string, and working directory to launch, substituting the
-    /// well-known placeholders a game definition's <c>Runtime.Arguments</c> template may
-    /// contain.
-    /// <para>
-    /// FIX: the placeholder names here previously didn't match what any real game definition
-    /// actually uses — every <c>data/providers/json/*.json</c> template uses
-    /// <c>{server_port}</c>/<c>{ram_min_mb}</c>/<c>{ram_max_mb}</c>/<c>{server_name}</c>/
-    /// <c>{java}</c>, not the <c>{port}</c>/<c>{ram_min}</c>/<c>{ram_max}</c> this method
-    /// substituted (and <c>{java}</c> wasn't substituted at all).
-    /// </para>
-    /// <para>
-    /// Resolving <c>{java}</c> may download a Java runtime on a server's first start: that is
-    /// reported through <paramref name="progress"/> (and the console) and is cancellable.
-    /// </para>
-    /// </summary>
     private async Task<(string Executable, string Arguments, string WorkingDir)> BuildCommandAsync(
         RunningServer running,
         GameDefinition game,
@@ -725,7 +559,27 @@ public sealed partial class ServerProcessService : IDisposable
             javaPath = await _resolveJava(javaMajor, javaProgress, ct).ConfigureAwait(false);
         }
 
-        string Substitute(string template) => SubstitutePlaceholders(template, server, javaPath);
+        // {dotnet}: a dotnet.exe with the .NET major the game needs, downloaded on first use.
+        var launchTemplate = game.Runtime.Executable + " " + (string.IsNullOrEmpty(server.StartCommand) ? game.Runtime.Arguments : server.StartCommand);
+        string? dotNetPath = null;
+        if (launchTemplate.Contains("{dotnet}"))
+        {
+            var dotNetProgress = new CallbackProgress<InstallProgress>(p =>
+            {
+                AppendLine(running, $"[MP Server Provider] {p.Status}");
+                try
+                {
+                    progress?.Report(p);
+                }
+                catch
+                {
+                    // Progress reporting is cosmetic.
+                }
+            });
+            dotNetPath = await _resolveDotNet(game.Runtime.Requires?.DotNet ?? 8, dotNetProgress, ct).ConfigureAwait(false);
+        }
+
+        string Substitute(string template) => SubstitutePlaceholders(template, server, javaPath, dotNetPath);
 
         var executable = Substitute(game.Runtime.Executable);
         var arguments = string.IsNullOrEmpty(server.StartCommand)
@@ -735,12 +589,7 @@ public sealed partial class ServerProcessService : IDisposable
         return (executable, arguments, workingDir);
     }
 
-    /// <summary>
-    /// Substitutes the well-known launch placeholders (see BUILD_NOTES.md) in
-    /// <paramref name="template"/>. <c>{server_name}</c> is stripped of quotes and control
-    /// characters first so a crafted name can't inject extra launch arguments.
-    /// </summary>
-    internal static string SubstitutePlaceholders(string template, ServerInstance server, string? javaPath) => (template ?? string.Empty)
+    internal static string SubstitutePlaceholders(string template, ServerInstance server, string? javaPath, string? dotNetPath = null) => (template ?? string.Empty)
         .Replace("{server_port}", server.ServerPort.ToString())
         .Replace("{server_ip}", server.ServerIp)
         .Replace("{ram_min_mb}", server.RamMinMb.ToString())
@@ -748,24 +597,15 @@ public sealed partial class ServerProcessService : IDisposable
         .Replace("{server_file}", server.ServerFile)
         .Replace("{server_root}", server.ServerRoot)
         .Replace("{server_name}", new string(server.ServerName.Where(c => c != '"' && !char.IsControl(c)).ToArray()))
-        .Replace("{java}", javaPath ?? "java");
+        .Replace("{java}", javaPath ?? "java")
+        .Replace("{dotnet}", dotNetPath ?? "dotnet");
 
-    /// <summary>
-    /// Resolves the directory a server is launched in (and whose log files are tailed):
-    /// the game's <c>working_dir</c> template with placeholders substituted, resolved against
-    /// the server root. Defaults to <c>{server_root}</c>.
-    /// </summary>
     internal static string ResolveWorkingDirectory(ServerInstance server, GameDefinition game)
     {
         var template = string.IsNullOrWhiteSpace(game.Runtime.WorkingDir) ? "{server_root}" : game.Runtime.WorkingDir;
         return server.ResolveRoot(SubstitutePlaceholders(template, server, javaPath: null));
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.SplitCommandLine(string)</c>: splits a single
-    /// command-line string into <c>(fileName, arguments)</c>, honoring a quoted first token
-    /// (e.g. <c>"\"C:\Program Files\java\bin\java.exe\" -Xmx2G -jar server.jar"</c>).
-    /// </summary>
     public static (string FileName, string Arguments) SplitCommandLine(string commandLine)
     {
         var trimmed = commandLine.Trim();
@@ -786,16 +626,9 @@ public sealed partial class ServerProcessService : IDisposable
             : (trimmed[..spaceIdx], trimmed[(spaceIdx + 1)..].TrimStart());
     }
 
-    /// <summary>Port of <c>ServerProcessService.StartAsync(ServerInstance)</c>.</summary>
     public Task StartAsync(ServerInstance server, CancellationToken ct = default) =>
         StartCoreAsync(server, carriedCrashes: 0, progress: null, ct);
 
-    /// <summary>
-    /// Starts <paramref name="server"/>, reporting slow preparation (a first-start Java download)
-    /// through <paramref name="progress"/>. Cancelling <paramref name="ct"/> — or calling
-    /// <see cref="StopAsync"/> while it is still preparing — aborts the start with an
-    /// <see cref="OperationCanceledException"/>.
-    /// </summary>
     public Task StartAsync(ServerInstance server, IProgress<InstallProgress>? progress, CancellationToken ct = default) =>
         StartCoreAsync(server, carriedCrashes: 0, progress, ct);
 
@@ -902,12 +735,6 @@ public sealed partial class ServerProcessService : IDisposable
         }
     }
 
-    /// <summary>Unwinds a start that never produced a process.</summary>
-    /// <summary>
-    /// Explains why <paramref name="server"/>'s port is unavailable, or returns <c>null</c> when
-    /// it is free. Without this the game itself started, failed to bind ("Address already in
-    /// use") and showed up as a crash, which says nothing about the real cause.
-    /// </summary>
     internal string? DescribePortConflict(ServerInstance server, GameDefinition game)
     {
         var port = server.ServerPort;
@@ -967,11 +794,6 @@ public sealed partial class ServerProcessService : IDisposable
                $"different port in Server Settings{FreeHint()}.";
     }
 
-    /// <summary>
-    /// Minecraft Java/Bedrock read their port from <c>server.properties</c>, not the command
-    /// line, so the port set in Server Settings never reached the game. Write it there before
-    /// each start (only touching the <c>server-port</c> line, and only when it differs).
-    /// </summary>
     internal static void SyncPropertiesPort(ServerInstance server, Action<string>? log = null)
     {
         if (server.ServerPort is <= 0 or > 65535 || string.IsNullOrWhiteSpace(server.ServerRoot))
@@ -1015,10 +837,6 @@ public sealed partial class ServerProcessService : IDisposable
 
     private static readonly string[] SaveFileExtensions = { ".park", ".sv6", ".sv4", ".sc6", ".sc4", ".sea" };
 
-    /// <summary>
-    /// A server told to host a save/scenario file (OpenRCT2's <c>host "…\park.park"</c>) that
-    /// doesn't exist yet only prints "Unable to open …" and quits. Explain what to put where.
-    /// </summary>
     internal static string? DescribeMissingSaveFile(string arguments, string serverRoot)
     {
         foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(arguments ?? string.Empty, "\"([^\"]+)\"|(\\S+)"))
@@ -1041,11 +859,6 @@ public sealed partial class ServerProcessService : IDisposable
         return null;
     }
 
-    /// <summary>
-    /// First port at or above <paramref name="preferred"/> that no other installed server is
-    /// configured for and no program on this PC is listening on (game default first, so the
-    /// usual port is kept whenever it is free).
-    /// </summary>
     public static int SuggestFreePort(int preferred, string? protocol, IEnumerable<int> reservedByServers)
     {
         if (preferred is <= 0 or > 65535)
@@ -1104,21 +917,12 @@ public sealed partial class ServerProcessService : IDisposable
         running.Exit.TrySetResult();
     }
 
-    /// <summary>Removes a finished run from the running table (keeping its console readable).</summary>
     private void Retire(RunningServer running)
     {
         _finished[running.Server.ServerName] = running;
         _running.TryRemove(new KeyValuePair<string, RunningServer>(running.Server.ServerName, running));
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.StartLogTail(RunningServer, ServerInstance,
-    /// GameDefinition)</c>: waits (up to a minute) for one of the well-known log files to exist
-    /// (exact relative paths confirmed in the decompile) and tails it, forwarding new lines like
-    /// live stdout. Ends when the run's <see cref="RunningServer.Lifetime"/> is cancelled (exit or
-    /// stop); the file is opened with <see cref="FileShare.Delete"/> so it never blocks log
-    /// rotation or deleting the server.
-    /// </summary>
     private void StartLogTail(RunningServer running, GameDefinition game)
     {
         var token = running.Lifetime.Token;
@@ -1181,11 +985,9 @@ public sealed partial class ServerProcessService : IDisposable
         });
     }
 
-    /// <summary>Port of <c>ServerProcessService.ConnectRconAsync(RunningServer, ServerInstance, GameDefinition)</c>.</summary>
     public Task ConnectRconAsync(ServerInstance server, int port, CancellationToken ct = default) =>
         _rcon.ConnectAsync(server.ServerIp, port, _rconPassword ?? string.Empty, TimeSpan.FromSeconds(5), ct);
 
-    /// <summary>Port of <c>ServerProcessService.PollRconAsync(RunningServer)</c>: best-effort reconnection attempt, swallowing failures.</summary>
     public async Task PollRconAsync(ServerInstance server, int port, CancellationToken ct = default)
     {
         if (_rcon.Connected)
@@ -1202,11 +1004,8 @@ public sealed partial class ServerProcessService : IDisposable
         }
     }
 
-    /// <summary>Port of <c>ServerProcessService.SetRconPassword(string)</c>.</summary>
     public void SetRconPassword(string password) => _rconPassword = password;
 
-    /// <summary>Port of <c>ServerProcessService.SendCommand(ServerInstance, string)</c>.
-    /// Fire-and-forget; never throws.</summary>
     public void SendCommand(ServerInstance server, string command)
     {
         if (!_running.TryGetValue(server.ServerName, out var running))
@@ -1217,8 +1016,6 @@ public sealed partial class ServerProcessService : IDisposable
         _ = SendCommandCoreAsync(running, command);
     }
 
-    /// <summary>Echoes and delivers <paramref name="command"/> (RCON when connected, otherwise
-    /// stdin). Returns <c>true</c> when it was delivered. Never throws.</summary>
     private async Task<bool> SendCommandCoreAsync(RunningServer running, string command)
     {
         try
@@ -1245,15 +1042,6 @@ public sealed partial class ServerProcessService : IDisposable
         return false;
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.StopAsync(ServerInstance, TimeSpan?)</c>. Graceful first:
-    /// the server's stop command over stdin, or — for games without one (e.g. Valheim) — Ctrl+C
-    /// to its console. If it hasn't exited within <paramref name="gracefulTimeout"/>, a harder
-    /// signal gets a few more seconds, then the whole process tree is killed. Returns once the
-    /// exit has been fully processed (uptime recorded, state Stopped). Stopping a server that is
-    /// still preparing to start (e.g. downloading Java) cancels the start; stopping a crashed
-    /// server cancels its pending auto-restart.
-    /// </summary>
     public async Task StopAsync(ServerInstance server, TimeSpan? gracefulTimeout = null, CancellationToken ct = default)
     {
         if (!_running.TryGetValue(server.ServerName, out var running))
@@ -1357,7 +1145,6 @@ public sealed partial class ServerProcessService : IDisposable
         }
     }
 
-    /// <summary>Port of <c>ServerProcessService.RestartAsync(ServerInstance)</c>.</summary>
     public async Task RestartAsync(ServerInstance server, CancellationToken ct = default)
     {
         if (_running.ContainsKey(server.ServerName))
@@ -1367,12 +1154,6 @@ public sealed partial class ServerProcessService : IDisposable
         await StartAsync(server, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.StopAllAsync()</c>: stops every active server IN PARALLEL,
-    /// each with a generous graceful window (<see cref="DefaultStopTimeout"/> unless
-    /// <paramref name="gracefulTimeout"/> says otherwise), so every server gets the same chance to
-    /// save. Never throws.
-    /// </summary>
     public async Task StopAllAsync(TimeSpan? gracefulTimeout = null)
     {
         var servers = _running.Values.Select(r => r.Server).ToList();
@@ -1389,15 +1170,6 @@ public sealed partial class ServerProcessService : IDisposable
         })).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.OnExited(RunningServer)</c>. The ONLY place that disposes
-    /// a run's process and records its uptime/crash stats, guarded to run exactly once per run.
-    /// A requested stop ends as Stopped. Anything else is a crash: Crashed is raised right away;
-    /// if <see cref="ServerInstance.AutoRestartOnCrash"/> is on, a restart follows after
-    /// <see cref="AutoRestartDelay"/>, carrying the consecutive-crash count, up to
-    /// <see cref="MaxConsecutiveCrashes"/> crashes in a row (a run that lasted
-    /// <see cref="CrashCounterResetUptime"/> resets the count). Never throws.
-    /// </summary>
     private async Task OnExitedAsync(RunningServer running)
     {
         try
@@ -1514,11 +1286,6 @@ public sealed partial class ServerProcessService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Port of <c>ServerProcessService.RecordUptime(RunningServer)</c>: adds the run's uptime (and
-    /// the crash, before persisting — it used to be counted after the save and never stored) to
-    /// the stored server's stats via <see cref="IServerPersistence.UpdateStats"/>.
-    /// </summary>
     private void RecordStats(RunningServer running, TimeSpan uptime, bool crashed)
     {
         var elapsed = Math.Max(0, (long)uptime.TotalSeconds);
@@ -1595,11 +1362,6 @@ public sealed partial class ServerProcessService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Removes terminal control sequences from a console line. Servers like OpenRCT2, Paper and
-    /// FXServer color their output with ANSI escapes (<c>ESC[31m</c> … <c>ESC[0m</c>); the
-    /// console box shows plain text, so they appeared as stray "[31m"/"[0m" symbols.
-    /// </summary>
     internal static string StripTerminalCodes(string line)
     {
         if (line.IndexOf('\u001b') < 0 && line.IndexOf('\u009b') < 0)
@@ -1618,9 +1380,6 @@ public sealed partial class ServerProcessService : IDisposable
     [System.Text.RegularExpressions.GeneratedRegex(@"(?:\u001b\[|\u009b)[0-?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)?|\u001b[ -/]*[0-~]")]
     private static partial System.Text.RegularExpressions.Regex TerminalCodeRegex();
 
-    /// <summary>Port of <c>ServerProcessService.Dispose()</c>: force-kills every tracked process
-    /// tree and clears the running-server table. Call <see cref="StopAllAsync"/> first for a
-    /// graceful shutdown.</summary>
     public void Dispose()
     {
         foreach (var running in _running.Values)
@@ -1648,8 +1407,6 @@ public sealed partial class ServerProcessService : IDisposable
         _rcon.Dispose();
     }
 
-    /// <summary>Synchronous <see cref="IProgress{T}"/> (unlike <see cref="Progress{T}"/> it doesn't
-    /// post to a captured context).</summary>
     private sealed class CallbackProgress<T>(Action<T> report) : IProgress<T>
     {
         public void Report(T value) => report(value);

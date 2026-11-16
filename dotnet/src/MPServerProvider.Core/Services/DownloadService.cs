@@ -6,29 +6,10 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.DownloadService</c> (decompile token
-/// 0x0200000a). HTTP download/progress/hash-verify helper used by the install providers and by
-/// <see cref="WorkshopService"/>/<see cref="ModLibraryService"/>.
-/// <para>
-/// Note on overlap with <c>Providers/DownloadHelper.cs</c>: that type is a small,
-/// provider-local-only equivalent the providers port added because <c>Services/</c> didn't exist
-/// yet at the time (see its own header comment). This type is the real, restored
-/// <c>DownloadService</c> — richer (adds JSON decoding, byte-accurate progress reporting, and
-/// SHA-256 hash verification, which the provider-local helper didn't need) — and is what
-/// <see cref="WorkshopService"/>/<see cref="ModLibraryService"/> (and, going forward, any
-/// provider re-wired to use <c>Services/</c>) should call instead.
-/// </para>
-/// </summary>
 public static class DownloadService
 {
     private static readonly Lazy<HttpClient> LazyClient = new(CreateClient);
 
-    /// <summary>
-    /// Port of <c>DownloadService.CreateClient()</c>: an <see cref="HttpClient"/> with the same
-    /// <c>"MPServerProvider/1.0"</c> user agent and 10-minute timeout as the original's
-    /// <c>SocketsHttpHandler</c>/<c>HttpClient</c> setup.
-    /// </summary>
     private static HttpClient CreateClient()
     {
         var handler = new SocketsHttpHandler
@@ -46,7 +27,6 @@ public static class DownloadService
 
     private static HttpClient Client => LazyClient.Value;
 
-    /// <summary>Port of <c>GetStringAsync(string url, CancellationToken)</c>.</summary>
     public static async Task<string> GetStringAsync(string url, CancellationToken ct = default)
     {
         using var response = await Client.GetAsync(url, ct).ConfigureAwait(false);
@@ -54,20 +34,12 @@ public static class DownloadService
         return await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>Port of <c>GetJsonAsync&lt;T&gt;(string url, CancellationToken)</c>.</summary>
     public static async Task<T?> GetJsonAsync<T>(string url, CancellationToken ct = default)
     {
         var body = await GetStringAsync(url, ct).ConfigureAwait(false);
         return JsonSerializer.Deserialize<T>(body, Json.Json.Options);
     }
 
-    /// <summary>
-    /// Port of <c>DownloadFileAsync(string url, string destPath, IProgress&lt;InstallProgress&gt;,
-    /// string status, string, string, CancellationToken)</c>: streams the response body to
-    /// <paramref name="destPath"/>, reporting <see cref="InstallProgress.At"/> as bytes arrive
-    /// when the server reports a <c>Content-Length</c>, or <see cref="InstallProgress.Indeterminate"/>
-    /// otherwise.
-    /// </summary>
     public static async Task DownloadFileAsync(
         string url,
         string destPath,
@@ -135,7 +107,6 @@ public static class DownloadService
         }
     }
 
-    /// <summary>Port of <c>ExtractZip(string zipPath, string destDir, IProgress&lt;InstallProgress&gt;, string)</c>.</summary>
     public static void ExtractZip(string zipPath, string destDir, string status, IProgress<InstallProgress> progress)
     {
         progress.Report(InstallProgress.Indeterminate(status));
@@ -143,12 +114,6 @@ public static class DownloadService
         ZipFile.ExtractToDirectory(zipPath, destDir, overwriteFiles: true);
     }
 
-    /// <summary>
-    /// Port of <c>FlattenSingleRootFolder(string dir)</c>.
-    /// INFERRED: the decompile evidence only captured call sites, not this method's own body;
-    /// this reconstructs the documented purpose (unwrap a zip that put everything under one
-    /// top-level folder), matching the already-verified Rust port's own INFERRED judgment call.
-    /// </summary>
     public static void FlattenSingleRootFolder(string dir)
     {
         var entries = Directory.GetFileSystemEntries(dir);
@@ -179,11 +144,6 @@ public static class DownloadService
         Directory.Delete(only);
     }
 
-    /// <summary>
-    /// Port of <c>VerifyHashAsync(string path, string expectedSha256Hex, IProgress&lt;InstallProgress&gt;,
-    /// CancellationToken)</c>: computes the SHA-256 of <paramref name="path"/> and compares it
-    /// (case-insensitively) to <paramref name="expectedHex"/>.
-    /// </summary>
     public static async Task<bool> VerifyHashAsync(string path, string expectedHex, CancellationToken ct = default)
     {
         await using var stream = File.OpenRead(path);
@@ -192,10 +152,6 @@ public static class DownloadService
         return string.Equals(actualHex, expectedHex.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// Port of <c>FormatBytes(long bytes) -&gt; string</c>: human-readable size with one decimal
-    /// place, matching the original's GB/MB/KB/B thresholds.
-    /// </summary>
     public static string FormatBytes(long bytes)
     {
         const double Kb = 1024.0;

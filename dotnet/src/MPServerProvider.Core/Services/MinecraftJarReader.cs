@@ -5,23 +5,8 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Reads the descriptor files inside a Minecraft mod/plugin jar (a zip) to learn what it is,
-/// which Minecraft versions it supports and what it requires:
-/// <c>fabric.mod.json</c>, <c>quilt.mod.json</c>, <c>META-INF/mods.toml</c>,
-/// <c>META-INF/neoforge.mods.toml</c>, <c>mcmod.info</c>, <c>plugin.yml</c>,
-/// <c>paper-plugin.yml</c>, <c>bungee.yml</c> and <c>velocity-plugin.json</c>.
-/// <para>
-/// Only the zip's central directory and those few small entries are read (never the classes),
-/// and every parser is best-effort: a malformed descriptor contributes nothing instead of
-/// throwing, and an unopenable file comes back as <see cref="MinecraftModInfo.IsReadable"/> =
-/// <c>false</c>. There are no YAML/TOML libraries in this solution, so the YAML and TOML readers
-/// below understand just the subset these descriptors use.
-/// </para>
-/// </summary>
 public static class MinecraftJarReader
 {
-    /// <summary>Descriptors larger than this are ignored (guards against zip bombs).</summary>
     private const long MaxDescriptorBytes = 1024 * 1024;
 
     private static readonly JsonDocumentOptions JsonOptions = new()
@@ -30,14 +15,12 @@ public static class MinecraftJarReader
         CommentHandling = JsonCommentHandling.Skip,
     };
 
-    /// <summary>Ids that are the game/loader itself rather than a real dependency.</summary>
     private static readonly HashSet<string> NonDependencyIds = new(StringComparer.OrdinalIgnoreCase)
     {
         "minecraft", "java", "fabricloader", "fabric-loader", "quilt_loader", "forge", "neoforge",
         "velocity", "bungeecord", "paper", "spigot", "bukkit",
     };
 
-    /// <summary>Reads <paramref name="path"/>; never throws.</summary>
     public static MinecraftModInfo Read(string path)
     {
         try
@@ -51,7 +34,6 @@ public static class MinecraftJarReader
         }
     }
 
-    /// <summary>Reads a jar from <paramref name="stream"/>; never throws.</summary>
     public static MinecraftModInfo Read(Stream stream)
     {
         ZipArchive zip;
@@ -115,7 +97,6 @@ public static class MinecraftJarReader
         return reader.ReadToEnd();
     }
 
-    /// <summary>Accumulates what each descriptor contributes; the first name/version found wins.</summary>
     internal sealed class Builder
     {
         public MinecraftPlatform Platforms;
@@ -153,7 +134,6 @@ public static class MinecraftJarReader
             RequiredDependencies = Dependencies,
         };
 
-        /// <summary>Drops unsubstituted build placeholders such as <c>${version}</c>.</summary>
         private static string? Clean(string? value)
             => string.IsNullOrWhiteSpace(value) || value.Contains("${", StringComparison.Ordinal) ? null : value.Trim();
     }
@@ -295,7 +275,6 @@ public static class MinecraftJarReader
             ? v.GetString()
             : null;
 
-    /// <summary>A Fabric/Quilt version requirement: a string, or an array of alternatives.</summary>
     private static string? VersionPredicate(JsonElement value)
     {
         if (value.ValueKind == JsonValueKind.String)
@@ -318,12 +297,6 @@ public static class MinecraftJarReader
 
     // -- Forge / NeoForge (TOML) ----------------------------------------------------------------
 
-    /// <summary>
-    /// Reads <c>[[mods]]</c> (<c>modId</c>, <c>version</c>, <c>displayName</c>) and
-    /// <c>[[dependencies.&lt;id&gt;]]</c> tables. The <c>minecraft</c> dependency's
-    /// <c>versionRange</c> is the supported Minecraft range; a <c>neoforge</c> dependency (or the
-    /// <c>neoforge.mods.toml</c> file name) marks the jar as NeoForge rather than Forge.
-    /// </summary>
     internal static void ParseModsToml(string? toml, Builder b, bool neoForgeFile, string? manifestVersion)
     {
         if (toml is null)
@@ -394,11 +367,6 @@ public static class MinecraftJarReader
 
     internal sealed record TomlTable(string Name, Dictionary<string, string> Values);
 
-    /// <summary>
-    /// Minimal TOML reader: <c>[table]</c>/<c>[[array-table]]</c> headers and <c>key = value</c>
-    /// pairs with basic/literal strings, bare scalars and (skipped) multi-line strings. The root
-    /// table is returned with an empty name.
-    /// </summary>
     internal static List<TomlTable> ParseTomlTables(string toml)
     {
         var tables = new List<TomlTable> { new(string.Empty, new Dictionary<string, string>()) };
@@ -563,11 +531,6 @@ public static class MinecraftJarReader
             }
             : Array.Empty<string>();
 
-    /// <summary>
-    /// Minimal block-YAML reader for plugin descriptors: nested mappings by indentation,
-    /// <c>- item</c> sequences of scalars, <c>[a, b]</c> flow sequences and quoted scalars.
-    /// Block scalars (<c>|</c>/<c>&gt;</c>) and anything fancier are skipped.
-    /// </summary>
     internal static Dictionary<string, object?> ParseYaml(string yaml)
     {
         var lines = yaml.Replace("\r\n", "\n").Replace('\t', ' ').Split('\n')
@@ -671,7 +634,6 @@ public static class MinecraftJarReader
         return list;
     }
 
-    /// <summary>The <c>key:</c> colon (followed by space or end), ignoring colons inside quotes.</summary>
     private static int FindKeyColon(string line)
     {
         var quote = '\0';

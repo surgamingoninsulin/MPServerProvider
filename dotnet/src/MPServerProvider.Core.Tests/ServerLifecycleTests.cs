@@ -7,12 +7,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Lifecycle tests for <see cref="ServerProcessService"/>: exit handling (#11), crash
-/// auto-restart (#3/#34), stop/shutdown (#14), stats persistence (#5), console buffer (#12),
-/// log tailing (#13), Java provisioning, and the elevation policy (#9). Most use scripted fake
-/// runners; a few launch real, harmless processes (cmd.exe) through the real runners.
-/// </summary>
 public class ServerLifecycleTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"mpsp-lifecycle-{Guid.NewGuid():N}");

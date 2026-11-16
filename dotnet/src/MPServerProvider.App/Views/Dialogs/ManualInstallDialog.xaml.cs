@@ -6,13 +6,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Port of <c>ManualInstallDialog</c>'s "Create Server" flow (0x02000012): calls
-/// <see cref="Services.InstallService.InstallAsync"/> against a <c>"manual"</c>-provider
-/// <see cref="GameDefinition"/>, carrying the user-picked source folder in the version slot
-/// (mirrors <c>ManualProvider.InstallAsync</c>, which reads <c>request.Version</c> as the folder
-/// to copy from — see the proven Rust reference's <c>dialogs/manual_install.rs</c>).
-/// </summary>
 public partial class ManualInstallDialog : DialogWindow
 {
     private readonly AppServices _services;
@@ -52,7 +45,6 @@ public partial class ManualInstallDialog : DialogWindow
 
     private void CancelButton_Click(object sender, RoutedEventArgs e) => Close();
 
-    /// <summary>The manual copy can't be cancelled midway, so block closing while it runs.</summary>
     protected override void OnClosing(CancelEventArgs e)
     {
         if (_busy)

@@ -7,11 +7,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Network-free tests for <see cref="TunnelService"/>: UPnP SOAP/SSDP/description parsing,
-/// address classification and LAN-IP selection, and the playit.gg agent's output/IPC/release
-/// handling (sample lines taken from the playit-agent v2.0.2 source).
-/// </summary>
 public class TunnelServiceTests
 {
     // -- SOAP ---------------------------------------------------------------------------------

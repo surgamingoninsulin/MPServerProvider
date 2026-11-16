@@ -3,13 +3,8 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.BeamMpProvider</c> (decompile token
-/// 0x0200001f). Installs the official BeamMP dedicated server from its latest GitHub release.
-/// </summary>
 public sealed class BeamMpProvider : IInstallProvider
 {
-    /// <summary><c>ReleasesApi</c> field.</summary>
     private const string ReleasesApi = "https://api.github.com/repos/BeamMP/BeamMP-Server/releases/latest";
 
     public string Id => "beammp";
@@ -70,11 +65,6 @@ public sealed class BeamMpProvider : IInstallProvider
         };
     }
 
-    /// <summary>
-    /// Port of <c>BeamMpProvider.WriteConfig(InstallRequest)</c>: writes <c>ServerConfig.toml</c>
-    /// in the BeamMP-Server format, verbatim from the decompiled interpolated-string literal,
-    /// only if it doesn't already exist.
-    /// </summary>
     internal static void WriteConfig(InstallRequest request)
     {
         var path = Path.Combine(request.TargetDir, "ServerConfig.toml");

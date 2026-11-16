@@ -1,11 +1,5 @@
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Copies a file or folder dropped from Explorer into a server folder (File Manager drag and
-/// drop). Folders are merged into an existing folder of the same name, like Explorer does; links
-/// and junctions inside a dropped folder are skipped so a loop or a link to elsewhere on disk
-/// can't pull unexpected content in.
-/// </summary>
 public static class FileDrop
 {
     public static void Copy(string source, string target)

@@ -4,10 +4,7 @@
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!--
-        Colors sampled directly from real screenshots of the running original
-        app (user-supplied reference images), since the BAML-recovered
-        app.xaml's own brush resources are stored in a deferred binary block
-        that could not be decoded to literal hex values. Pixel-sampled via a
+        Colors pixel-sampled from the reference screenshots via a
         PowerShell/System.Drawing probe against the reference PNGs:
           - BrandAccent   (#4F6BFF) from the "PROVIDER" logo text and the
             "Manage Servers" button fill (same color used in both places).
@@ -49,8 +46,7 @@
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
 
     <!-- Logo text gradient: "MP SERVER" reads near-white/light, "PROVIDER"
-         reads in BrandAccentColor, per the sampled reference (not a literal
-         LinearGradientBrush in the original — two separate Runs). -->
+         reads in BrandAccentColor, per the sampled reference. -->
     <LinearGradientBrush x:Key="LogoAccentGradientBrush" StartPoint="0,0" EndPoint="1,0">
         <GradientStop Color="{StaticResource TextPrimaryColor}" Offset="0" />
         <GradientStop Color="{StaticResource BrandAccentColor}" Offset="1" />
@@ -88,8 +84,7 @@
     <CornerRadius x:Key="InputCornerRadius">8</CornerRadius>
     <sys:Double x:Key="InputHeight">34</sys:Double>
 
-    <!-- Hero banner background: the real asset is unrecoverable (deferred BAML binary), so this
-         approximates it with a dark radial vignette plus a faint accent-blue top glow, close to
+    <!-- Hero banner background: a dark radial vignette plus a faint accent-blue top glow, close to
          1.png's hero (dark photographic background, brand text + CTA buttons on top). -->
     <RadialGradientBrush x:Key="HeroBannerBackgroundBrush" Center="0.5,0" RadiusX="1.1" RadiusY="1.0">
         <GradientStop Color="#17204A" Offset="0" />
@@ -257,7 +252,7 @@
          Controls:AutoScrollingItemsControl's default template (see Themes/Theme.xaml usage in
          AutoScrollingItemsControl's own template below) so the news carousel slides smoothly
          without a visible scrollbar, matching the reference screenshot's subtle feel while still
-         actually scrolling (unlike the Rust/Slint port's static row). -->
+         actually scrolling. -->
     <Style TargetType="{x:Type controls:AutoScrollingItemsControl}">
         <Setter Property="Template">
             <Setter.Value>

@@ -2,57 +2,29 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.BuiltInGames</c> (decompile token 0x02000006).
-/// The decompiled <c>All()</c> body (token 0x06000019, rva 9212) is one large method built
-/// entirely from inline string/number literals and a long chain of
-/// <c>GameDefinition..ctor</c>/<c>set_*</c> calls (no file I/O, no <c>JsonSerializer</c> calls in
-/// its call graph) -- i.e. the original hardcodes the catalog directly in C# via object
-/// initializers, which this restores exactly (rather than the JSON-embedding approach the Rust
-/// port used as its own language's nearest equivalent to <c>include_str!</c>).
-/// The decompile report's string evidence is truncated after the first ~3 entries, but every
-/// entry it *does* show (<c>minecraft-java</c>, <c>minecraft-bedrock</c>, <c>fivem</c>, plus the
-/// <c>cfx</c>/FXServer bits for <c>redm</c>) matches byte-for-byte against the real on-disk
-/// ground truth in <c>data/providers/json/*.json</c>, so the full catalog below is reconstructed
-/// from those files (via the already-verified Rust port's same embedded copies under
-/// <c>crates/mpsp-core/src/services/builtin_games/*.json</c>) rather than guessed.
-/// <para>
-/// Two exceptions, carried over verbatim from the Rust port's own judgment calls:
-/// </para>
-/// <list type="bullet">
-/// <item><c>cubic-odyssey-dedicated-server-beta-version.json</c> exists under
-/// <c>data/providers/json/</c> but is <b>not</b> included here: it's a niche, recently-released
-/// indie game with no supporting string evidence in the decompiled <c>BuiltInGames.All()</c>/
-/// <c>BuiltInNews.All()</c> bodies, consistent with it being a user-added manifest rather than a
-/// shipped built-in.</item>
-/// <item><c>openrct2</c> is <b>not</b> present under <c>data/providers/json/</c> on this machine,
-/// but <c>GameLibraryService.SeedBuiltIns</c>'s decompiled body references an
-/// <c>"openrct2.json"</c> string literal and <c>BuiltInNews.All()</c> has an
-/// <c>"https://openrct2.org/uploads/images/logo.png"</c> artwork URL, so it's clearly part of the
-/// real built-in set. INFERRED: reconstructed from that one artwork URL plus OpenRCT2's
-/// well-known public release archive, since no further decompile evidence survived for its
-/// <c>install</c>/<c>runtime</c>/<c>network</c> fields.</item>
-/// </list>
-/// <c>IsBuiltIn</c>/<c>SourceFile</c> are intentionally left at their default (<c>false</c>/
-/// <c>null</c>) here; <see cref="GameLibraryService.Reload"/> is responsible for setting
-/// <c>IsBuiltIn = true</c> once a definition is loaded from <c>GamesDir</c>.
-/// </summary>
-public static class BuiltInGames
+public static partial class BuiltInGames
 {
-    /// <summary>
-    /// Steam CDN host used by several built-in entries' artwork URLs. Port of the
-    /// <c>SteamCdn</c> static field.
-    /// </summary>
     public const string SteamCdn = "https://cdn.cloudflare.steamstatic.com/steam/apps/";
 
-    /// <summary>
-    /// Port of <c>BuiltInGames.All() -&gt; List&lt;GameDefinition&gt;</c>. Each entry's
-    /// <see cref="GameDefinition.Details"/> (Game Detail page content, researched from official
-    /// sites/docs and Steam store data in Nov 2026) is NOT from the decompile; it must stay
-    /// identical to the <c>details</c> block of the matching <c>data/providers/json/{id}.json</c>
-    /// (enforced by <c>GameDetailsTests.Shipped_json_details_match_BuiltInGames</c>).
-    /// </summary>
-    public static List<GameDefinition> All() => new()
+    public static List<GameDefinition> All()
+    {
+        var all = CoreGames();
+        all.AddRange(AddedGames());
+        return all;
+    }
+
+    internal static List<GameDefinition> AddedGames()
+    {
+        var added = new List<GameDefinition>();
+        added.AddRange(SurvivalAGames());
+        added.AddRange(SurvivalBGames());
+        added.AddRange(SurvivalCGames());
+        added.AddRange(SurvivalDGames());
+        added.AddRange(MiscGames());
+        return added;
+    }
+
+    private static List<GameDefinition> CoreGames() => new()
     {
             new GameDefinition
             {
@@ -1193,16 +1165,12 @@ public static class BuiltInGames
                 ManifestVersion = 1,
                 Id = "openrct2",
                 Name = "OpenRCT2 Server",
-                // INFERRED entry: reconstructed from a single artwork-URL string literal in the
-                // decompiled BuiltInNews/GameLibraryService bodies; install/runtime/network fields
-                // have no surviving decompile evidence. (The description used to carry this note,
-                // which leaked into the Library card text.)
                 Description = "Host co-op theme park building with OpenRCT2, the open-source RollerCoaster Tycoon 2 engine, as a headless dedicated server.",
                 Genres = new() { "Simulation", "Strategy" },
                 Artwork = new ArtworkSpec
                 {
-                    // The decompile-evidenced URL ("https://openrct2.org/uploads/images/logo.png")
-                    // now 404s — the site's asset layout changed since that string was captured.
+                    // The old URL ("https://openrct2.org/uploads/images/logo.png")
+                    // now 404s — the site's asset layout changed.
                     // A later stand-in, the 64x64 GitHub app icon, rendered blurry stretched over
                     // a wide card. The cover is now a banner bundled with the app
                     // (App/Assets/Artwork/openrct2-banner.png, 1840x860): the RCT2 helter-skelter

@@ -5,18 +5,6 @@ using System.Windows.Media;
 
 namespace MPServerProvider.App.Controls;
 
-/// <summary>
-/// Attached behavior (applied to every <see cref="ScrollViewer"/> by the implicit style in
-/// <c>Themes/Theme.xaml</c>) that makes mouse-wheel scrolling work everywhere despite nesting.
-/// <para>
-/// WPF's <see cref="ScrollViewer"/> marks <c>MouseWheel</c> as handled even when it has nothing
-/// left to scroll, so an inner scroller (a read-only console <see cref="TextBox"/>, a
-/// <see cref="ListBox"/>, the horizontal news carousel, a ComboBox dropdown...) swallowed the
-/// wheel and the page around it never scrolled. With scrollbars hidden app-wide that left whole
-/// pages un-scrollable under the cursor. This forwards the wheel to the parent whenever the
-/// innermost scroller under the mouse can't move further in that direction.
-/// </para>
-/// </summary>
 public static class WheelScroll
 {
     public static readonly DependencyProperty ForwardToParentProperty =

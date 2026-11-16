@@ -7,15 +7,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Port of <c>AddCustomGameDialog</c>'s "Add to Library" flow (0x02000008): builds a
-/// <see cref="GameDefinition"/> from the form, writes it to <c>{GamesDir}/{id}.json</c> — the
-/// same on-disk shape <see cref="GameLibraryService.Reload"/> reads back — then reloads the
-/// catalog. <see cref="GameLibraryService"/> has no dedicated "add custom game" API of its own
-/// (confirmed against its real public surface: <c>Games</c>/<c>Find</c>/<c>AllGenres</c>/
-/// <c>Reload</c> only), so this writes the manifest file directly exactly like the proven Rust
-/// port's <c>dialogs/add_custom_game.rs</c> had to.
-/// </summary>
 public partial class AddCustomGameDialog : DialogWindow
 {
     private readonly AppServices _services;
@@ -81,6 +72,12 @@ public partial class AddCustomGameDialog : DialogWindow
 
         try
         {
+            if (_services.Games.Find(game.Id) is { IsBuiltIn: true } builtIn)
+            {
+                StatusText.Text = $"'{game.Id}' is already used by the built-in game {builtIn.Name}. Pick another id.";
+                return;
+            }
+
             var path = Path.Combine(_services.Paths.GamesDir, $"{game.Id}.json");
             if (File.Exists(path))
             {

@@ -144,6 +144,12 @@
             <RadioButton x:Name="TabTxAdmin" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
                          Content="txAdmin" Checked="Tab_Checked" Margin="4,0,0,0"
                          Visibility="{Binding IsFiveMOrRedM, Converter={StaticResource BoolToVis}}" />
+            <RadioButton x:Name="TabHytale" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
+                         Content="Hytale Login" Checked="Tab_Checked" Margin="4,0,0,0"
+                         Visibility="{Binding IsHytale, Converter={StaticResource BoolToVis}}" />
+            <RadioButton x:Name="TabKlei" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
+                         Content="Klei Token" Checked="Tab_Checked" Margin="4,0,0,0"
+                         Visibility="{Binding IsDontStarve, Converter={StaticResource BoolToVis}}" />
             <RadioButton x:Name="TabResourcePack" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
                          Content="Resource Pack" Checked="Tab_Checked" Margin="4,0,0,0"
                          Visibility="{Binding ResourcePack.IsAvailable, Converter={StaticResource BoolToVis}}" />
@@ -635,6 +641,102 @@
                         <Button Content="Open txAdmin in Browser" Style="{StaticResource GhostButtonStyle}"
                                 HorizontalAlignment="Center" Command="{Binding OpenTxAdminInBrowserCommand}" />
                     </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Klei Token (Don't Starve Together): paste box on top, Klei account site embedded below
+             so the user can sign in, open Game Servers and copy the cluster token. -->
+        <!-- Hytale Login: sends /auth login device, shows the code and the sign-in page. -->
+        <Grid x:Name="HytalePanel" Grid.Row="2" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Hytale server login" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Text="{Binding HytaleAuthStatus}" FontSize="12" Margin="0,4,0,10" TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HytaleSignedIn}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Sign in server" Style="{StaticResource AccentButtonStyle}" Command="{Binding HytaleSignInCommand}" />
+                            <Button Content="Keep login" Margin="8,0,0,0" Style="{StaticResource GhostButtonStyle}" Command="{Binding HytaleKeepLoginCommand}" />
+                            <Button Content="Open in Browser" Margin="8,0,0,0" Style="{StaticResource GhostButtonStyle}" Command="{Binding OpenHytaleAuthInBrowserCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <TextBlock Text="Code" Foreground="{StaticResource TextMutedBrush}" FontSize="12" HorizontalAlignment="Right" />
+                        <TextBox Text="{Binding HytaleAuthCode, Mode=OneWay, TargetNullValue=—}" IsReadOnly="True" FontFamily="Consolas" FontSize="22"
+                                 FontWeight="SemiBold" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Grid.Row="1" Style="{StaticResource CardStyle}">
+                <Grid>
+                    <wv2:WebView2 x:Name="HytaleWeb" Visibility="Collapsed" />
+                    <TextBlock x:Name="HytaleWebStatus" Text="Click Sign in server and the Hytale sign-in page opens here."
+                               VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="420" TextAlignment="Center" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="KleiPanel" Grid.Row="2" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Klei cluster token" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock Text="Sign in below, open Games › Don't Starve Together › Game Servers, add a new server and copy its token. Paste it here and save."
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,10" TextWrapping="Wrap" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding KleiToken, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                        <Button Grid.Column="1" Content="Save token" Margin="8,0,0,0" Style="{StaticResource AccentButtonStyle}"
+                                Command="{Binding SaveKleiTokenCommand}" />
+                        <Button Grid.Column="2" Content="Open in Browser" Margin="8,0,0,0" Style="{StaticResource GhostButtonStyle}"
+                                Command="{Binding OpenKleiInBrowserCommand}" />
+                    </Grid>
+                    <TextBlock Text="{Binding KleiTokenStatus}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasKleiToken}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Style="{StaticResource CardStyle}">
+                <Grid>
+                    <wv2:WebView2 x:Name="KleiWeb" Visibility="Collapsed" />
+                    <TextBlock x:Name="KleiWebStatus" Text="Loading the Klei account page…" VerticalAlignment="Center" HorizontalAlignment="Center"
+                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" MaxWidth="420" TextAlignment="Center" />
                 </Grid>
             </Border>
         </Grid>

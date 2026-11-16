@@ -9,15 +9,6 @@ using MPServerProvider.App.ViewModels;
 
 namespace MPServerProvider.App.Views;
 
-/// <summary>
-/// Code-behind for the Server Detail panel embedded in <c>MyServersPage</c>'s
-/// <c>DetailHost</c>. Owns tab-strip switching (plain named-panel visibility toggling, matching
-/// the recovered real XAML's <c>ConsolePanel</c>/<c>FilesPanel</c>/<c>ModsPanel</c>/
-/// <c>ResourcesPanel</c>/<c>TxAdminPanel</c>/<c>SettingsPanel</c> shape), the incremental console
-/// view, the File Manager's built-in editor surface (line-number gutter, Ctrl+S, dirty tracking)
-/// and the txAdmin tab's real <see cref="Microsoft.Web.WebView2.Wpf.WebView2"/> embed attempt.
-/// Every handler reports failures as a toast instead of letting them escape.
-/// </summary>
 public partial class ServerDetailView : UserControl
 {
     private bool _suppressEditorDirty;
@@ -35,6 +26,7 @@ public partial class ServerDetailView : UserControl
                 oldVm.ConsoleUpdated -= ViewModel_ConsoleUpdated;
                 oldVm.EditorTextLoaded -= ViewModel_EditorTextLoaded;
                 oldVm.FilesTabRequested -= ViewModel_FilesTabRequested;
+                oldVm.KleiTabRequested -= ViewModel_KleiTabRequested;
                 oldVm.EditorTextProvider = null;
             }
             if (e.NewValue is ServerDetailViewModel newVm)
@@ -43,6 +35,7 @@ public partial class ServerDetailView : UserControl
                 newVm.ConsoleUpdated += ViewModel_ConsoleUpdated;
                 newVm.EditorTextLoaded += ViewModel_EditorTextLoaded;
                 newVm.FilesTabRequested += ViewModel_FilesTabRequested;
+                newVm.KleiTabRequested += ViewModel_KleiTabRequested;
                 newVm.EditorTextProvider = () => EditorBox.Text;
                 UpdateEditorLayout(newVm.IsEditorOpen);
                 newVm.SetViewVisible(IsVisible);
@@ -59,12 +52,6 @@ public partial class ServerDetailView : UserControl
         FallBackToConsoleWhenHidden(TabLuckPerms);
     }
 
-    /// <summary>
-    /// Conditional tabs (Resource Pack for Minecraft Java, LuckPerms when installed) collapse when
-    /// another server is selected or the plugin is removed; if that tab was selected, show the
-    /// Console instead of leaving an orphaned panel. Watches the Visibility property itself, not
-    /// IsVisible, which also flips whenever the whole page is hidden.
-    /// </summary>
     private void FallBackToConsoleWhenHidden(RadioButton tab)
     {
         DependencyPropertyDescriptor.FromProperty(VisibilityProperty, typeof(RadioButton))
@@ -131,6 +118,10 @@ public partial class ServerDetailView : UserControl
                     _ = TryShowTxAdminAsync();
                 }
             }
+            else if (e.PropertyName == nameof(ServerDetailViewModel.HytaleAuthLink))
+            {
+                _ = TryShowHytaleAuthAsync();
+            }
             else if (e.PropertyName == nameof(ServerDetailViewModel.IsEditorOpen) && ViewModel is { } vm)
             {
                 UpdateEditorLayout(vm.IsEditorOpen);
@@ -144,13 +135,6 @@ public partial class ServerDetailView : UserControl
 
     // -- Console ------------------------------------------------------------------------------
 
-    /// <summary>
-    /// Whether the console follows new output. Tracked from real scroll events instead of
-    /// measuring offsets when a line arrives: those offsets are only updated by the next
-    /// layout pass, so a burst of lines (or a reset) used to read as "the user scrolled up"
-    /// and the console stopped following. Scrolling up turns this off, scrolling back to
-    /// the bottom turns it on again.
-    /// </summary>
     private bool _followConsole = true;
 
     private void ConsoleBox_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -188,7 +172,6 @@ public partial class ServerDetailView : UserControl
         }
     }
 
-    /// <summary>Scrolls now and once more after layout has measured the new text.</summary>
     private void ScrollConsoleToEnd()
     {
         ConsoleBox.ScrollToEnd();
@@ -219,6 +202,8 @@ public partial class ServerDetailView : UserControl
             ModsPanel.Visibility = Visibility.Collapsed;
             ResourcesPanel.Visibility = Visibility.Collapsed;
             TxAdminPanel.Visibility = Visibility.Collapsed;
+            KleiPanel.Visibility = Visibility.Collapsed;
+            HytalePanel.Visibility = Visibility.Collapsed;
             SettingsPanel.Visibility = Visibility.Collapsed;
             ResourcePackPanel.Visibility = Visibility.Collapsed;
             LuckPermsPanel.Visibility = Visibility.Collapsed;
@@ -248,6 +233,16 @@ public partial class ServerDetailView : UserControl
                 TxAdminPanel.Visibility = Visibility.Visible;
                 _ = TryShowTxAdminAsync();
             }
+            else if (ReferenceEquals(sender, TabHytale))
+            {
+                HytalePanel.Visibility = Visibility.Visible;
+                _ = TryShowHytaleAuthAsync();
+            }
+            else if (ReferenceEquals(sender, TabKlei))
+            {
+                KleiPanel.Visibility = Visibility.Visible;
+                _ = TryShowKleiAsync();
+            }
             else if (ReferenceEquals(sender, TabSettings))
             {
                 SettingsPanel.Visibility = Visibility.Visible;
@@ -267,11 +262,63 @@ public partial class ServerDetailView : UserControl
         }
     }
 
-    /// <summary>
-    /// Real <see cref="Microsoft.Web.WebView2.Wpf.WebView2"/> embed for the txAdmin tab; falls
-    /// back to the "open in browser" placeholder if the WebView2 Runtime isn't installed or the
-    /// server isn't running.
-    /// </summary>
+    private async Task TryShowKleiAsync()
+    {
+        try
+        {
+            if (KleiWeb.Visibility == Visibility.Visible || ViewModel is not { IsDontStarve: true } vm)
+            {
+                return;
+            }
+
+            await KleiWeb.EnsureCoreWebView2Async();
+            KleiWeb.Source = new Uri(vm.KleiLoginUrl);
+            KleiWeb.Visibility = Visibility.Visible;
+            KleiWebStatus.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            KleiWeb.Visibility = Visibility.Collapsed;
+            KleiWebStatus.Visibility = Visibility.Visible;
+            KleiWebStatus.Text = $"Couldn't show the Klei page here ({ex.Message}). Use Open in Browser instead.";
+        }
+    }
+
+    private async Task TryShowHytaleAuthAsync()
+    {
+        try
+        {
+            if (ViewModel is not { IsHytale: true, HytaleAuthLink: { } link } || HytalePanel.Visibility != Visibility.Visible)
+            {
+                return;
+            }
+
+            await HytaleWeb.EnsureCoreWebView2Async();
+            var uri = new Uri(link);
+            if (HytaleWeb.Source?.AbsoluteUri != uri.AbsoluteUri)
+            {
+                HytaleWeb.Source = uri;
+            }
+
+            HytaleWeb.Visibility = Visibility.Visible;
+            HytaleWebStatus.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            HytaleWeb.Visibility = Visibility.Collapsed;
+            HytaleWebStatus.Visibility = Visibility.Visible;
+            HytaleWebStatus.Text = $"Couldn't show the Hytale page here ({ex.Message}). Use Open in Browser instead.";
+        }
+    }
+
+    private void ViewModel_KleiTabRequested(object? sender, EventArgs e)
+    {
+        if (TabKlei.Visibility == Visibility.Visible)
+        {
+            TabKlei.IsChecked = true;
+        }
+    }
+
     private async Task TryShowTxAdminAsync()
     {
         try
@@ -416,10 +463,6 @@ public partial class ServerDetailView : UserControl
         }
     }
 
-    /// <summary>
-    /// Loads the Mods tab only while it's actually visible (tab selected and page shown), so the
-    /// server folder/jar scan never runs in the background or from the 800 ms poll.
-    /// </summary>
     private void ModsPanel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         try
@@ -449,8 +492,6 @@ public partial class ServerDetailView : UserControl
         e.Handled = true;
     }
 
-    /// <summary>DragLeave also fires when moving between child elements; only hide the overlay
-    /// once the pointer has really left the drop area.</summary>
     private static void HideDropOverlayIfLeft(DragEventArgs e, FrameworkElement area, Border overlay)
     {
         var p = e.GetPosition(area);
@@ -594,7 +635,6 @@ public partial class ServerDetailView : UserControl
 
     private void EditorBox_SizeChanged(object sender, SizeChangedEventArgs e) => QueueGutterUpdate();
 
-    /// <summary>Coalesces gutter refreshes (typing, scrolling, resizing) into one per frame.</summary>
     private void QueueGutterUpdate()
     {
         if (_gutterUpdateQueued)
@@ -617,12 +657,6 @@ public partial class ServerDetailView : UserControl
         }));
     }
 
-    /// <summary>
-    /// Line numbers for only the visible lines: the editor never wraps, so each logical line is
-    /// one visual line; the gutter TextBlock is positioned at the first visible line's top and
-    /// uses that line height, so it stays aligned while scrolling without rendering numbers for
-    /// the whole (possibly 100k-line) file.
-    /// </summary>
     private void UpdateGutter()
     {
         if (EditorPanel.Visibility != Visibility.Visible)

@@ -2,22 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Minecraft version requirement matching for the two syntaxes mod descriptors use:
-/// <list type="bullet">
-/// <item>Fabric/Quilt semver predicates (<c>~1.21.1</c>, <c>&gt;=1.20 &lt;1.21</c>, <c>1.21.x</c>,
-/// <c>^1.20</c>, <c>*</c>, alternatives joined with <c>||</c>);</item>
-/// <item>Forge/NeoForge Maven ranges (<c>[1.20.1,1.21)</c>, <c>[1.21]</c>, <c>[1.20,)</c>) — where a bare
-/// version (Maven's "soft" requirement, also what legacy <c>mcmod.info</c> <c>mcversion</c> holds)
-/// is read as "that minor line" (<c>1.20.1</c> → 1.20.x) rather than "anything".</item>
-/// </list>
-/// Everything here is deliberately lenient: anything it can't parse (snapshot ids such as
-/// <c>24w14a</c>, unsubstituted <c>${...}</c> placeholders) yields <c>null</c> = "unknown", and
-/// callers treat unknown as compatible. Only a clear mismatch is reported as incompatible.
-/// </summary>
 public static class MinecraftVersionRange
 {
-    /// <summary>One allowed interval; a <c>null</c> bound is unbounded on that side.</summary>
     internal readonly record struct Interval(int[]? Lower, bool LowerInclusive, int[]? Upper, bool UpperInclusive)
     {
         public static readonly Interval Any = new(null, true, null, true);
@@ -75,12 +61,6 @@ public static class MinecraftVersionRange
 
     private static readonly Regex LeadingVersion = new(@"^\s*v?(\d+(?:\.\d+)+|\d+(?=\s|$))", RegexOptions.CultureInvariant);
 
-    /// <summary>
-    /// The Minecraft version a server runs, from <see cref="Models.ServerInstance.ServerVersion"/>
-    /// strings such as <c>26.3 (build 252)</c> (Paper/Purpur), <c>1.21.10 (loader 0.16.14)</c>
-    /// (Fabric), <c>1.20.1-47.2.0</c> (Forge) or plain <c>1.21.10</c> (vanilla). <c>null</c> for
-    /// <c>latest</c>, snapshots and anything else without a leading dotted version.
-    /// </summary>
     public static string? ServerMinecraftVersion(string? serverVersion)
     {
         if (string.IsNullOrWhiteSpace(serverVersion))
@@ -92,8 +72,6 @@ public static class MinecraftVersionRange
         return match.Success && match.Groups[1].Value.Contains('.') ? match.Groups[1].Value : null;
     }
 
-    /// <summary>Parses <c>1.21.1</c>, <c>26.3</c>, <c>1.21-rc.1</c> (pre-release suffix dropped) into
-    /// numeric components; <c>null</c> for snapshot ids and other non-numeric versions.</summary>
     internal static int[]? ParseVersion(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -126,7 +104,6 @@ public static class MinecraftVersionRange
         return result;
     }
 
-    /// <summary>Component-wise compare with missing components read as 0 (<c>1.21 == 1.21.0</c>).</summary>
     internal static int Compare(int[] a, int[] b)
     {
         var n = Math.Max(a.Length, b.Length);
@@ -143,11 +120,6 @@ public static class MinecraftVersionRange
         return 0;
     }
 
-    /// <summary>
-    /// Does <paramref name="version"/> satisfy <paramref name="range"/>? <c>null</c> when either
-    /// can't be understood. <paramref name="maven"/> selects Forge/NeoForge Maven-range syntax;
-    /// otherwise Fabric/Quilt predicate syntax.
-    /// </summary>
     public static bool? Satisfies(string? range, string? version, bool maven)
     {
         var v = ParseVersion(version);
@@ -160,11 +132,6 @@ public static class MinecraftVersionRange
         return intervals.Any(i => i.Contains(v));
     }
 
-    /// <summary>
-    /// Bukkit/Paper <c>api-version</c> check: a plugin built against API <c>1.21</c> loads on
-    /// 1.21 and newer servers (newer servers keep accepting older API versions), and servers
-    /// refuse plugins declaring an API newer than themselves.
-    /// </summary>
     public static bool? SatisfiesApiVersion(string? apiVersion, string? serverVersion)
     {
         var api = ParseVersion(apiVersion);
@@ -179,8 +146,6 @@ public static class MinecraftVersionRange
         return Compare(trimmed, api) >= 0;
     }
 
-    /// <summary>Short human form of a range for tags and reasons, e.g. <c>1.21.1</c>,
-    /// <c>1.21.x</c>, <c>1.20–1.21.x</c>, <c>1.21+</c>. Falls back to the raw text.</summary>
     public static string Describe(string? range, bool maven)
     {
         if (string.IsNullOrWhiteSpace(range))
@@ -279,7 +244,6 @@ public static class MinecraftVersionRange
         return string.Join('.', v.Take(len));
     }
 
-    /// <summary>[major.minor, major.(minor+1)) — "that minor line".</summary>
     private static Interval FamilyOf(int[] v)
     {
         var major = v[0];
@@ -289,8 +253,6 @@ public static class MinecraftVersionRange
 
     // -- Fabric / Quilt predicates -------------------------------------------------------------
 
-    /// <summary>Parses a Fabric/Quilt version predicate (alternatives separated by <c>||</c>, each a
-    /// space-separated AND of comparators). <c>null</c> when any part isn't understood.</summary>
     internal static List<Interval>? ParseFabric(string? predicate)
     {
         if (predicate is null)
@@ -384,8 +346,6 @@ public static class MinecraftVersionRange
 
     // -- Forge / NeoForge Maven ranges ---------------------------------------------------------
 
-    /// <summary>Parses a Maven version range (<c>[1.20.1,1.21)</c>, <c>[1.21]</c>, <c>(,1.21)</c>,
-    /// comma-joined unions, or a bare soft version read as its minor line).</summary>
     internal static List<Interval>? ParseMaven(string? spec)
     {
         if (string.IsNullOrWhiteSpace(spec))

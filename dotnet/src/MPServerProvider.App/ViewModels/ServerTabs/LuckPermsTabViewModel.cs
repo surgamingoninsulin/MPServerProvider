@@ -8,32 +8,10 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>
-/// LuckPerms tab: runs the LuckPerms web editor inside the app.
-/// <para>
-/// Flow (see https://luckperms.net/wiki/Web-Editor and "Web Editor Technical Details"):
-/// "Open editor" sends <c>lp editor</c> to the console (consoles take commands without the
-/// leading slash); LuckPerms uploads the data to bytebin and prints
-/// <c>https://luckperms.net/editor/&lt;code&gt;</c>, which this view model picks up from
-/// <see cref="ServerProcessService.OutputReceived"/> and the view loads in a WebView2. The
-/// editor then joins a bytesocks WebSocket channel with the server:
-/// </para>
-/// <list type="bullet">
-/// <item>trusted browser → "Editor window connected successfully": live mode, Save applies the
-/// changes on the server by itself;</item>
-/// <item>unknown browser → the server prints (and the editor shows) <c>/lp trusteditor &lt;id&gt;</c>;
-/// the "Trust editor" button sends it after the user confirms it's their session;</item>
-/// <item>no socket (old LuckPerms, blocked socket) → Save shows <c>/lp applyedits &lt;code&gt;</c>,
-/// which the view reads from the page and the "Apply changes" button sends.</item>
-/// </list>
-/// </summary>
 public sealed partial class LuckPermsTabViewModel : ObservableObject
 {
-    /// <summary>How long to wait for LuckPerms to print the editor link (it uploads the data
-    /// first, so a slow connection or a big user list takes a few seconds).</summary>
     private static readonly TimeSpan EditorLinkTimeout = TimeSpan.FromSeconds(30);
 
-    /// <summary>The jar check touches the disk; the 800 ms detail poll only re-runs it this often.</summary>
     private static readonly TimeSpan DetectInterval = TimeSpan.FromSeconds(5);
 
     private readonly AppServices _services;
@@ -57,7 +35,6 @@ public sealed partial class LuckPermsTabViewModel : ObservableObject
 
     public ServerInstance? Current { get; private set; }
 
-    /// <summary>Tab visibility: a LuckPerms jar is installed on the selected server.</summary>
     [ObservableProperty]
     private bool _isAvailable;
 
@@ -68,7 +45,6 @@ public sealed partial class LuckPermsTabViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(OpenEditorCommand))]
     private bool _isServerRunning;
 
-    /// <summary>The editor link printed by the server; the view navigates its WebView2 to it.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEditorUrl))]
     private string _editorUrl = string.Empty;
@@ -82,18 +58,15 @@ public sealed partial class LuckPermsTabViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "Start the server, then press Open editor.";
 
-    /// <summary>Live (socket) mode: saving in the editor applies changes by itself.</summary>
     [ObservableProperty]
     private bool _isLive;
 
-    /// <summary>Code from <c>/lp applyedits &lt;code&gt;</c> shown by the editor after Save.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasApplyCode))]
     private string _applyCode = string.Empty;
 
     public bool HasApplyCode => ApplyCode.Length > 0;
 
-    /// <summary>Session id from <c>/lp trusteditor &lt;id&gt;</c> while the editor waits to be trusted.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasTrustNonce))]
     private string _trustNonce = string.Empty;
@@ -103,8 +76,6 @@ public sealed partial class LuckPermsTabViewModel : ObservableObject
     private string _applyAlias = "lp";
     private string _trustAlias = "lp";
 
-    /// <summary>Called on every <c>ServerDetailViewModel.Show</c>/<c>Hide</c>; a different server
-    /// ends the current editor session in the UI.</summary>
     public void SetServer(ServerInstance? server)
     {
         var isSame = server is not null && Current?.ServerName == server.ServerName;
@@ -118,7 +89,6 @@ public sealed partial class LuckPermsTabViewModel : ObservableObject
         RefreshLive();
     }
 
-    /// <summary>Per-tick refresh from the detail view's poll: running state and (throttled) jar detection.</summary>
     public void RefreshLive()
     {
         if (Current is not { } server)
@@ -328,11 +298,6 @@ public sealed partial class LuckPermsTabViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Called by the view with commands found in the editor page (DOM text or a clipboard write):
-    /// <c>applyedits</c> after a non-live Save, <c>trusteditor</c> when the browser isn't trusted.
-    /// Only fills buttons; nothing is sent without a click.
-    /// </summary>
     public void OnEditorPageCommand(string kind, string alias, string code)
     {
         if (LuckPermsSupport.BuildCommand(alias, kind, code) is null)

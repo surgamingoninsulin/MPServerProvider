@@ -7,15 +7,6 @@ using MPServerProvider.App.ViewModels;
 
 namespace MPServerProvider.App.Views.ServerTabs;
 
-/// <summary>
-/// LuckPerms tab: shows the editor link printed by <c>lp editor</c> in a WebView2 so the user
-/// never leaves the app. The LuckPerms web editor (LuckPermsWeb, Vue) renders the commands it
-/// wants the user to run as <c>&lt;code&gt;/lp applyedits &lt;key&gt;&lt;/code&gt;</c> (after a non-live
-/// Save) and <c>&lt;code&gt;/lp trusteditor &lt;nonce&gt;&lt;/code&gt;</c> (untrusted browser), and copies
-/// them on click. An injected script watches the DOM (MutationObserver) and
-/// <c>navigator.clipboard.writeText</c> for those and posts them to
-/// <see cref="LuckPermsTabViewModel.OnEditorPageCommand"/>, which only arms a button.
-/// </summary>
 public partial class LuckPermsTab : UserControl
 {
     private const string WatchScript = """
@@ -126,8 +117,6 @@ public partial class LuckPermsTab : UserControl
         }
     }
 
-    /// <summary>Loads the current editor URL (or shows the placeholder). Only does real work while
-    /// the tab is visible, so the browser isn't started for servers nobody looks at.</summary>
     private async Task ShowEditorAsync()
     {
         try
@@ -204,7 +193,6 @@ public partial class LuckPermsTab : UserControl
         }
     }
 
-    /// <summary>Links out of the editor (wiki, GitHub, Discord) open in the real browser.</summary>
     private void Core_NewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
     {
         try

@@ -8,14 +8,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views.Pages;
 
-/// <summary>
-/// In-depth view of one <see cref="GameDefinition"/>, opened from a Library card or a Home news
-/// card through <see cref="MainWindow.ShowGameDetail"/>. Everything shown comes from the manifest
-/// itself (mostly its optional <see cref="GameDefinition.Details"/> block, hardcoded from research
-/// into the built-in catalog) — no web lookups apart from the artwork images, which load through
-/// <see cref="ArtworkImages"/> off the UI thread. Sections whose data is missing collapse; image
-/// failures keep the accent fallback tile.
-/// </summary>
 public partial class GameDetailPage : UserControl
 {
     private const double ThumbnailWidth = 220;
@@ -533,7 +525,6 @@ public partial class GameDetailPage : UserControl
         }
     }
 
-    /// <summary>Mouse "back" side button returns like the Back button does.</summary>
     private void OnPreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.XButton1)

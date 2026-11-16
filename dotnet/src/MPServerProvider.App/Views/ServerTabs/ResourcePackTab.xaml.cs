@@ -8,31 +8,10 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.Views.ServerTabs;
 
-/// <summary>
-/// Resource Pack tab: mcpacks.dev in a WebView2 (left) and the server.properties form (right,
-/// <see cref="ResourcePackTabViewModel"/>).
-/// <para>
-/// How the upload result is captured: mcpacks.dev is a Laravel + Inertia.js (Vue) app. The
-/// upload form posts the zip to <c>/upload</c> with an <c>X-Inertia</c> XHR; the redirect lands on
-/// an Inertia page <c>{"component":"UploadSuccess","props":{"pack":{"download_url":…,
-/// "sha1_hash":…}}}</c> (the same <c>pack</c> shape is used by the <c>PackDetails</c> page).
-/// Three independent readers feed <see cref="ResourcePackTabViewModel.OnPackCaptured"/>, each
-/// validated in Core before use:
-/// </para>
-/// <list type="number">
-/// <item><c>WebResourceResponseReceived</c>: the JSON body of the <c>X-Inertia</c> response;</item>
-/// <item>an injected script polling <c>history.state.page</c> (Inertia keeps the current page
-/// object there) and the server-rendered <c>script[data-page]</c> JSON, posted back with
-/// <c>chrome.webview.postMessage</c>;</item>
-/// <item>a DOM fallback in the same script: a 40-hex <c>&lt;code&gt;</c> next to a
-/// <c>…/download</c> link, in case the site changes its data layer.</item>
-/// </list>
-/// </summary>
 public partial class ResourcePackTab : UserControl
 {
     private const string McPacksHost = "mcpacks.dev";
 
-    /// <summary>Runs in every mcpacks.dev document; reports the shown pack (if any) once per change.</summary>
     private const string CaptureScript = """
         (() => {
           if (window.__mpspPacks) return; window.__mpspPacks = true;
@@ -154,7 +133,6 @@ public partial class ResourcePackTab : UserControl
         }
     }
 
-    /// <summary>Reads the Inertia JSON response of the upload (and any page visit) directly.</summary>
     private async void Core_WebResourceResponseReceived(object? sender, CoreWebView2WebResourceResponseReceivedEventArgs e)
     {
         try
@@ -184,7 +162,6 @@ public partial class ResourcePackTab : UserControl
         }
     }
 
-    /// <summary>mcpacks.dev pages open in place; anything else (docs, socials) in the real browser.</summary>
     private void Core_NewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
     {
         try

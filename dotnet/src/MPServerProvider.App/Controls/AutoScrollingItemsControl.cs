@@ -4,23 +4,6 @@ using System.Windows.Threading;
 
 namespace MPServerProvider.App.Controls;
 
-/// <summary>
-/// Reusable horizontally auto-scrolling card row — built now so the Home page's news carousel
-/// (explicitly called out by the user as broken in the Rust/Slint port: "no sliding news
-/// carousel", just a static row) has a genuinely reusable, genuinely-auto-scrolling home from
-/// day one. A later wave drops real <c>NewsItem</c> cards into its <see cref="ItemsControl.ItemsSource"/>
-/// and styles them via <c>ItemTemplate</c> — the scrolling mechanism itself does not change.
-/// <para>
-/// Mechanism: hosts an <see cref="ItemsControl"/> (so arbitrary card templates work) inside a
-/// <see cref="ScrollViewer"/> with horizontal scrolling enabled but its scrollbar hidden, and
-/// nudges <see cref="ScrollViewer.ScrollToHorizontalOffset"/> forward on a
-/// <see cref="DispatcherTimer"/> tick. When the offset reaches the scrollable extent it wraps
-/// back to 0, giving a continuous, auto-sliding loop — the behavior the real original app has
-/// (per <c>docs/reference-screenshots/1.png</c>'s horizontal scrollbar on the news row) and the
-/// Rust/Slint port lacked. Pausing on pointer-over is included so a user can actually read a
-/// card before it slides away.
-/// </para>
-/// </summary>
 public sealed class AutoScrollingItemsControl : ItemsControl
 {
     public static readonly DependencyProperty ScrollSpeedProperty = DependencyProperty.Register(
@@ -29,16 +12,12 @@ public sealed class AutoScrollingItemsControl : ItemsControl
     public static readonly DependencyProperty IsAutoScrollEnabledProperty = DependencyProperty.Register(
         nameof(IsAutoScrollEnabled), typeof(bool), typeof(AutoScrollingItemsControl), new PropertyMetadata(true));
 
-    /// <summary>Pixels nudged per timer tick.</summary>
     public double ScrollSpeed
     {
         get => (double)GetValue(ScrollSpeedProperty);
         set => SetValue(ScrollSpeedProperty, value);
     }
 
-    /// <summary>Port of the Settings page's "Slide the Home news cards automatically" toggle
-    /// (<c>AppSettings.news_auto_scroll</c> per the reference-screenshots index) — bind this to
-    /// that setting so users can turn the slide off.</summary>
     public bool IsAutoScrollEnabled
     {
         get => (bool)GetValue(IsAutoScrollEnabledProperty);

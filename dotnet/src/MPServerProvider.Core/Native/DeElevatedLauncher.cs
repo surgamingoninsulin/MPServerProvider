@@ -6,34 +6,6 @@ using Microsoft.Win32.SafeHandles;
 
 namespace MPServerProvider.Core.Native;
 
-/// <summary>
-/// Near-literal restoration of <c>MPServerProvider.Core.Services.DeElevatedLauncher</c> /
-/// <c>DeElevatedProcess</c> (see <c>docs/decompile-report/report/NATIVE_BOUNDARIES.md</c> and
-/// <c>.../MPServerProvider.Core.Services/0x02000008_DeElevatedProcess.md</c>,
-/// <c>0x02000009_DeElevatedLauncher.md</c>).
-///
-/// <para>
-/// Why this exists: the app sometimes needs to run elevated (editing firewall rules for game
-/// server ports requires admin), but game-server child processes it launches must NOT inherit
-/// that elevation. The original worked around this with the well-known "steal the desktop
-/// shell's unelevated token" trick:
-/// </para>
-/// <list type="number">
-/// <item>Find Explorer's main window (<see cref="GetShellWindow"/>) and its PID
-/// (<see cref="GetWindowThreadProcessId"/>). Explorer always runs unelevated as the interactive
-/// user, even when this app is elevated.</item>
-/// <item>Open that process (<see cref="OpenProcess"/>) and grab its primary access token
-/// (<see cref="OpenProcessToken"/>).</item>
-/// <item>Duplicate that token as a new primary token (<see cref="DuplicateTokenEx"/>) usable for
-/// process creation.</item>
-/// <item>Use the duplicated token to spawn the child: try <see cref="CreateProcessWithTokenW"/>
-/// first, then fall back to <see cref="CreateProcessAsUser"/> on failure — the exact fallback
-/// order confirmed by the already-verified Rust port
-/// (<c>crates/mpsp-core/src/native/deelevated_launcher.rs</c>).</item>
-/// </list>
-/// All 8 P/Invoke signatures below are the real, well-documented Win32 APIs — this is a direct
-/// restoration, not a reinterpretation.
-/// </summary>
 [SupportedOSPlatform("windows")]
 public static class DeElevatedLauncher
 {
@@ -55,22 +27,13 @@ public static class DeElevatedLauncher
     private const short SW_HIDE = 0;
     private const uint HANDLE_FLAG_INHERIT = 0x00000001;
 
-    /// <summary>Whose token a launch runs with.</summary>
     public enum TokenSource
     {
-        /// <summary>The interactive desktop user's unelevated token (Explorer's). Production default.</summary>
         DesktopUser,
 
-        /// <summary>A duplicate of this process's own token. Only useful for exercising the
-        /// redirected-launch plumbing from a process that isn't elevated (tests/diagnostics).</summary>
         CurrentProcess,
     }
 
-    /// <summary>
-    /// A process started by <see cref="LaunchSuspendedRedirected"/>: still suspended until
-    /// <see cref="Resume"/> is called, with this process's ends of the child's stdin/stdout/stderr
-    /// pipes. The caller owns <see cref="Process"/> and the three pipe handles.
-    /// </summary>
     public sealed class RedirectedLaunch : IDisposable
     {
         private IntPtr _thread;
@@ -89,16 +52,12 @@ public static class DeElevatedLauncher
 
         public int ProcessId { get; }
 
-        /// <summary>Write end of the child's stdin.</summary>
         public SafeFileHandle StandardInput { get; }
 
-        /// <summary>Read end of the child's stdout.</summary>
         public SafeFileHandle StandardOutput { get; }
 
-        /// <summary>Read end of the child's stderr.</summary>
         public SafeFileHandle StandardError { get; }
 
-        /// <summary>Lets the suspended child run.</summary>
         public void Resume()
         {
             var thread = Interlocked.Exchange(ref _thread, IntPtr.Zero);
@@ -120,8 +79,6 @@ public static class DeElevatedLauncher
             }
         }
 
-        /// <summary>Closes the primary-thread handle if <see cref="Resume"/> never ran. Does not
-        /// touch the process or pipe handles (those belong to the caller).</summary>
         public void Dispose()
         {
             var thread = Interlocked.Exchange(ref _thread, IntPtr.Zero);
@@ -238,12 +195,6 @@ public static class DeElevatedLauncher
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool CloseHandle(IntPtr hObject);
 
-    /// <summary>
-    /// Finds the interactive desktop user's (Explorer's) primary token, duplicated into a new
-    /// primary token this process can use with <see cref="CreateProcessWithTokenW"/>/
-    /// <see cref="CreateProcessAsUser"/>. Port of <c>DeElevatedLauncher.OpenShellUserToken</c>.
-    /// Caller owns the returned handle and must <see cref="CloseHandle"/> it when done.
-    /// </summary>
     private static IntPtr OpenShellUserToken()
     {
         var shellHwnd = GetShellWindow();
@@ -297,15 +248,6 @@ public static class DeElevatedLauncher
         }
     }
 
-    /// <summary>
-    /// Launches <paramref name="commandLine"/> unelevated as the interactive desktop user, even
-    /// if this process is itself running elevated. Returns the new process's PID.
-    /// Port of <c>DeElevatedLauncher.Start</c>. Mirrors the original's exact fallback order:
-    /// try <see cref="CreateProcessWithTokenW"/> first, then <see cref="CreateProcessAsUser"/>.
-    /// </summary>
-    /// <param name="commandLine">Full command line to launch.</param>
-    /// <param name="workingDirectory">Optional working directory; <c>null</c> inherits this
-    /// process's current directory.</param>
     public static int Launch(string commandLine, string? workingDirectory = null)
     {
         var token = OpenShellUserToken();
@@ -366,7 +308,6 @@ public static class DeElevatedLauncher
         }
     }
 
-    /// <summary>A primary token duplicated from this process's own token.</summary>
     private static IntPtr OpenCurrentProcessToken()
     {
         if (!OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE | TOKEN_QUERY, out var own))
@@ -389,16 +330,6 @@ public static class DeElevatedLauncher
         }
     }
 
-    /// <summary>
-    /// Starts <paramref name="commandLine"/> SUSPENDED with the token from
-    /// <paramref name="tokenSource"/> (by default the unelevated desktop user's), with its stdin,
-    /// stdout and stderr connected to anonymous pipes (<c>STARTF_USESTDHANDLES</c>) and no visible
-    /// console window. The caller should put the process into a job, start reading the pipes,
-    /// register for exit, and only then call <see cref="RedirectedLaunch.Resume"/> — so nothing
-    /// the process does (even exiting immediately) can be missed. Same
-    /// <see cref="CreateProcessWithTokenW"/> → <see cref="CreateProcessAsUser"/> fallback order as
-    /// <see cref="Launch"/>. Throws <see cref="System.ComponentModel.Win32Exception"/> on failure.
-    /// </summary>
     public static RedirectedLaunch LaunchSuspendedRedirected(string commandLine, string? workingDirectory, TokenSource tokenSource = TokenSource.DesktopUser)
     {
         lock (ConsoleCtrl.LaunchGate)
@@ -472,8 +403,6 @@ public static class DeElevatedLauncher
         }
     }
 
-    /// <summary>Creates an anonymous pipe whose child-side end is inheritable and whose
-    /// parent-side end (<paramref name="parentEndIsRead"/>) is not.</summary>
     private static void CreateInheritablePipe(out SafeFileHandle read, out SafeFileHandle write, bool parentEndIsRead)
     {
         var attributes = new SECURITY_ATTRIBUTES
@@ -495,11 +424,6 @@ public static class DeElevatedLauncher
         }
     }
 
-    /// <summary>
-    /// Port of <c>DeElevatedLauncher.IsCurrentProcessElevated</c>: the original used
-    /// <see cref="WindowsIdentity.GetCurrent()"/> + <see cref="WindowsPrincipal"/>
-    /// (pure managed code, no P/Invoke), restored here identically.
-    /// </summary>
     public static bool IsCurrentProcessElevated()
     {
         using var identity = WindowsIdentity.GetCurrent();

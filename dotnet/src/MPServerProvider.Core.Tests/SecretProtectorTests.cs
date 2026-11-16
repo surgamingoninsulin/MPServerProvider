@@ -4,10 +4,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// DPAPI is user-scoped (tied to the Windows account running the test), so this is a valid
-/// self-test on this machine: protect then unprotect under the current user must round-trip.
-/// </summary>
 [SupportedOSPlatform("windows")]
 public class SecretProtectorTests
 {

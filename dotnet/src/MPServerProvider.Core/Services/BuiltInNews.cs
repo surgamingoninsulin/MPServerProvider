@@ -2,39 +2,8 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.BuiltInNews</c> (decompile token 0x02000007).
-/// <para>
-/// Ground truth: the decompiled <c>All()</c> body's string literals directly give
-/// <c>Tag="Added"</c>, <c>Title</c>, <c>Summary</c>, <c>Image</c> and <c>GameId</c> for eight
-/// entries (7 Days to Die, PixARK, Unturned, ATS, ETS2, BeamMP, FiveM, RedM) before the extracted
-/// evidence is truncated. Those eight are reproduced verbatim below.
-/// </para>
-/// <para>
-/// INFERRED: the <c>.cctor()</c>'s <c>Released</c> static field is a single shared
-/// <c>DateTimeOffset</c> literal (opcodes show <c>ldc.i4</c> immediates feeding one
-/// <c>DateTimeOffset..ctor</c> call, then every <c>NewsItem..ctor</c> call in <c>All()</c> reuses
-/// that same static field for its <c>Date</c>), but the actual year/month/day/offset immediates
-/// weren't captured in the extracted evidence. This port uses a single fixed placeholder
-/// timestamp (<c>2026-07-01T00:00:00Z</c>, chosen to land inside the same July 2026 window the
-/// real <c>data/settings.json</c>/<c>server.json</c> fixtures were captured in) shared by every
-/// entry, preserving the original's "every built-in news item has the same date" behavior even
-/// though the exact value is a guess — the same judgment call already made (and verified) by the
-/// Rust port.
-/// </para>
-/// <para>
-/// The decompile evidence is truncated before showing whether further entries exist for the
-/// other built-in games (minecraft-java, minecraft-bedrock, rust, valheim, gmod, openrct2);
-/// rather than fabricate "Added X Server" copy for those with zero string evidence, this port
-/// only includes the eight confirmed entries.
-/// </para>
-/// </summary>
 public static class BuiltInNews
 {
-    /// <summary>
-    /// Port of the <c>Released</c> static field. See the type docs for why this is a single
-    /// inferred placeholder rather than a decompiled exact value.
-    /// </summary>
     private static readonly DateTime Released = new(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private static readonly (string Title, string Summary, string Image, string GameId)[] Entries =
@@ -89,17 +58,58 @@ public static class BuiltInNews
         ),
     };
 
-    /// <summary>Port of <c>BuiltInNews.All() -&gt; List&lt;NewsItem&gt;</c>.</summary>
-    public static List<NewsItem> All() => Entries
-        .Select(e => new NewsItem
+    private static readonly DateTime AddedGamesReleased = new(2026, 11, 16, 0, 0, 0, DateTimeKind.Utc);
+
+    public static List<NewsItem> All()
+    {
+        var news = Entries
+            .Select(e => new NewsItem
+            {
+                Tag = "Added",
+                Title = e.Title,
+                Summary = e.Summary,
+                Date = Released,
+                Image = e.Image,
+                GameId = e.GameId,
+                Link = null,
+            })
+            .ToList();
+
+        // Same date for the whole batch; a slightly earlier time per card keeps the Library order.
+        var added = BuiltInGames.AddedGames();
+        for (var i = 0; i < added.Count; i++)
         {
-            Tag = "Added",
-            Title = e.Title,
-            Summary = e.Summary,
-            Date = Released,
-            Image = e.Image,
-            GameId = e.GameId,
-            Link = null,
-        })
-        .ToList();
+            var game = added[i];
+            news.Add(new NewsItem
+            {
+                Tag = "Added",
+                Title = $"Added {game.Name}",
+                Summary = Summarize(game),
+                Date = AddedGamesReleased.AddMinutes(-i),
+                Image = game.Artwork.Cover,
+                GameId = game.Id,
+                Link = null,
+            });
+        }
+
+        return news;
+    }
+
+    internal static string Summarize(GameDefinition game)
+    {
+        var about = game.Details?.About?.Split("\n\n", 2)[0].Trim();
+        if (string.IsNullOrWhiteSpace(about))
+        {
+            return game.Description;
+        }
+
+        var sentences = about.Split(". ");
+        var summary = sentences[0].TrimEnd('.') + ".";
+        for (var i = 1; i < sentences.Length && summary.Length + sentences[i].Length < 260; i++)
+        {
+            summary += " " + sentences[i].TrimEnd('.') + ".";
+        }
+
+        return summary;
+    }
 }

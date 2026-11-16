@@ -11,25 +11,10 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>Console text change pushed to the view: either replace everything or append.</summary>
 public sealed record ConsoleUpdate(bool Reset, string Text);
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.ServerDetailView</c> (decompile token 0x02000019, see
-/// <c>docs/decompile-report/report/MPServerProvider.App.dll/MPServerProvider.App.Views/
-/// 0x02000019_ServerDetailView.md</c>). Drives Start/Stop/Restart/Open Folder/Export (via
-/// <see cref="AppServices.Processes"/>/<see cref="AppServices.Servers"/>), the Console tab's
-/// live output + command box, the File Manager tab's listing + built-in text editor, the Mods
-/// tab's supported/unsupported empty state, the Resources tab's live stat tiles, and the
-/// Settings tab's edit/save/delete — matching the already-proven Rust reference's
-/// <c>ServerDetailController</c> (<c>crates/mpsp-app/src/pages/server_detail.rs</c>) call
-/// sequencing and polling cadence.
-/// </summary>
 public sealed partial class ServerDetailViewModel : ObservableObject
 {
-    /// <summary>Once this many lines were appended to the console view since the last full
-    /// reset, the next update replaces the text with the (capped) snapshot again so the
-    /// TextBox doesn't grow without bound.</summary>
     private const int ConsoleResetAfterAppendedLines = 3000;
 
     private readonly AppServices _services;
@@ -56,16 +41,12 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         LuckPerms = new LuckPermsTabViewModel(services, toasts);
     }
 
-    /// <summary>Resource Pack tab (Minecraft Java only), see <c>Views/ServerTabs/ResourcePackTab</c>.</summary>
     public ResourcePackTabViewModel ResourcePack { get; }
 
-    /// <summary>LuckPerms tab (shown when a LuckPerms jar is installed), see <c>Views/ServerTabs/LuckPermsTab</c>.</summary>
     public LuckPermsTabViewModel LuckPerms { get; }
 
     public ServerInstance? Current { get; private set; }
 
-    /// <summary>Raised when console text should be replaced or appended to (never re-joins the
-    /// whole buffer unless the content actually diverged).</summary>
     public event EventHandler<ConsoleUpdate>? ConsoleUpdated;
 
     [ObservableProperty]
@@ -93,8 +74,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
 
     private ServerModsTabViewModel? _modsTab;
 
-    /// <summary>The Mods tab's own view model (installed list + compatible library items).
-    /// Created on first use; it loads only while the tab is visible, never from the poll timer.</summary>
     public ServerModsTabViewModel ModsTab => _modsTab ??= new ServerModsTabViewModel(_services, _toasts, this);
 
     // -- Resources tab ----------------------------------------------------------------------
@@ -121,6 +100,41 @@ public sealed partial class ServerDetailViewModel : ObservableObject
 
     [ObservableProperty]
     private string _txAdminUrl = "http://127.0.0.1:40120/";
+
+    // -- Hytale Login tab --------------------------------------------------------------------
+
+    [ObservableProperty]
+    private bool _isHytale;
+
+    [ObservableProperty]
+    private string? _hytaleAuthLink;
+
+    [ObservableProperty]
+    private string? _hytaleAuthCode;
+
+    [ObservableProperty]
+    private bool _hytaleSignedIn;
+
+    [ObservableProperty]
+    private string _hytaleAuthStatus = string.Empty;
+
+    // -- Klei Token tab (Don't Starve Together) ---------------------------------------------
+
+    [ObservableProperty]
+    private bool _isDontStarve;
+
+    [ObservableProperty]
+    private string _kleiToken = string.Empty;
+
+    [ObservableProperty]
+    private string _kleiTokenStatus = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasKleiToken;
+
+    public string KleiLoginUrl => DstCluster.KleiLoginUrl;
+
+    public event EventHandler? KleiTabRequested;
 
     // -- Settings tab -----------------------------------------------------------------------
 
@@ -158,17 +172,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
     [ObservableProperty]
     private bool _canGoUp;
 
-    /// <summary>
-    /// Port of <c>MyServersPage.OnServerSelected</c> -&gt; <c>ServerDetailView.SetServer</c>.
-    /// <para>
-    /// <see cref="MyServersViewModel"/>'s 1.5s poll timer reloads every server from disk and
-    /// reassigns <c>SelectedServer</c> to a freshly-deserialized <see cref="ServerInstance"/>
-    /// instance representing the same logical server — which re-triggers this method on every
-    /// tick. Re-seeding the Settings tab's editable text fields (and resetting the File Manager's
-    /// current directory / editor) on every one of those ticks made editing impossible, so that
-    /// only happens when the selection is actually a different server.
-    /// </para>
-    /// </summary>
     public void Show(ServerInstance server)
     {
         // Show/Hide are driven by MyServersViewModel's poll timer; a modal "save changes?"
@@ -193,6 +196,7 @@ public sealed partial class ServerDetailViewModel : ObservableObject
             if (!isSameServer)
             {
                 SeedSettingsFields(server);
+                LoadKleiToken(server);
                 CurrentFilesDir = server.ServerRoot;
                 ResetConsole();
                 RefreshFiles();
@@ -240,8 +244,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         _timer.Stop();
     }
 
-    /// <summary>Called by the view when it becomes visible/hidden (tab or page switch) so the
-    /// 800 ms poll only runs while somebody can actually see it.</summary>
     public void SetViewVisible(bool visible)
     {
         _isViewVisible = visible;
@@ -264,7 +266,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>Surfaces an exception from a UI handler as an error toast.</summary>
     public void ReportError(string what, Exception ex)
     {
         try
@@ -300,7 +301,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>ServerListItemVm.Refresh()</c>'s detail-view sibling.</summary>
     public void RefreshLiveFields()
     {
         if (Current is not { } server)
@@ -324,6 +324,12 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         NameText = server.ServerName;
         GameText = $"{(game?.Name ?? server.ServerGame)}  •  {server.ServerVersion}  •  port {server.ServerPort}";
         IsFiveMOrRedM = server.ServerGame is "fivem" or "redm";
+        IsDontStarve = server.ServerGame == DstCluster.GameId;
+        IsHytale = server.ServerGame == HytaleAuth.GameId;
+        if (IsHytale)
+        {
+            RefreshHytaleAuth(server);
+        }
         SupportsMods = game?.Mods.Supported ?? false;
         ConnectionText = $"{server.ServerIp}:{server.ServerPort}";
 
@@ -341,7 +347,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
 
     // -- Console (incremental) --------------------------------------------------------------
 
-    /// <summary>Re-sends the whole console buffer (used when a view (re)attaches).</summary>
     public void ResyncConsole()
     {
         ResetConsole();
@@ -355,12 +360,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         ConsoleUpdated?.Invoke(this, new ConsoleUpdate(true, string.Empty));
     }
 
-    /// <summary>
-    /// Diffs the capped console snapshot against what the view already shows and pushes only
-    /// the new lines. The service keeps a rolling 2000-line buffer, so when old lines were
-    /// dropped from the front the overlap is located by offset; anything that can't be matched
-    /// (server restarted, buffer replaced) falls back to a full reset.
-    /// </summary>
     private void UpdateConsole(IReadOnlyList<string> snapshot)
     {
         var shown = _shownConsole;
@@ -399,8 +398,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         ConsoleUpdated?.Invoke(this, new ConsoleUpdate(false, sb.ToString()));
     }
 
-    /// <summary>Index in <paramref name="next"/> from which lines are new relative to
-    /// <paramref name="shown"/>, or -1 when they don't line up (full reset needed).</summary>
     internal static int FindAppendStart(IReadOnlyList<string> shown, IReadOnlyList<string> next)
     {
         if (shown.Count == 0)
@@ -437,9 +434,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         return -1;
     }
 
-    /// <summary>
-    /// Per-process CPU/RAM sampling of the running server's real OS <see cref="Process"/>.
-    /// </summary>
     private void RefreshResourceTiles()
     {
         if (Current is not { } server || !IsOnline)
@@ -503,16 +497,29 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         {
             return;
         }
+        if (server.ServerGame == DstCluster.GameId && DstCluster.ReadToken(_services.Servers.RootFor(server)) is null)
+        {
+            _toasts.Warning("Don't Starve Together needs a Klei cluster token first. Paste it in the Klei Token tab.");
+            KleiTabRequested?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        if (_services.Games.Find(server.ServerGame) is { } game
+            && !Views.Dialogs.CreativerseWorldDialog.EnsureWorld(System.Windows.Application.Current?.MainWindow, server, game, _services.Settings))
+        {
+            return;
+        }
+
         _startStatus = null;
         var announcedDownload = false;
         var progress = new Progress<InstallProgress>(p =>
         {
-            // Only slow preparation reports progress (a first-start Java download).
+            // Only slow preparation reports progress (a first-start Java or .NET download).
             _startStatus = p.Status;
             if (!announcedDownload)
             {
                 announcedDownload = true;
-                _toasts.Info($"Downloading Java for {server.ServerName} (first start only, ~50 MB)… Click Stop to cancel.");
+                _toasts.Info($"{server.ServerName}: {p.Status} (first start only). Click Stop to cancel.");
             }
             SafeRefreshLiveFields();
         });
@@ -537,8 +544,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         SafeMutated();
     }
 
-    /// <summary>What a still-preparing start is doing (e.g. "Downloading Temurin JRE 21"),
-    /// shown next to the "starting" status.</summary>
     private string? _startStatus;
 
     [RelayCommand]
@@ -612,10 +617,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Port of <c>ServerDetailView.OnExport</c>: writes this server's <c>server.json</c> payload
-    /// to a user-chosen location.
-    /// </summary>
     [RelayCommand]
     private void Export()
     {
@@ -666,6 +667,112 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         catch (Exception ex)
         {
             ReportError("Could not send the command", ex);
+        }
+    }
+
+    // -- Hytale Login tab -----------------------------------------------------------------
+
+    private void RefreshHytaleAuth(ServerInstance server)
+    {
+        var state = HytaleAuth.Scan(_services.Processes.ConsoleOf(server));
+        HytaleAuthLink = state.Link;
+        HytaleAuthCode = state.Code;
+        HytaleSignedIn = state.SignedIn;
+        HytaleAuthStatus = !IsOnline
+            ? "Start the server, then sign it in to your Hytale account here."
+            : state.SignedIn
+                ? "Signed in. Click \"Keep login\" once so the server stays signed in after a restart."
+                : state.Link is not null
+                    ? "Sign in on the page below with your Hytale account and enter the code."
+                    : "Click \"Sign in server\" to get a sign-in code.";
+    }
+
+    [RelayCommand]
+    private void HytaleSignIn()
+    {
+        if (Current is not { } server || !IsOnline)
+        {
+            _toasts.Warning("Start the Hytale server first.");
+            return;
+        }
+
+        _services.Processes.SendCommand(server, HytaleAuth.LoginCommand);
+        HytaleAuthStatus = "Asked the server for a sign-in code…";
+    }
+
+    [RelayCommand]
+    private void HytaleKeepLogin()
+    {
+        if (Current is not { } server || !IsOnline)
+        {
+            _toasts.Warning("Start the Hytale server first.");
+            return;
+        }
+
+        _services.Processes.SendCommand(server, HytaleAuth.PersistCommand);
+        _toasts.Success("The server will keep its Hytale login after restarts.");
+    }
+
+    [RelayCommand]
+    private void OpenHytaleAuthInBrowser()
+    {
+        if (!Controls.ArtworkImages.OpenInBrowser(HytaleAuthLink ?? HytaleAuth.DevicePage))
+        {
+            _toasts.Error("Couldn't open the Hytale sign-in page.");
+        }
+    }
+
+    // -- Klei Token tab -------------------------------------------------------------------
+
+    private void LoadKleiToken(ServerInstance server)
+    {
+        if (server.ServerGame != DstCluster.GameId)
+        {
+            KleiToken = string.Empty;
+            HasKleiToken = false;
+            KleiTokenStatus = string.Empty;
+            return;
+        }
+
+        var token = DstCluster.ReadToken(_services.Servers.RootFor(server));
+        KleiToken = token ?? string.Empty;
+        HasKleiToken = token is not null;
+        KleiTokenStatus = token is null
+            ? "No token saved yet. Sign in below, copy the token from Game Servers and paste it here."
+            : "Token saved. Restart the server after changing it.";
+    }
+
+    [RelayCommand]
+    private void SaveKleiToken()
+    {
+        if (Current is not { } server)
+        {
+            return;
+        }
+
+        try
+        {
+            DstCluster.SaveToken(_services.Servers.RootFor(server), KleiToken, server.ServerName, server.ServerPort);
+            KleiToken = KleiToken.Trim();
+            HasKleiToken = true;
+            KleiTokenStatus = IsOnline
+                ? "Token saved. Restart the server to use it."
+                : "Token saved. You can start the server now.";
+            _toasts.Success("Klei cluster token saved.");
+        }
+        catch (Exception ex)
+        {
+            KleiTokenStatus = ex.Message;
+            _toasts.Error($"Couldn't save the token: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenKleiInBrowser()
+    {
+        if (!Controls.ArtworkImages.OpenInBrowser(DstCluster.KleiLoginUrl))
+        {
+            _toasts.Error("Couldn't open the Klei account page.");
         }
     }
 
@@ -916,11 +1023,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Double-click / Open on a row: folders navigate, text files open in the built-in editor,
-    /// everything else is revealed in Explorer (never shell-executed: server folders contain
-    /// untrusted mod/plugin content and the app often runs elevated).
-    /// </summary>
     public void OpenEntry(FileRowViewModel entry)
     {
         if (Current is null)
@@ -1006,8 +1108,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>Opens Explorer with <paramref name="fullPath"/> selected (de-elevated when
-    /// possible); nothing in the server folder is executed.</summary>
     private static void RevealInExplorer(string fullPath)
     {
         var args = $"/select,\"{fullPath}\"";
@@ -1089,11 +1189,8 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>Raised when another tab asks to show a folder in the File Manager (the view
-    /// switches to that tab).</summary>
     public event EventHandler? FilesTabRequested;
 
-    /// <summary>Opens <paramref name="folder"/> (inside this server) in the File Manager tab.</summary>
     public void ShowInFiles(string folder)
     {
         if (Current is null || !PathGuard.TryResolveInsideRoot(ServerRoot, folder, out var full, allowRootItself: true)
@@ -1111,11 +1208,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCopyingFiles;
 
-    /// <summary>
-    /// Copies files/folders dropped from Explorer into the File Manager's current folder. Name
-    /// clashes are asked about once (replace them, or skip them and copy the rest); a folder is
-    /// never copied into itself; links/junctions inside dropped folders are not followed.
-    /// </summary>
     public async Task CopyDroppedFilesAsync(IReadOnlyList<string> paths)
     {
         if (Current is null || paths.Count == 0 || IsCopyingFiles)
@@ -1250,14 +1342,10 @@ public sealed partial class ServerDetailViewModel : ObservableObject
 
     private TextFileDocument? _editorDocument;
 
-    /// <summary>Full path of the file open in the editor, or <c>null</c>.</summary>
     public string? EditorFilePath { get; private set; }
 
-    /// <summary>Set by the view: returns the editor's current text (read only on save, so a
-    /// multi-MB document isn't copied on every keystroke).</summary>
     public Func<string>? EditorTextProvider { get; set; }
 
-    /// <summary>Raised with the text (CRLF line breaks) the view should load into the editor.</summary>
     public event EventHandler<string>? EditorTextLoaded;
 
     [ObservableProperty]
@@ -1275,7 +1363,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
     [ObservableProperty]
     private string _editorInfoText = string.Empty;
 
-    /// <summary>Called by the view on every user edit.</summary>
     public void MarkEditorDirty()
     {
         if (IsEditorOpen && !IsEditorDirty)
@@ -1387,8 +1474,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         }
     }
 
-    /// <summary>Asks before throwing away unsaved edits. Returns <c>true</c> when it's OK to
-    /// continue (nothing unsaved, or the user chose to discard).</summary>
     public bool ConfirmDiscardEditorChanges(string action)
     {
         if (!IsEditorOpen || !IsEditorDirty)
@@ -1404,8 +1489,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
             cancelText: "Keep Editing");
     }
 
-    /// <summary>When something forces the editor closed (server switch, app exit), offer to
-    /// save instead of silently losing edits.</summary>
     public void PromptSaveEditorBeforeLeaving(string action)
     {
         if (!IsEditorOpen || !IsEditorDirty)

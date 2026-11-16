@@ -2,32 +2,20 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.ModLibraryService</c> (decompile token
-/// 0x0200000f). Manages imported/downloaded mods under <c>{DataRoot}/mods/&lt;gameId&gt;/...</c>
-/// and assigns/removes them into/from a server's own mods folder.
-/// </summary>
 public class ModLibraryService
 {
-    /// <summary>
-    /// Game ids whose mod folder lives under a fixed <c>txData\resources</c> subpath regardless
-    /// of the manifest's own <c>mods.folder</c> (Cfx.re's txAdmin layout).
-    /// </summary>
     private static readonly string[] TxAdminGames = { "fivem", "redm" };
 
     private readonly AppPaths _paths;
     private readonly ServerRepository _servers;
     private readonly GameLibraryService _games;
 
-    /// <summary>Parsed jar metadata keyed by full path, valid while size + last-write time match.</summary>
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (long Size, DateTime Modified, MinecraftModInfo Info)> _metadataCache
         = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Recursive folder sizes keyed by full path, valid while the folder's last-write time matches.</summary>
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Modified, long Size)> _dirSizeCache
         = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Port of <c>.ctor(AppPaths, ServerRepository, GameLibraryService)</c>.</summary>
     public ModLibraryService(AppPaths paths, ServerRepository servers, GameLibraryService games)
     {
         _paths = paths;
@@ -35,21 +23,6 @@ public class ModLibraryService
         _games = games;
     }
 
-    /// <summary>
-    /// Port of <c>Scan(string? gameId) -&gt; List&lt;ModItem&gt;</c>: every file/folder under
-    /// <c>{ModsDir}/&lt;gameId&gt;/</c>, for every game-id subfolder when <paramref name="workshop"/>
-    /// is present, plus (when the folder's game uses <c>steamcmd</c> with <c>workshop_ids</c>) any
-    /// cached Steam Workshop items for that game's <c>AppId</c> not already represented on disk.
-    /// </summary>
-    /// <remarks>
-    /// Performance: this used to stat every entry several times, recursively size every folder
-    /// on every call, and probe every server's mods folder once per (mod × server) pair — about
-    /// 650–880 ms for ~460 entries / 6 servers, and the Home page runs it on the UI thread. Now
-    /// entries come from one directory enumeration (size and times arrive with the listing),
-    /// each server's mods folder is listed once per scan, folder sizes and jar metadata are
-    /// cached by path + size/last-write time, and jar metadata is only read when
-    /// <paramref name="readMetadata"/> is set (the Mods pages, off the UI thread).
-    /// </remarks>
     public List<ModItem> Scan(WorkshopService? workshop = null, bool readMetadata = false)
     {
         var modsDir = _paths.ModsDir;
@@ -149,17 +122,6 @@ public class ModLibraryService
         return result;
     }
 
-    /// <summary>
-    /// Port of <c>ImportFromFolder(string folder, string gameId) -&gt; int</c>: copies every
-    /// file/subfolder under <paramref name="folder"/> matching the game's <c>mods.extensions</c>
-    /// (a folder is imported wholesale, regardless of its contents' extensions) into
-    /// <c>{ModsDir}/&lt;gameId&gt;/</c>, returning the count imported.
-    /// </summary>
-    /// <remarks>
-    /// Minecraft Java only loads jar files, so for it sub-folders are skipped (they used to be
-    /// copied wholesale, which is how other games' mod folders ended up in the Minecraft library
-    /// and then on Minecraft servers).
-    /// </remarks>
     public int ImportFromFolder(string folder, string gameId)
     {
         var game = _games.Find(gameId);
@@ -207,12 +169,6 @@ public class ModLibraryService
         return count;
     }
 
-    /// <summary>
-    /// Port of <c>AssignToServer(ModItem, ServerInstance)</c>, plus a compatibility gate: an
-    /// item <see cref="CheckCompatibility"/> rejects (wrong game, non-jar on Minecraft, wrong
-    /// loader/variant, clear Minecraft version mismatch) is refused here with
-    /// <see cref="ModIncompatibleException"/>, so no UI path can install it.
-    /// </summary>
     public void AssignToServer(ModItem item, ServerInstance server)
     {
         var destDir = ServerModsDir(server)
@@ -248,12 +204,6 @@ public class ModLibraryService
         }
     }
 
-    /// <summary>
-    /// Installs files dropped onto a server's Mods tab straight into its mods/plugins folder,
-    /// through the same compatibility gate as <see cref="AssignToServer"/>. A dropped folder is
-    /// expanded to the jars directly inside it on Minecraft (which only loads jars) and copied as
-    /// one item for other games (FiveM resources, BepInEx plugin folders, …).
-    /// </summary>
     public ModDropResult InstallFilesToServer(IEnumerable<string> paths, ServerInstance server)
     {
         var destDir = ServerModsDir(server)
@@ -303,11 +253,6 @@ public class ModLibraryService
         return result;
     }
 
-    /// <summary>
-    /// Copies files dropped onto the Mod Library page into the library for
-    /// <paramref name="gameId"/>, applying the same filters as <see cref="ImportFromFolder"/>
-    /// (Minecraft: jars only; others: the game's mod extensions, folders copied whole).
-    /// </summary>
     public ModDropResult ImportFilesToLibrary(IEnumerable<string> paths, string gameId)
     {
         var result = new ModDropResult();
@@ -365,8 +310,6 @@ public class ModLibraryService
         return result;
     }
 
-    /// <summary>Dropped paths → the items to install: Minecraft folders become the jars directly
-    /// inside them; anything that no longer exists is reported as skipped.</summary>
     private static List<string> ExpandDropped(IEnumerable<string> paths, string gameId, ModDropResult result)
     {
         var items = new List<string>();
@@ -403,8 +346,6 @@ public class ModLibraryService
         return items;
     }
 
-    /// <summary>Another jar in <paramref name="dir"/> declaring the same mod/plugin id or name as
-    /// the just-added <paramref name="fileName"/> (typically an older version left behind).</summary>
     private string? FindOtherCopy(string dir, string fileName, MinecraftModInfo added)
     {
         var key = added.Id ?? added.Name;
@@ -435,7 +376,6 @@ public class ModLibraryService
         Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
         StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Port of <c>RemoveFromServer(ModItem, ServerInstance)</c>.</summary>
     public void RemoveFromServer(ModItem item, ServerInstance server)
     {
         var destDir = ServerModsDir(server);
@@ -460,7 +400,6 @@ public class ModLibraryService
         }
     }
 
-    /// <summary>Port of <c>DeleteFromLibrary(ModItem)</c>.</summary>
     public void DeleteFromLibrary(ModItem item)
     {
         if (string.IsNullOrEmpty(item.LibraryPath))
@@ -484,14 +423,12 @@ public class ModLibraryService
         }
     }
 
-    /// <summary>Port of <c>ServerModsDir(ServerInstance) -&gt; string?</c>.</summary>
     public string? ServerModsDir(ServerInstance server)
     {
         if (TxAdminGames.Contains(server.ServerGame))
         {
             var root = _servers.RootFor(server);
-            // Port of the `txData`/`resources` lookup: txAdmin stores resources under
-            // `{root}\txData\<profile>\resources`; the decompiled call graph enumerates
+            // txAdmin stores resources under `{root}\txData\<profile>\resources`; enumerate
             // `txData`'s subdirectories to find the active profile rather than hardcoding its
             // name.
             var txData = Path.Combine(root, "txData");
@@ -518,10 +455,6 @@ public class ModLibraryService
         return Path.Combine(_servers.RootFor(server), folder);
     }
 
-    /// <summary>
-    /// <c>true</c> for a plain relative folder path (e.g. <c>mods</c>, <c>BepInEx/plugins</c>):
-    /// not rooted, no drive/UNC prefix, no <c>.</c>/<c>..</c> segments, no invalid characters.
-    /// </summary>
     internal static bool IsSafeRelativeFolder(string folder)
     {
         if (Path.IsPathRooted(folder) || folder.Contains(':') || folder.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
@@ -533,10 +466,6 @@ public class ModLibraryService
         return segments.All(s => s.Length > 0 && s != "." && s != "..");
     }
 
-    /// <summary>
-    /// Port of <c>FindAssignments(string gameId, string fileName) -&gt; List&lt;string&gt;</c>:
-    /// every server (of the matching game) whose mods dir already contains <paramref name="fileName"/>.
-    /// </summary>
     internal List<string> FindAssignments(string gameId, string fileName)
         => _servers.Servers
             .Where(s => s.ServerGame == gameId)
@@ -545,11 +474,6 @@ public class ModLibraryService
             .Select(s => s.ServerName)
             .ToList();
 
-    /// <summary>
-    /// Compatibility of a library item with a server (see <see cref="ModCompatibility.Check"/>).
-    /// Reads the item's jar metadata from disk (cached) when the item doesn't carry it, so the
-    /// verdict never depends on how the caller built the <see cref="ModItem"/>.
-    /// </summary>
     public ModCompatibilityResult CheckCompatibility(ModItem item, ServerInstance server)
     {
         var probe = item;
@@ -571,7 +495,6 @@ public class ModLibraryService
         return ModCompatibility.Check(probe, server, _games.Find(server.ServerGame));
     }
 
-    /// <summary>Jar metadata for <paramref name="path"/>, cached by path + size + last-write time.</summary>
     public MinecraftModInfo GetMinecraftInfo(string path)
     {
         try
@@ -600,10 +523,6 @@ public class ModLibraryService
         return parsed;
     }
 
-    /// <summary>
-    /// What is currently installed in <paramref name="server"/>'s mods/plugins folder, with jar
-    /// metadata (for the per-server Mods tab). Empty when the server has no mods folder yet.
-    /// </summary>
     public List<ModItem> ListServerMods(ServerInstance server)
     {
         var result = new List<ModItem>();
@@ -640,7 +559,6 @@ public class ModLibraryService
         return result;
     }
 
-    /// <summary>Server name → names present in its mods folder (one listing per server).</summary>
     private Dictionary<string, HashSet<string>> ServerEntrySets(IEnumerable<ServerInstance> servers)
     {
         var result = new Dictionary<string, HashSet<string>>();
@@ -664,13 +582,6 @@ public class ModLibraryService
         return result;
     }
 
-    /// <summary>
-    /// Recursive folder size, cached by path + the folder's own last-write time. A folder's
-    /// timestamp only moves when its direct children change, so an in-place edit deep inside a
-    /// library folder can show a stale size until the folder itself changes — acceptable for a
-    /// display-only figure, and it keeps big folder mods/Workshop items from being re-walked on
-    /// every refresh.
-    /// </summary>
     private long CachedDirSize(DirectoryInfo dir)
     {
         var key = dir.FullName;
@@ -697,10 +608,6 @@ public class ModLibraryService
         return size;
     }
 
-    /// <summary>
-    /// Port of the <c>ensure &lt;resource&gt;</c> line management in
-    /// <c>AssignToServer</c>/<c>RemoveFromServer</c> for <c>fivem</c>/<c>redm</c>'s <c>server.cfg</c>.
-    /// </summary>
     private static void AddEnsureLine(string resourcesDir, string resourceName)
     {
         var serverCfg = FindServerCfg(resourcesDir);
@@ -733,10 +640,6 @@ public class ModLibraryService
         File.WriteAllLines(serverCfg, lines);
     }
 
-    /// <summary>
-    /// <c>server.cfg</c> lives one level up from <c>resources/</c> in a txAdmin profile
-    /// (<c>txData/&lt;profile&gt;/server.cfg</c>); search upward for it.
-    /// </summary>
     private static string? FindServerCfg(string resourcesDir)
     {
         var profileDir = Path.GetDirectoryName(resourcesDir);
@@ -749,7 +652,6 @@ public class ModLibraryService
         return File.Exists(direct) ? direct : null;
     }
 
-    /// <summary>Port of <c>CopyDirectory(string, string)</c>.</summary>
     private static void CopyDirectory(string src, string dest)
     {
         Directory.CreateDirectory(dest);
@@ -791,27 +693,19 @@ public class ModLibraryService
     }
 }
 
-/// <summary>Outcome of a drag-and-drop install/import (see
-/// <see cref="ModLibraryService.InstallFilesToServer"/>).</summary>
 public sealed class ModDropResult
 {
     public List<string> Added { get; } = new();
 
-    /// <summary>Items that overwrote one with the same name.</summary>
     public List<string> Replaced { get; } = new();
 
     public List<(string Name, string Reason)> Skipped { get; } = new();
 
-    /// <summary>A jar just added → another jar of the same mod/plugin already in the folder.</summary>
     public List<(string Added, string Other)> Duplicates { get; } = new();
 
     public int Count => Added.Count + Replaced.Count;
 }
 
-/// <summary>
-/// Thrown by <see cref="ModLibraryService.AssignToServer"/> when the item isn't compatible with
-/// the target server; the message carries the human-readable reason.
-/// </summary>
 public sealed class ModIncompatibleException : InvalidOperationException
 {
     public ModIncompatibleException(string message) : base(message)

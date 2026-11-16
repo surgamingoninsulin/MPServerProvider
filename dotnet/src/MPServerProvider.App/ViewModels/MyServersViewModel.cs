@@ -11,27 +11,8 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.MyServersPage</c>'s own code-behind logic (decompile
-/// token 0x02000016, see <c>docs/decompile-report/report/MPServerProvider.App.dll/
-/// MPServerProvider.App.Views/0x02000016_MyServersPage.md</c>): loads <see cref="AppServices"/>'s
-/// <c>Servers</c> repository, renders the searchable left-hand list, and drives selection into
-/// the embedded <see cref="ServerDetailViewModel"/>. Mirrors the already-proven Rust reference's
-/// <c>MyServersController</c> (<c>crates/mpsp-app/src/pages/my_servers.rs</c>): a steady poll
-/// (rather than a push subscription) keeps the list's status dots/active count fresh while the
-/// page is on screen.
-/// <para>
-/// HARDENING: the poll no longer re-reads every <c>server.json</c> and rebuilds the list every
-/// 1.5 s. Each tick only reads in-memory process state and diffs the rows in place (by server
-/// name); the disk is re-scanned only every <see cref="DiskReloadEveryTicks"/> ticks and after
-/// the app's own changes. The old <c>Clear()</c>+rebuild made the ListBox push a <c>null</c>
-/// selection on every tick, which re-seeded the Settings tab and reset the File Manager — the
-/// "my settings get reverted" bug. Selection changes caused by a refresh are now ignored.
-/// </para>
-/// </summary>
 public sealed partial class MyServersViewModel : ObservableObject, IDisposable
 {
-    /// <summary>Re-scan the servers folders from disk once every N poll ticks (~30 s).</summary>
     private const int DiskReloadEveryTicks = 20;
 
     private readonly AppServices _services;
@@ -66,7 +47,6 @@ public sealed partial class MyServersViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _hasSelection;
 
-    /// <summary>Drives the empty-state ("No Servers Yet") vs. the sidebar list's visibility.</summary>
     [ObservableProperty]
     private bool _hasAnyServers;
 
@@ -93,10 +73,6 @@ public sealed partial class MyServersViewModel : ObservableObject, IDisposable
 
     partial void OnSearchTextChanged(string value) => SafeRun(RefreshRows);
 
-    /// <summary>
-    /// Starts polling (call when the page becomes visible, e.g. from
-    /// <c>INavigationAware.OnNavigatedTo</c>). Idempotent; does an immediate disk scan.
-    /// </summary>
     public void Start()
     {
         SafeRun(() =>
@@ -112,7 +88,6 @@ public sealed partial class MyServersViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Stops polling (call from <c>INavigationAware.OnNavigatedFrom</c>).</summary>
     public void Stop()
     {
         _running = false;
@@ -133,11 +108,6 @@ public sealed partial class MyServersViewModel : ObservableObject, IDisposable
         });
     }
 
-    /// <summary>
-    /// Runs a refresh step, turning any failure (e.g. the servers drive was removed) into one
-    /// toast per distinct message instead of an exception escaping a timer tick (which used to
-    /// stack a modal crash dialog per tick).
-    /// </summary>
     private void SafeRun(Action action)
     {
         try
@@ -157,14 +127,6 @@ public sealed partial class MyServersViewModel : ObservableObject, IDisposable
 
     private void ReloadFromDisk() => _services.Servers.Reload();
 
-    /// <summary>
-    /// Port of <c>MyServersPage.ReloadList()</c>/<c>RefreshStates()</c>, as an in-place diff:
-    /// unchanged rows are kept, changed rows are replaced at their index, removed/added rows are
-    /// removed/inserted, and the selection is restored without ever notifying the detail panel
-    /// of a transient <c>null</c>.
-    /// </summary>
-    /// <summary>Selects the server named <paramref name="serverName"/> (e.g. when another page
-    /// links to it), clearing a search filter that would hide it.</summary>
     public void Select(string serverName)
     {
         if (!Servers.Any(r => r.Server.ServerName == serverName) && SearchText.Length > 0)
@@ -294,17 +256,6 @@ public sealed partial class MyServersViewModel : ObservableObject, IDisposable
         dialog.ShowDialog();
     }
 
-    /// <summary>
-    /// Port of <c>MyServersPage.OnImportServerConfig</c>: opens a native file picker for a
-    /// previously-exported <c>server.json</c> and imports it as a new server instance, matching
-    /// the proven Rust reference's <c>rfd</c> file-dialog based import.
-    /// <para>
-    /// SECURITY: an imported file is untrusted. Its paths (<c>server_root</c>, <c>mods_folder</c>,
-    /// <c>server_file</c>) are never used — the import gets a fresh folder of its own, the mods
-    /// folder comes from the game definition, and stats are reset. A custom start command is
-    /// shown to the user for confirmation before it is kept.
-    /// </para>
-    /// </summary>
     [RelayCommand]
     private void ImportServerConfig()
     {

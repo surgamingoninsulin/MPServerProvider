@@ -1,14 +1,5 @@
 namespace MPServerProvider.Core.Models;
 
-/// <summary>
-/// A persisted, installed server instance (<c>server.json</c> in a server's folder).
-/// Ported from <c>MPServerProvider.Core.Models.ServerInstance</c> (decompile token 0x02000037).
-/// This type extends plain <c>System.Object</c> in the decompile (no
-/// <c>CommunityToolkit.Mvvm.ObservableObject</c> base, no observable-property evidence anywhere
-/// in <c>MPServerProvider.Core.Models</c>), so it is a plain DTO rather than a bindable
-/// view-model-adjacent type — any live-updating binding happens in a ViewModel that wraps this,
-/// not here.
-/// </summary>
 public class ServerInstance
 {
     public int ManifestVersion { get; set; } = 1;
@@ -53,16 +44,8 @@ public class ServerInstance
 
     public ServerStats Stats { get; set; } = new();
 
-    /// <summary>
-    /// Not present in the on-disk <c>server.json</c>; set by the loader to the path the
-    /// instance was read from.
-    /// </summary>
     public string? SourceFile { get; set; }
 
-    /// <summary>
-    /// Ported from the decompiled <c>ServerInstance.ResolveRoot(string)</c> helper: resolves a
-    /// (possibly relative/templated) path against this server's root directory.
-    /// </summary>
     public string ResolveRoot(string path)
     {
         if (string.IsNullOrEmpty(path))

@@ -4,14 +4,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Round-trip tests for the models that have no real on-disk ground-truth sample
-/// (<see cref="ModItem"/>, <see cref="NewsItem"/>, <see cref="InstallProgress"/>,
-/// <see cref="InstallRequest"/>, <see cref="InstallResult"/>, <see cref="ServerExportData"/>,
-/// <see cref="ServerInstance"/>) plus the <see cref="ServerState"/> enum's snake_case string
-/// serialization, exercised with representative synthetic data via the app's real
-/// <see cref="Json.Options"/> policy.
-/// </summary>
 public class ModelsRoundTripTests
 {
     [Fact]
@@ -222,13 +214,11 @@ public class ModelsRoundTripTests
     }
 
     [Theory]
-    // NB: the decompiled `Json..cctor` constructs `JsonStringEnumConverter()` with no naming
-    // policy argument (parameterless `newobj`, confirmed by the IL argument-count accounting in
-    // the decompile report), and on net8.0 `JsonStringEnumConverter`'s global naming policy
+    // NB: `Json` constructs `JsonStringEnumConverter()` with no naming policy argument, and on
+    // net8.0 `JsonStringEnumConverter`'s global naming policy
     // fallback does not extend to enum *member* names unless a naming policy is passed to the
     // converter explicitly. So enum values round-trip using their literal C# member names
-    // (PascalCase), not the snake_case the earlier Rust port speculated for this never-persisted
-    // enum (it has no on-disk JSON sample to verify against). Confirmed empirically here.
+    // (PascalCase), not snake_case.
     [InlineData(ServerState.Stopped, "\"Stopped\"")]
     [InlineData(ServerState.Starting, "\"Starting\"")]
     [InlineData(ServerState.Running, "\"Running\"")]

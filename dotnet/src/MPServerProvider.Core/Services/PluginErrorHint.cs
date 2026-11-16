@@ -4,14 +4,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Explains Java linkage errors (<c>AbstractMethodError</c>, <c>NoSuchMethodError</c>, …) in a
-/// Minecraft server's console. They mean a plugin/mod was compiled against a different version
-/// of the server or of a plugin it depends on — e.g. ConstructionWand 0.9.0 on Rebar 0.45 kicks
-/// every joining player with <c>EncoderException: AbstractMethodError: …ConstructionWandPlugin
-/// .getDefaultLanguage()</c>. The class named in the error is looked up in the server's jars so
-/// the hint names the plugin file to update or remove.
-/// </summary>
 public static partial class PluginErrorHint
 {
     // Package prefixes of the JDK, the server itself and common shaded libraries: never "the
@@ -30,10 +22,6 @@ public static partial class PluginErrorHint
     [GeneratedRegex(@"[A-Za-z_$][\w$]*(?:[/.][A-Za-z_$][\w$]*){2,}")]
     private static partial Regex ClassTokenRegex();
 
-    /// <summary>
-    /// A one-line <c>[MP Server Provider]</c> hint for <paramref name="line"/>, or <c>null</c>.
-    /// <paramref name="hinted"/> (per server run) makes sure each class is explained once.
-    /// </summary>
     public static string? ForLine(string line, ServerInstance server, HashSet<string> hinted)
     {
         if (line.StartsWith("[MP Server Provider]", StringComparison.Ordinal)
@@ -88,8 +76,6 @@ public static partial class PluginErrorHint
         return null;
     }
 
-    /// <summary>The jar in <paramref name="dir"/> holding the class <paramref name="classPath"/>
-    /// (<c>a/b/C</c>, possibly followed by a member name, which is trimmed off).</summary>
     internal static string? FindJarContaining(string dir, string classPath)
     {
         var candidates = new List<string>();

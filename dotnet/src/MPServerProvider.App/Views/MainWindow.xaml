@@ -8,7 +8,7 @@
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="{StaticResource RootBackgroundBrush}">
-    <!-- Port of views_mainwindow.xaml: borderless custom-chrome shell. WindowChrome gives us the
+    <!-- Borderless custom-chrome shell. WindowChrome gives us the
          real resize/snap behavior of a normal window while WindowStyle=None removes the native
          titlebar, so the top bar below supplies its own drag region (CaptionHeight) plus custom
          minimize/maximize/close buttons (⤢ / □ / ✕ in the reference screenshots' top-right). -->

@@ -2,7 +2,6 @@ using System.Text;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>Why a file can or can't be opened in the built-in text editor.</summary>
 public enum TextEditability
 {
     Editable,
@@ -12,18 +11,10 @@ public enum TextEditability
     TooLarge,
 }
 
-/// <summary>
-/// Decides whether a server file is safe to show in the built-in text editor: a known-binary
-/// extension blocklist (archives, executables, images, game data packs, databases, ...) plus a
-/// content sniff of the first <see cref="SniffBytes"/> bytes for NUL bytes, and a size cap so a
-/// multi-hundred-MB log can't freeze the UI.
-/// </summary>
 public static class TextFileDetector
 {
-    /// <summary>Default maximum size for the built-in editor (5 MB).</summary>
     public const long DefaultMaxEditableBytes = 5L * 1024 * 1024;
 
-    /// <summary>How many leading bytes are sniffed for NUL bytes.</summary>
     public const int SniffBytes = 8192;
 
     private static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -39,17 +30,12 @@ public static class TextFileDetector
         ".db", ".sqlite", ".sqlite3", ".db3", ".mdb", ".dat", ".dat_old", ".mca", ".mcr", ".nbt", ".ldb", ".sav", ".pdf", ".iso", ".img", ".vdi", ".vmdk",
     };
 
-    /// <summary>True when the extension is on the known-binary blocklist.</summary>
     public static bool IsKnownBinaryExtension(string path)
     {
         var ext = Path.GetExtension(path);
         return !string.IsNullOrEmpty(ext) && BinaryExtensions.Contains(ext);
     }
 
-    /// <summary>
-    /// True when <paramref name="sample"/> looks like binary data: it contains a NUL byte and is
-    /// not UTF-16/UTF-32 text announced by a byte-order mark (which legitimately contains NULs).
-    /// </summary>
     public static bool LooksBinary(ReadOnlySpan<byte> sample)
     {
         if (HasUtf16Or32Bom(sample))
@@ -59,7 +45,6 @@ public static class TextFileDetector
         return sample.IndexOf((byte)0) >= 0;
     }
 
-    /// <summary>Classifies a file on disk for the built-in editor.</summary>
     public static TextEditability Classify(string path, long maxBytes = DefaultMaxEditableBytes)
     {
         if (!File.Exists(path))
@@ -97,12 +82,6 @@ public static class TextFileDetector
         (bytes.Length >= 4 && bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0xFE && bytes[3] == 0xFF);
 }
 
-/// <summary>
-/// A text file loaded for editing, remembering how it was encoded on disk (encoding, whether it
-/// had a byte-order mark, and its dominant line ending) so saving writes it back the same way.
-/// <see cref="Text"/> always uses <c>\n</c> line endings internally; <see cref="Save"/>
-/// converts every line break back to <see cref="LineEnding"/>.
-/// </summary>
 public sealed class TextFileDocument
 {
     private TextFileDocument(string text, Encoding encoding, bool hasBom, string lineEnding)
@@ -113,17 +92,14 @@ public sealed class TextFileDocument
         LineEnding = lineEnding;
     }
 
-    /// <summary>Content with every line break normalized to <c>\n</c>.</summary>
     public string Text { get; }
 
     public Encoding Encoding { get; }
 
     public bool HasBom { get; }
 
-    /// <summary><c>"\r\n"</c>, <c>"\n"</c> or <c>"\r"</c>.</summary>
     public string LineEnding { get; }
 
-    /// <summary>Short human label, e.g. "UTF-8 BOM · CRLF".</summary>
     public string Description
     {
         get
@@ -141,7 +117,6 @@ public sealed class TextFileDocument
         }
     }
 
-    /// <summary>Decodes raw file bytes, detecting BOM / encoding / line endings.</summary>
     public static TextFileDocument Parse(byte[] bytes)
     {
         Encoding encoding;
@@ -191,13 +166,8 @@ public sealed class TextFileDocument
         return new TextFileDocument(NormalizeLineEndings(raw, "\n"), encoding, hasBom, lineEnding);
     }
 
-    /// <summary>Reads and decodes a file.</summary>
     public static TextFileDocument Load(string path) => Parse(File.ReadAllBytes(path));
 
-    /// <summary>
-    /// Encodes <paramref name="text"/> (any mix of line breaks) using this document's encoding,
-    /// BOM and line ending.
-    /// </summary>
     public byte[] Encode(string text)
     {
         var normalized = NormalizeLineEndings(text, LineEnding);
@@ -213,10 +183,6 @@ public sealed class TextFileDocument
         return result;
     }
 
-    /// <summary>
-    /// Writes <paramref name="text"/> to <paramref name="path"/> via a temp file + replace so a
-    /// failed write never leaves a half-written config behind.
-    /// </summary>
     public void Save(string path, string text)
     {
         var bytes = Encode(text);
@@ -233,7 +199,6 @@ public sealed class TextFileDocument
         }
     }
 
-    /// <summary>Returns the dominant line ending in <paramref name="text"/> (CRLF on a tie / none).</summary>
     public static string DetectLineEnding(string text)
     {
         int crlf = 0, lf = 0, cr = 0;
@@ -273,7 +238,6 @@ public sealed class TextFileDocument
         return "\r\n";
     }
 
-    /// <summary>Converts every CRLF / CR / LF in <paramref name="text"/> to <paramref name="lineEnding"/>.</summary>
     public static string NormalizeLineEndings(string text, string lineEnding)
     {
         if (text.Length == 0)

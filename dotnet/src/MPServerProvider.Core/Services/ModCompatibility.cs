@@ -2,8 +2,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>Outcome of <see cref="ModCompatibility.Check"/>: compatible, or not with a short reason
-/// fit for a menu item / tooltip (e.g. <c>Needs MC 1.20.x, server is 26.3</c>).</summary>
 public sealed record ModCompatibilityResult(bool IsCompatible, string? Reason)
 {
     public static readonly ModCompatibilityResult Ok = new(true, null);
@@ -11,19 +9,6 @@ public sealed record ModCompatibilityResult(bool IsCompatible, string? Reason)
     public static ModCompatibilityResult No(string reason) => new(false, reason);
 }
 
-/// <summary>
-/// Decides whether a library item may be installed on a server. Lives in Core (not the UI) so
-/// <see cref="ModLibraryService.AssignToServer"/> enforces the same rules the Mods pages show.
-/// <para>
-/// Rules: an item only ever goes to servers of its own game; Minecraft Java servers only take
-/// <c>.jar</c> files whose declared platform matches the server variant (Paper/Purpur → Bukkit
-/// and Paper plugins, Fabric → Fabric mods, Forge → Forge mods, NeoForge → NeoForge mods,
-/// Velocity/BungeeCord → their proxy plugins, vanilla → nothing) and whose declared Minecraft
-/// version (or plugin <c>api-version</c>) includes the server's; and Minecraft jars never go to
-/// other games. Missing or unparseable metadata is treated leniently (allowed); only clear
-/// mismatches are refused.
-/// </para>
-/// </summary>
 public static class ModCompatibility
 {
     public const string MinecraftJavaId = "minecraft-java";
@@ -32,8 +17,6 @@ public static class ModCompatibility
 
     public static bool IsJarFile(string fileName) => fileName.EndsWith(".jar", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Platforms a Minecraft Java server variant can load. <see cref="MinecraftPlatform.None"/>
-    /// for vanilla.</summary>
     public static MinecraftPlatform AcceptedPlatforms(ServerInstance server)
     {
         var type = (server.ServerType ?? string.Empty).Trim().ToLowerInvariant();
@@ -60,7 +43,6 @@ public static class ModCompatibility
         };
     }
 
-    /// <summary>Short name of a Minecraft server variant for messages (<c>Paper</c>, <c>Fabric</c>…).</summary>
     public static string VariantLabel(ServerInstance server)
     {
         var type = (server.ServerType ?? string.Empty).Trim();
@@ -70,7 +52,6 @@ public static class ModCompatibility
             : char.ToUpperInvariant(type[0]) + type[1..].ToLowerInvariant();
     }
 
-    /// <summary>What a variant takes, for empty states (e.g. <c>Fabric mods</c>).</summary>
     public static string AcceptedDescription(ServerInstance server)
     {
         var accepted = AcceptedPlatforms(server);
@@ -97,11 +78,6 @@ public static class ModCompatibility
     private static bool IsProxy(MinecraftPlatform accepted)
         => accepted is MinecraftPlatform.Velocity or MinecraftPlatform.BungeeCord;
 
-    /// <summary>
-    /// Can <paramref name="item"/> (with its <see cref="ModItem.Minecraft"/> metadata, when it's a
-    /// jar) be installed on <paramref name="server"/>? <paramref name="serverGame"/> is the
-    /// server's game definition (for its accepted file extensions); may be <c>null</c>.
-    /// </summary>
     public static ModCompatibilityResult Check(ModItem item, ServerInstance server, GameDefinition? serverGame)
     {
         var isMcServer = IsMinecraftJava(server.ServerGame);
@@ -232,10 +208,6 @@ public static class ModCompatibility
         return firstMismatch is null ? ModCompatibilityResult.Ok : ModCompatibilityResult.No(firstMismatch);
     }
 
-    /// <summary>
-    /// Short card tags for a Minecraft jar, e.g. <c>MC 1.21.1 · Fabric</c>,
-    /// <c>Paper plugin · API 1.21</c>, <c>Needs Fabric API</c>, <c>Unknown jar</c>.
-    /// </summary>
     public static List<string> Tags(ModItem item)
     {
         var tags = new List<string>();

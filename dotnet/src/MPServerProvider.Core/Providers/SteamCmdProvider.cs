@@ -5,24 +5,10 @@ using MPServerProvider.Core.Native;
 
 namespace MPServerProvider.Core.Providers;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Providers.SteamCmdProvider</c> (decompile token
-/// 0x02000026).
-/// <para>
-/// Note: the original's <c>.ctor</c> also builds a <c>WorkshopService</c> (<c>_workshop</c>
-/// field) for Steam Workshop item downloads. <c>WorkshopService</c> lives under
-/// <c>MPServerProvider.Core.Services</c>, which is out of scope for this task (a separate task
-/// owns <c>Services/</c>), so workshop support is intentionally not ported here — matching the
-/// proven Rust port's same omission for the same reason.
-/// </para>
-/// </summary>
 public sealed partial class SteamCmdProvider : IInstallProvider
 {
-    /// <summary><c>SteamCmdZip</c> field.</summary>
     private const string SteamCmdZipUrl = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip";
 
-    /// <summary><c>ExeBlocklist</c> static field: installer/support binaries to skip when
-    /// auto-detecting a Steam app's dedicated-server executable.</summary>
     private static readonly string[] ExeBlocklist =
     {
         "steamerrorreporter",
@@ -39,7 +25,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
 
     public string Id => "steamcmd";
 
-    /// <summary>Port of <c>SteamCmdProvider.FindOnPath(string exeName)</c>.</summary>
     private static string? FindOnPath(string exeName)
     {
         var pathVar = Environment.GetEnvironmentVariable("PATH");
@@ -65,11 +50,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return null;
     }
 
-    /// <summary>
-    /// Port of <c>SteamCmdProvider.EnsureSteamCmdAsync(IProgress&lt;InstallProgress&gt;, CancellationToken)</c>:
-    /// finds an existing <c>steamcmd.exe</c> (under <c>{ToolsDir}/steamcmd/</c> or on
-    /// <c>PATH</c>), or downloads+extracts the official Valve zip.
-    /// </summary>
     private static async Task<string> EnsureSteamCmdAsync(IProgress<InstallProgress> progress, CancellationToken ct)
     {
         var dir = Path.Combine(DownloadHelper.ToolsDir(), "steamcmd");
@@ -103,18 +83,10 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return exe;
     }
 
-    /// <summary>Max wall-clock time for one <c>app_update</c> run (multi-GB games on slow links).</summary>
     internal static readonly TimeSpan InstallTimeout = TimeSpan.FromHours(3);
 
-    /// <summary>Max wall-clock time for a metadata-only SteamCMD run.</summary>
     internal static readonly TimeSpan AppInfoTimeout = TimeSpan.FromMinutes(10);
 
-    /// <summary>
-    /// Port of <c>SteamCmdProvider.LoginArguments(InstallSpec spec)</c>, display/command-line
-    /// form. SECURITY: this never contains the password any more — anything on a process command
-    /// line is readable by every local user (<c>Win32_Process.CommandLine</c>). Authenticated
-    /// logins with a password go through <see cref="RunscriptLoginLine"/> in a private runscript.
-    /// </summary>
     internal static string LoginArguments(InstallSpec spec)
     {
         if (spec.Anonymous || string.IsNullOrWhiteSpace(spec.Username))
@@ -125,10 +97,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return $"+login \"{RequireSafeToken(spec.Username!, "Steam username")}\"";
     }
 
-    /// <summary>
-    /// The <c>login</c> line for a SteamCMD runscript when the spec has a stored password, or
-    /// <c>null</c> for anonymous / username-only logins.
-    /// </summary>
     internal static string? RunscriptLoginLine(InstallSpec spec)
     {
         if (spec.Anonymous || string.IsNullOrWhiteSpace(spec.Username) || string.IsNullOrEmpty(spec.Password))
@@ -139,7 +107,7 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         string password;
         try
         {
-            // Port of `SecretProtector.Unprotect` applied to the stored password: the stored
+            // `SecretProtector.Unprotect` applied to the stored password: the stored
             // value is a base64-encoded DPAPI blob.
             // DPAPI only exists on Windows (also silences CA1416 for this net8.0 library).
             if (!OperatingSystem.IsWindows())
@@ -162,7 +130,78 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return $"login \"{RequireSafeToken(spec.Username!, "Steam username")}\" \"{RequireSafeToken(password, "Steam password")}\"";
     }
 
-    /// <summary>SteamCMD has no escape syntax: refuse values that would break out of quotes.</summary>
+    public static bool NeedsSteamLogin(GameDefinition game)
+        => game.Install.Provider == "steamcmd"
+           && !game.Install.Anonymous
+           && string.IsNullOrWhiteSpace(game.Install.Username);
+
+    internal static string TypedLoginLine(SteamLogin login)
+    {
+        var line = $"login \"{RequireSafeToken(login.Username.Trim(), "Steam username")}\" \"{RequireSafeToken(login.Password!, "Steam password")}\"";
+        return string.IsNullOrWhiteSpace(login.GuardCode)
+            ? line
+            : $"{line} \"{RequireSafeToken(login.GuardCode.Trim(), "Steam Guard code")}\"";
+    }
+
+    internal static string? LoginProblem(string output, InstallRequest request)
+    {
+        bool Has(string text) => output.Contains(text, StringComparison.OrdinalIgnoreCase);
+        var game = request.Game.Name;
+
+        if (Has("Two-factor code mismatch") || Has("Invalid Login Auth Code"))
+        {
+            return "Steam didn't accept the Steam Guard code. Enter the newest code from the Steam app or email and try again.";
+        }
+
+        if (Has("Steam Guard") || Has("two-factor") || Has("Account Logon Denied") || Has("AccountLogonDenied"))
+        {
+            return "Steam wants a Steam Guard code for this login. Open the Steam app on your phone (or check your email), then enter the code and try again.";
+        }
+
+        if (Has("Invalid Password") || Has("InvalidPassword"))
+        {
+            return "Steam says the username or password is wrong.";
+        }
+
+        if (Has("Rate Limit") || Has("RateLimitExceeded"))
+        {
+            return "Steam blocked the login for a while after too many attempts. Wait 30 minutes or so and try again.";
+        }
+
+        if (Has("Cached credentials not found") || (request.SteamLogin is { Password: null or "" } && Has("password")))
+        {
+            return "SteamCMD has no saved login for this account any more. Enter your password again.";
+        }
+
+        if (Has("No subscription") || Has("Invalid platform"))
+        {
+            return request.SteamLogin is null && request.Game.Install.Anonymous
+                ? $"Steam won't let anonymous accounts download the {game} server."
+                : $"This Steam account doesn't own {game}. Log in with an account that owns the game.";
+        }
+
+        return null;
+    }
+
+    internal static string? BranchName(InstallSpec spec)
+    {
+        var branch = spec.Branch?.Trim();
+        if (string.IsNullOrEmpty(branch) || branch.Equals("public", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (!branch.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.'))
+        {
+            throw new InvalidOperationException($"The Steam beta branch '{branch}' contains characters SteamCMD can't accept.");
+        }
+
+        return branch;
+    }
+
+    private static string BranchSuffix(InstallSpec spec)
+        => BranchName(spec) is { } branch ? $" -beta {branch}" : string.Empty;
+
     private static string RequireSafeToken(string value, string what)
     {
         if (value.Any(c => c == '"' || char.IsControl(c)))
@@ -173,11 +212,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return value;
     }
 
-    /// <summary>
-    /// <c>true</c> when SteamCMD's output shows the app install succeeded. SteamCMD's exit code
-    /// alone is unreliable (it can exit non-zero after self-updating even on success, and exit 0
-    /// after printing an <c>ERROR!</c>), so the success banner is the primary signal.
-    /// </summary>
     internal static bool InstallSucceeded(int exitCode, string output, long appId)
     {
         if (output.Contains($"Success! App '{appId}' fully installed", StringComparison.OrdinalIgnoreCase)
@@ -190,16 +224,11 @@ public sealed partial class SteamCmdProvider : IInstallProvider
             && !output.Contains("FAILED", StringComparison.Ordinal);
     }
 
-    /// <summary>Last <c>ERROR!</c>/<c>FAILED</c> line from SteamCMD output, for a useful error message.</summary>
     private static string? LastErrorLine(string output)
         => output.Split('\n')
             .Select(l => l.Trim())
             .LastOrDefault(l => l.Contains("ERROR!", StringComparison.Ordinal) || l.Contains("FAILED", StringComparison.Ordinal));
 
-    /// <summary>
-    /// Writes a SteamCMD runscript (holding credentials) into a fresh private temp folder that
-    /// only the current user can read, returning the script path. Callers delete the folder.
-    /// </summary>
     private static string WritePrivateRunscript(IEnumerable<string> lines)
     {
         var dir = Path.Combine(Path.GetTempPath(), "mpsp-steamcmd-" + Guid.NewGuid().ToString("N"));
@@ -241,17 +270,29 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         }
     }
 
-    /// <summary>Port of <c>SteamCmdProvider.DefinitionNamesExecutable(string executable)</c>.</summary>
     internal static bool DefinitionNamesExecutable(string executable)
         => !string.IsNullOrWhiteSpace(executable) && executable.Contains("{server_file}");
 
-    /// <summary>Port of <c>SteamCmdProvider.ExeFromDefinition(InstallRequest request)</c>.</summary>
     private static string? ExeFromDefinition(InstallRequest request)
     {
         var executable = request.Game.Runtime.Executable;
         if (DefinitionNamesExecutable(executable))
         {
             return null;
+        }
+
+        // A runtime placeholder ({dotnet}/{java}) launches a .dll/.jar named in the arguments.
+        if (executable.Trim() is "{dotnet}" or "{java}")
+        {
+            var payload = System.Text.RegularExpressions.Regex.Match(
+                request.Game.Runtime.Arguments ?? string.Empty, @"\{server_root\}[^""\s]*\.(dll|jar)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!payload.Success)
+            {
+                return null;
+            }
+
+            var payloadPath = payload.Value.Replace("{server_root}", request.TargetDir);
+            return File.Exists(payloadPath) ? payloadPath : null;
         }
 
         var resolved = executable.Replace("{server_root}", request.TargetDir).Trim();
@@ -264,12 +305,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return File.Exists(path) ? resolved : null;
     }
 
-    /// <summary>
-    /// Port of <c>SteamCmdProvider.AutoDetectServerExe(string rootDir)</c>: scans for
-    /// <c>*.exe</c> under <paramref name="rootDir"/>, skipping <see cref="ExeBlocklist"/> names
-    /// and anything under a <c>_commonredist</c>/<c>redist</c> folder, preferring names
-    /// containing "server"/"srcds"/"dedicated", then falling back to the largest <c>.exe</c> file.
-    /// </summary>
     internal static string? AutoDetectServerExe(string rootDir)
     {
         var candidates = new List<string>();
@@ -339,11 +374,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         }
     }
 
-    /// <summary>
-    /// Port of <c>SteamCmdProvider.ParseProgress(string line) -&gt; SteamProgress?</c>. Matches
-    /// the precompiled regex from the decompiled <c>.cctor</c>:
-    /// <c>Update state \(0x[0-9a-fA-F]+\)\s*(?&lt;state&gt;[\w ]+?),\s*progress:\s*(?&lt;pct&gt;[0-9.]+)\s*\(\s*(?&lt;done&gt;\d+)\s*/\s*(?&lt;total&gt;\d+)\s*\)</c>.
-    /// </summary>
     internal static SteamProgress? ParseProgress(string line)
     {
         var match = SteamProgressRegex().Match(line);
@@ -371,23 +401,8 @@ public sealed partial class SteamCmdProvider : IInstallProvider
     [GeneratedRegex(@"Update state \(0x[0-9a-fA-F]+\)\s*(?<state>[\w ]+?),\s*progress:\s*(?<pct>[0-9.]+)\s*\(\s*(?<done>\d+)\s*/\s*(?<total>\d+)\s*\)")]
     private static partial Regex SteamProgressRegex();
 
-    /// <summary>
-    /// Port of <c>SteamCmdProvider.Megabytes(long bytes) -&gt; string</c>. Used by the original to
-    /// format <c>SteamProgress.BytesDone</c>/<c>BytesTotal</c> for display; kept here (tested
-    /// below) even though this port's <c>InstallAsync</c> reports percentage-only progress rather
-    /// than a formatted "X / Y MB" string.
-    /// </summary>
     internal static string Megabytes(long bytes) => Math.Round(bytes / 1_048_576.0).ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
 
-    /// <summary>
-    /// Port of <c>SteamCmdProvider.GetAppInfoAsync(int appId, IProgress&lt;InstallProgress&gt;, CancellationToken)</c>:
-    /// runs <c>steamcmd +login anonymous +app_info_update 1 +app_info_print &lt;id&gt; +quit</c>
-    /// and parses its VDF-formatted stdout with <see cref="Vdf"/>. Not part of
-    /// <see cref="IInstallProvider"/> itself (the decompiled type exposes it as an extra public
-    /// method, used elsewhere by <c>InstallService</c> per the decompile report's call graph),
-    /// but ported here since it's the one real use of <see cref="Vdf.ToAppInfo"/> outside of
-    /// tests.
-    /// </summary>
     public static async Task<SteamAppInfo> GetAppInfoAsync(int appId, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         var steamcmd = await EnsureSteamCmdAsync(progress, ct).ConfigureAwait(false);
@@ -409,11 +424,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
     public Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct)
         => Task.FromResult(new List<string> { "latest" });
 
-    /// <summary>
-    /// Port of <c>InstallAsync</c>: runs
-    /// <c>steamcmd +force_install_dir "&lt;target&gt;" &lt;login&gt; +app_update &lt;id&gt; validate +quit</c>,
-    /// streaming stdout for progress, then auto-detects the server executable.
-    /// </summary>
     public async Task<InstallResult> InstallAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
         var appId = request.Game.Install.AppId
@@ -441,7 +451,9 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         ExternalProcessResult run;
         try
         {
-            var loginLine = RunscriptLoginLine(request.Game.Install);
+            var loginLine = request.SteamLogin is { Password.Length: > 0 } typed
+                ? TypedLoginLine(typed)
+                : RunscriptLoginLine(request.Game.Install);
             string[] args;
             if (loginLine is not null)
             {
@@ -453,7 +465,7 @@ public sealed partial class SteamCmdProvider : IInstallProvider
                     "@NoPromptForPassword 1",
                     $"force_install_dir \"{request.TargetDir}\"",
                     loginLine,
-                    $"app_update {appId} validate",
+                    $"app_update {appId}{BranchSuffix(request.Game.Install)} validate",
                     "quit",
                 });
                 scriptDir = Path.GetDirectoryName(script);
@@ -461,18 +473,29 @@ public sealed partial class SteamCmdProvider : IInstallProvider
             }
             else
             {
-                var login = request.Game.Install.Anonymous || string.IsNullOrWhiteSpace(request.Game.Install.Username)
-                    ? "anonymous"
-                    : RequireSafeToken(request.Game.Install.Username!, "Steam username");
-                args = new[]
+                // A login without a password reuses the session SteamCMD cached last time.
+                var login = request.SteamLogin is { } cached
+                    ? RequireSafeToken(cached.Username.Trim(), "Steam username")
+                    : request.Game.Install.Anonymous || string.IsNullOrWhiteSpace(request.Game.Install.Username)
+                        ? "anonymous"
+                        : RequireSafeToken(request.Game.Install.Username!, "Steam username");
+                var argList = new List<string>
                 {
                     "+@ShutdownOnFailedCommand", "1",
                     "+@NoPromptForPassword", "1",
                     "+force_install_dir", request.TargetDir,
                     "+login", login,
-                    "+app_update", appId.ToString(), "validate",
-                    "+quit",
+                    "+app_update", appId.ToString(),
                 };
+                if (BranchName(request.Game.Install) is { } branch)
+                {
+                    argList.Add("-beta");
+                    argList.Add(branch);
+                }
+
+                argList.Add("validate");
+                argList.Add("+quit");
+                args = argList.ToArray();
             }
 
             run = await ExternalProcess.RunAsync(steamcmd, args, request.TargetDir, OnLine, InstallTimeout, ct).ConfigureAwait(false);
@@ -487,6 +510,11 @@ public sealed partial class SteamCmdProvider : IInstallProvider
 
         if (!InstallSucceeded(run.ExitCode, run.Output, appId))
         {
+            if (LoginProblem(run.Output, request) is { } loginProblem)
+            {
+                throw new InvalidOperationException(loginProblem);
+            }
+
             var detail = LastErrorLine(run.Output);
             throw new InvalidOperationException(
                 $"SteamCMD could not install app {appId} (exit code {run.ExitCode})" + (detail is null ? "." : $": {detail}"));
@@ -507,11 +535,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
     }
 }
 
-/// <summary>
-/// Port of <c>SteamProgress</c> (a value type used by <c>ParseProgress</c>'s
-/// <c>Nullable&lt;SteamProgress&gt;</c> return): a single parsed
-/// <c>"Update state (...) ..., progress: N (a / b)"</c> line.
-/// </summary>
 public sealed class SteamProgress
 {
     public string State { get; set; } = string.Empty;

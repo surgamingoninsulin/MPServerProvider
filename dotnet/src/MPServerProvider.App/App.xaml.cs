@@ -6,36 +6,10 @@ using MPServerProvider.App.Views;
 
 namespace MPServerProvider.App;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.App</c> (decompile token 0x02000004): shows the splash,
-/// builds the <see cref="AppServices"/> composition root off the UI thread, then constructs and
-/// shows <see cref="MainWindow"/> and closes the splash. Progress sequencing mirrors
-/// <c>OnAppStartup</c>/the proven Rust port's <c>main.rs</c>:
-/// "Initializing services…" -&gt; "Loading game library…" -&gt; "Fetching official artwork…" -&gt;
-/// "You are up to date. Finalizing...".
-/// <para>
-/// Unlike the Rust/Slint port (which needed a manual background thread + mpsc channel + polling
-/// timer because Slint's event loop isn't tokio-aware), WPF's <see cref="Dispatcher"/> lets a
-/// background <see cref="System.Threading.Tasks.Task"/> marshal splash updates straight back to
-/// the UI thread via <see cref="Dispatcher.InvokeAsync(Action)"/> — no channel/poll-timer needed.
-/// </para>
-/// </summary>
 public partial class App : Application
 {
     public AppServices? Services { get; private set; }
 
-    /// <summary>
-    /// Global safety net: the Mods/Settings pages (and likely others) were crashing the entire
-    /// application on real-world filesystem/WMI edge cases that no single targeted fix could
-    /// fully rule out in advance — e.g. <c>ModLibraryService.Scan()</c> enumerating a locked or
-    /// permission-denied mods subfolder, or a WMI/perf-counter hiccup. Rather than keep
-    /// whack-a-moling individual call sites, this catches ANY otherwise-unhandled exception on
-    /// the UI thread, writes the full details to <c>%LocalAppData%\MPServerProvider\crash.log</c>
-    /// (so the exact cause is always recoverable after the fact), shows the message instead of
-    /// silently dying, and marks the exception handled so the app keeps running. A page that hit
-    /// this will be left in a partially-refreshed state, which is strictly better than the whole
-    /// application disappearing.
-    /// </summary>
     public App()
     {
         DispatcherUnhandledException += OnDispatcherUnhandledException;
@@ -70,7 +44,6 @@ public partial class App : Application
     private static readonly Dictionary<string, DateTime> LastCrashDialogAt = new();
     private static bool _crashDialogOpen;
 
-    /// <summary>Appends <paramref name="ex"/> to <c>%LocalAppData%\MPServerProvider\crash.log</c>. Never throws.</summary>
     internal static void LogCrash(Exception ex, string origin)
     {
         try
@@ -89,12 +62,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Always logs; shows at most one crash dialog at a time and the same message at most once a
-    /// minute — a timer tick that throws every time used to stack a new modal per tick. Non-fatal
-    /// reports from other threads are marshalled to the UI thread (never shown on the finalizer
-    /// thread, which an unobserved-Task report runs on).
-    /// </summary>
     private static void LogAndReportCrash(Exception ex, string origin, bool fatal)
     {
         LogCrash(ex, origin);
@@ -201,8 +168,7 @@ public partial class App : Application
 
                 await ReportAsync(splash, "Loading game library…", 0.4);
                 // AppServices.Initialize() already reloaded the library synchronously; this is
-                // a cheap yield so the message above is actually visible rather than flashing by,
-                // matching the proven Rust port's same 150ms pacing delay.
+                // a cheap yield so the message above is actually visible rather than flashing by.
                 await System.Threading.Tasks.Task.Delay(150);
 
                 await ReportAsync(splash, "Fetching official artwork…", 0.7);
@@ -213,7 +179,7 @@ public partial class App : Application
                 catch
                 {
                     // Best-effort prefetch; startup must not fail if artwork fetch fails (e.g. no
-                    // network), matching the proven Rust port's same tolerance.
+                    // network).
                 }
 
                 // Load the installed servers now (still off the UI thread): Home's "servers
@@ -288,10 +254,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// "Restart servers that were running on last shutdown": only when that setting is on.
-    /// Runs in the background after the window is up; each failure is a toast. Never throws.
-    /// </summary>
     private static async Task RestoreRunningServersAsync(AppServices services, ToastService toasts)
     {
         try
@@ -323,10 +285,6 @@ public partial class App : Application
     private static Task ReportAsync(SplashWindow splash, string status, double fraction)
         => splash.Dispatcher.InvokeAsync(() => splash.Report(status, fraction)).Task;
 
-    /// <summary>Adapter: <see cref="Core.Services.AppPaths"/> already exposes
-    /// <c>ArtworkCacheDir</c>, it just doesn't implement
-    /// <see cref="Core.Services.ArtworkCacheService.ICachePaths"/> directly — same small
-    /// App-side adapter pattern as <see cref="AppServices"/>'s persistence/lookup adapters.</summary>
     private sealed class CachePathsAdapter(Core.Services.AppPaths paths) : Core.Services.ArtworkCacheService.ICachePaths
     {
         public string ArtworkCacheDir => paths.ArtworkCacheDir;
@@ -334,13 +292,11 @@ public partial class App : Application
 
     private bool _gracefulShutdownDone;
 
-    /// <summary>Called by <see cref="MainWindow"/> once it has stopped every server and removed
-    /// the tunnel forwards, so <see cref="OnExit"/> has nothing slow left to do.</summary>
     internal void MarkGracefulShutdownDone() => _gracefulShutdownDone = true;
 
     protected override void OnExit(ExitEventArgs e)
     {
-        // Port of AppServices.Shutdown(). Normally the main window already stopped every server
+        // Normally the main window already stopped every server
         // gracefully (with an overlay, off the UI thread). This path only has work left when the
         // app exits without that (e.g. Windows signing out): give servers a short, bounded
         // chance, then kill whatever is left (Dispose; the kill-on-close jobs back that up).

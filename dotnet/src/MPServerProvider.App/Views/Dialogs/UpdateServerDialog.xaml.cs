@@ -5,12 +5,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App.Views.Dialogs;
 
-/// <summary>
-/// Updates an installed (and already stopped) server in place through
-/// <see cref="Core.Services.InstallService.UpdateAsync"/>: lists the provider's versions, then
-/// re-runs its installer into the server folder while keeping worlds and config files.
-/// <see cref="Window.DialogResult"/> is <c>true</c> after a successful update.
-/// </summary>
 public partial class UpdateServerDialog : DialogWindow
 {
     private readonly AppServices _services;
@@ -79,6 +73,12 @@ public partial class UpdateServerDialog : DialogWindow
             version = null;
         }
 
+        var steamLogin = SteamLoginDialog.Ask(this, _game, _services.Settings, out var loginCancelled);
+        if (loginCancelled)
+        {
+            return;
+        }
+
         UpdateButton.IsEnabled = false;
         VersionCombo.IsEnabled = false;
         ProgressPanel.Visibility = Visibility.Visible;
@@ -96,6 +96,7 @@ public partial class UpdateServerDialog : DialogWindow
             }
 
             ProgressStatusText.Text = p.Status;
+            ShowProgressLink(p.Link);
             if (p.Percent > 0)
             {
                 ProgressBarControl.IsIndeterminate = false;
@@ -105,7 +106,7 @@ public partial class UpdateServerDialog : DialogWindow
 
         try
         {
-            await _services.Installer.UpdateAsync(_server, _game, version, progress, cts.Token);
+            await _services.Installer.UpdateAsync(_server, _game, version, progress, cts.Token, steamLogin);
             _toasts?.Success($"Updated {_server.ServerName} to {_server.ServerVersion}.");
             _cts = null;
             DialogResult = true;
@@ -155,4 +156,21 @@ public partial class UpdateServerDialog : DialogWindow
             cts.Cancel();
         }
     }
+
+    private string? _progressLink;
+
+    private void ShowProgressLink(string? link)
+    {
+        if (link is null || link == _progressLink)
+        {
+            return;
+        }
+
+        _progressLink = link;
+        ProgressLinkButton.Visibility = Visibility.Visible;
+        Controls.ArtworkImages.OpenInBrowser(link);
+    }
+
+    private void ProgressLinkButton_Click(object sender, RoutedEventArgs e)
+        => Controls.ArtworkImages.OpenInBrowser(_progressLink);
 }

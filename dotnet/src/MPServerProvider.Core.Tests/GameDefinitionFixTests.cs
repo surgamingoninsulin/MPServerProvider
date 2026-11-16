@@ -75,11 +75,6 @@ public class MinecraftJavaMajorMigrationTests
     }
 }
 
-/// <summary>
-/// <see cref="GameLibraryService"/> repairs for corrected built-in definitions: an existing
-/// on-disk copy that still carries the OLD shipped value gets the corrected one, while a value
-/// the user edited is left alone.
-/// </summary>
 public class BuiltInDefinitionRepairTests : IDisposable
 {
     private readonly AppPaths _paths;
@@ -101,55 +96,74 @@ public class BuiltInDefinitionRepairTests : IDisposable
     private void WriteExisting(GameDefinition game)
         => File.WriteAllText(Path.Combine(_paths.GamesDir, $"{game.Id}.json"), Json.Json.Serialize(game));
 
-    private GameDefinition Reload(string id)
+    private GameLibraryService Reload()
     {
         var svc = new GameLibraryService(_paths);
         svc.Reload();
         svc.Reload(); // idempotent
-        return svc.Find(id)!;
+        return svc;
     }
 
     [Fact]
-    public void OpenRCT2_old_seeded_copy_gets_release_lookup_launch_and_banner()
+    public void Built_ins_come_from_code_not_from_providers_json()
+    {
+        var svc = Reload();
+
+        Assert.Empty(Directory.GetFiles(_paths.GamesDir, "*.json"));
+        foreach (var builtIn in BuiltInGames.All())
+        {
+            var loaded = svc.Find(builtIn.Id)!;
+            Assert.True(loaded.IsBuiltIn, builtIn.Id);
+            Assert.Null(loaded.SourceFile);
+        }
+    }
+
+    [Fact]
+    public void Old_seeded_copy_of_a_built_in_is_moved_to_backup_and_code_wins()
     {
         var old = BuiltIn("openrct2");
-        old.Install = new InstallSpec
-        {
-            Provider = "url",
-            Url = "https://github.com/OpenRCT2/OpenRCT2/releases/latest/download/OpenRCT2-windows-x64.zip",
-            Anonymous = true,
-        };
-        old.Runtime = new RuntimeSpec
-        {
-            Executable = "{server_root}\\openrct2.exe",
-            Arguments = "host {server_file} --port {server_port} --headless",
-            WorkingDir = "{server_root}",
-            StopCommand = "quit",
-        };
-        old.Artwork = new ArtworkSpec { Cover = "https://raw.githubusercontent.com/OpenRCT2/OpenRCT2/develop/resources/logo/icon_x64.png", Accent = "#2563EB" };
-        old.Details!.SetupTips = new() { "old tip" };
+        old.Runtime.Arguments = "host {server_file} --port {server_port} --headless";
         WriteExisting(old);
 
-        var fixedUp = Reload("openrct2");
-        var builtIn = BuiltIn("openrct2");
-        Assert.Equal("OpenRCT2/OpenRCT2", fixedUp.Install.GithubRepo);
-        Assert.Equal("zip", fixedUp.Install.Archive);
-        Assert.Equal(builtIn.Runtime.Executable, fixedUp.Runtime.Executable);
-        Assert.Equal(builtIn.Runtime.Arguments, fixedUp.Runtime.Arguments);
-        Assert.DoesNotContain("{server_file}", fixedUp.Runtime.Arguments);
-        Assert.Equal(builtIn.Artwork.Cover, fixedUp.Artwork.Cover);
-        Assert.NotNull(fixedUp.Artwork.Hero);
-        Assert.Equal(builtIn.Details!.SetupTips, fixedUp.Details!.SetupTips);
+        var svc = Reload();
+
+        Assert.Equal(BuiltIn("openrct2").Runtime.Arguments, svc.Find("openrct2")!.Runtime.Arguments);
+        Assert.False(File.Exists(Path.Combine(_paths.GamesDir, "openrct2.json")));
+        var backup = Path.Combine(svc.BuiltInBackupDir, "openrct2.json");
+        Assert.True(File.Exists(backup));
+        Assert.Equal(old.Runtime.Arguments, Json.Json.Deserialize<GameDefinition>(File.ReadAllText(backup))!.Runtime.Arguments);
     }
 
     [Fact]
-    public void OpenRCT2_user_edited_launch_is_kept()
+    public void Retiring_never_overwrites_an_earlier_backup()
     {
-        var edited = BuiltIn("openrct2");
-        edited.Runtime.Arguments = "host \"D:\\parks\\mine.park\" --port {server_port} --headless";
-        WriteExisting(edited);
+        WriteExisting(BuiltIn("rust"));
+        var svc = Reload();
+        WriteExisting(BuiltIn("rust"));
+        svc.Reload();
 
-        Assert.Equal(edited.Runtime.Arguments, Reload("openrct2").Runtime.Arguments);
+        Assert.True(File.Exists(Path.Combine(svc.BuiltInBackupDir, "rust.json")));
+        Assert.True(File.Exists(Path.Combine(svc.BuiltInBackupDir, "rust (2).json")));
+    }
+
+    [Fact]
+    public void Custom_game_from_providers_json_is_loaded_next_to_built_ins()
+    {
+        var custom = new GameDefinition
+        {
+            Id = "my-custom-game",
+            Name = "My Custom Game",
+            Install = new InstallSpec { Provider = "manual" },
+            Runtime = new RuntimeSpec { Executable = "{server_root}\\server.exe" },
+        };
+        WriteExisting(custom);
+
+        var svc = Reload();
+
+        var loaded = svc.Find("my-custom-game")!;
+        Assert.False(loaded.IsBuiltIn);
+        Assert.Equal(Path.Combine(_paths.GamesDir, "my-custom-game.json"), loaded.SourceFile);
+        Assert.Equal(BuiltInGames.All().Count + 1, svc.Games.Count);
     }
 
     private const string OldPixarkArgs = "CubeWorld_Light?listen?SessionName={server_name}?Port={server_port}?QueryPort=27015 -server -log";
@@ -172,29 +186,6 @@ public class BuiltInDefinitionRepairTests : IDisposable
     }
 
     [Fact]
-    public void PixARK_old_seeded_copy_gets_new_launch_and_details()
-    {
-        var old = BuiltIn("pixark");
-        old.Runtime.Arguments = OldPixarkArgs;
-        old.Details!.Ports = new() { new GamePortInfo { Port = "7777", Protocol = "UDP", Purpose = "old" } };
-        WriteExisting(old);
-
-        var fixedUp = Reload("pixark");
-        Assert.Equal(BuiltIn("pixark").Runtime.Arguments, fixedUp.Runtime.Arguments);
-        Assert.Contains(fixedUp.Details!.Ports, p => p.Port == "15000");
-    }
-
-    [Fact]
-    public void PixARK_user_edited_launch_is_kept()
-    {
-        var edited = BuiltIn("pixark");
-        edited.Runtime.Arguments = OldPixarkArgs + " -CubePort=14999";
-        WriteExisting(edited);
-
-        Assert.Equal(OldPixarkArgs + " -CubePort=14999", Reload("pixark").Runtime.Arguments);
-    }
-
-    [Fact]
     public void Installed_server_with_stale_default_start_command_is_migrated()
     {
         var pixark = new ServerInstance { ServerGame = "pixark", StartCommand = OldPixarkArgs };
@@ -207,27 +198,6 @@ public class BuiltInDefinitionRepairTests : IDisposable
 
         var other = new ServerInstance { ServerGame = "rust", StartCommand = OldPixarkArgs };
         Assert.False(ServerRepository.MigrateStaleStartCommand(other));
-    }
-
-    [Fact]
-    public void Minecraft_old_java_21_default_becomes_25()
-    {
-        var mc = BuiltIn("minecraft-java");
-        Assert.Equal(25, mc.Runtime.Requires!.Java);
-        mc.Runtime.Requires.Java = 21;
-        WriteExisting(mc);
-
-        Assert.Equal(25, Reload("minecraft-java").Runtime.Requires!.Java);
-    }
-
-    [Fact]
-    public void Minecraft_user_chosen_java_is_kept()
-    {
-        var mc = BuiltIn("minecraft-java");
-        mc.Runtime.Requires!.Java = 17;
-        WriteExisting(mc);
-
-        Assert.Equal(17, Reload("minecraft-java").Runtime.Requires!.Java);
     }
 }
 
@@ -291,8 +261,7 @@ public class CubicOdysseyDefinitionTests
         // Verified Nov 2026: `steamcmd +login anonymous +app_update 3858450` reports
         // "Success! App '3858450' fully installed." and the shipped help/server_manual.txt
         // documents -Port=BIND_PORT.
-        var path = Path.Combine(TestPaths.ProvidersJsonDir, "cubic-odyssey-dedicated-server-beta-version.json");
-        var game = Json.Json.Deserialize<GameDefinition>(File.ReadAllText(path))!;
+        var game = BuiltInGames.All().Single(g => g.Id == "cubic-odyssey");
         Assert.Equal("steamcmd", game.Install.Provider);
         Assert.Equal(3858450, game.Install.AppId);
         Assert.True(game.Install.Anonymous);

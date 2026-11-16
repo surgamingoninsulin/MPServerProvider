@@ -4,10 +4,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Covers the File Manager's built-in editor helpers: path containment (no traversal / sibling
-/// prefix / reparse-point escapes), binary detection, and encoding/BOM/line-ending round trips.
-/// </summary>
 public class FileEditingTests : IDisposable
 {
     private readonly string _temp;

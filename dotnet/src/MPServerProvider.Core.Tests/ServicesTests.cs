@@ -5,14 +5,6 @@ using Xunit;
 
 namespace MPServerProvider.Core.Tests;
 
-/// <summary>
-/// Tests for the catalog/install-side services ported from the already-verified Rust port's own
-/// test suite (<c>crates/mpsp-core/src/services/{app_paths,builtin_games,builtin_news,news,
-/// game_library,server_repository,settings,install}.rs</c>), adapted to this project's real C#
-/// APIs (<see cref="AppPaths"/> constructed via <see cref="AppPaths.ForRoot"/> rather than
-/// mutating the process-global <c>MPSM_DATA</c> environment variable, matching that Rust test
-/// helper's own reasoning for avoiding shared mutable env state across parallel test threads).
-/// </summary>
 public class ServicesTests
 {
     private static AppPaths TempPaths()
@@ -25,10 +17,10 @@ public class ServicesTests
     // ---- BuiltInGames -------------------------------------------------
 
     [Fact]
-    public void BuiltInGames_All_returns_fourteen_entries_with_unique_ids()
+    public void BuiltInGames_All_has_the_original_games_and_unique_ids()
     {
         var games = BuiltInGames.All();
-        Assert.Equal(14, games.Count);
+        Assert.True(games.Count > 14);
 
         var ids = games.Select(g => g.Id).ToList();
         Assert.Contains("minecraft-java", ids);
@@ -64,12 +56,20 @@ public class ServicesTests
     // ---- BuiltInNews / NewsService -------------------------------------
 
     [Fact]
-    public void BuiltInNews_All_returns_eight_confirmed_entries()
+    public void BuiltInNews_has_the_eight_original_entries_plus_one_per_added_game()
     {
         var news = BuiltInNews.All();
-        Assert.Equal(8, news.Count);
+        var added = BuiltInGames.AddedGames();
+        Assert.Equal(8 + added.Count, news.Count);
         Assert.All(news, n => Assert.Equal("Added", n.Tag));
         Assert.All(news, n => Assert.NotNull(n.Image));
+        foreach (var game in added)
+        {
+            var card = Assert.Single(news, n => n.GameId == game.Id);
+            Assert.Equal($"Added {game.Name}", card.Title);
+            Assert.InRange(card.Summary.Length, 20, 400);
+            Assert.DoesNotContain("\n", card.Summary);
+        }
     }
 
     [Fact]

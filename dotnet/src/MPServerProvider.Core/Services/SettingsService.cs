@@ -2,10 +2,6 @@ using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>
-/// Ported from <c>MPServerProvider.Core.Services.SettingsService</c> (decompile token
-/// 0x02000016). Loads/saves <see cref="AppSettings"/> to/from <c>{DataRoot}/settings.json</c>.
-/// </summary>
 public class SettingsService
 {
     private readonly AppPaths _paths;
@@ -13,24 +9,17 @@ public class SettingsService
     private readonly object _writeLock = new();
     private AppSettings _settings = new();
 
-    /// <summary>Port of <c>.ctor(AppPaths)</c>: constructs with defaults, then immediately <see cref="Load"/>s.</summary>
     public SettingsService(AppPaths paths)
     {
         _paths = paths;
         Load();
     }
 
-    /// <summary>Port of <c>get_Settings()</c>.</summary>
     public AppSettings Settings
     {
         get { lock (_lock) { return _settings; } }
     }
 
-    /// <summary>
-    /// Port of <c>Load()</c>: reads <c>settings.json</c> if present (falling back to
-    /// <c>new AppSettings()</c> otherwise), then applies <c>InstallRoot</c> (if set) to
-    /// <see cref="AppPaths.OverrideServersDir"/>.
-    /// </summary>
     public void Load()
     {
         var path = _paths.SettingsFile;
@@ -79,11 +68,6 @@ public class SettingsService
         }
     }
 
-    /// <summary>
-    /// Set when the last <see cref="Load"/> had to fall back to defaults (corrupt/unreadable
-    /// <c>settings.json</c> or an unavailable install location); <c>null</c> otherwise. The UI
-    /// can surface it once instead of the app failing to start.
-    /// </summary>
     public string? LoadError { get; private set; }
 
     private static void BackUpCorruptFile(string path)
@@ -98,8 +82,6 @@ public class SettingsService
         }
     }
 
-    /// <summary>Port of <c>Save()</c>: writes <c>settings.json</c> (atomically, see
-    /// <see cref="Json.Json.WriteAllTextAtomic"/>), then <see cref="ApplyStartOnBoot"/>.</summary>
     public void Save()
     {
         string json;
@@ -120,20 +102,8 @@ public class SettingsService
         }
     }
 
-    /// <summary>
-    /// Whether <see cref="Save"/> also writes the Windows "run at sign-in" registry entry. Tests
-    /// turn this off so they never touch the developer's real <c>HKCU\…\Run</c> key.
-    /// </summary>
     public bool ManageStartupEntry { get; set; } = true;
 
-    /// <summary>
-    /// Additive helper (not a direct decompile port of a single method, but needed by every
-    /// settings-mutating caller — <c>OnStartOnBootChanged</c>, <c>OnBehaviourChanged</c>,
-    /// <c>OnAddRule</c>/<c>OnDeleteRule</c> in the decompiled <c>SettingsPage</c> all
-    /// read-modify-write <c>AppSettings</c> then call <c>Save()</c>, exactly what this does in
-    /// one step): mutates the in-memory settings via <paramref name="mutate"/>, then
-    /// <see cref="Save"/>s.
-    /// </summary>
     public void Update(Action<AppSettings> mutate)
     {
         lock (_lock)
@@ -144,12 +114,6 @@ public class SettingsService
         Save();
     }
 
-    /// <summary>Port of <c>SetInstallRoot(string)</c>.</summary>
-    /// <remarks>
-    /// The install root only decides where NEW servers go: <see cref="AppPaths.OverrideServersDir"/>
-    /// remembers the previous location so existing servers stay listed. The folder is created
-    /// (and validated) before the setting is changed, so a failure leaves everything as it was.
-    /// </remarks>
     public void SetInstallRoot(string installRoot)
     {
         _paths.OverrideServersDir(installRoot);
@@ -162,12 +126,6 @@ public class SettingsService
         Save();
     }
 
-    /// <summary>
-    /// Port of <c>ApplyStartOnBoot()</c>: writes/removes a
-    /// <c>HKCU\Software\Microsoft\Windows\CurrentVersion\Run\MPServerProvider</c> value so the
-    /// app does/doesn't launch at Windows sign-in, matching <c>AppSettings.StartOnBoot</c>/
-    /// <c>StartMinimizedToTray</c>.
-    /// </summary>
     public void ApplyStartOnBoot()
     {
         if (!OperatingSystem.IsWindows())
@@ -210,7 +168,7 @@ public class SettingsService
         }
         catch
         {
-            // Best-effort; matches the original's silent-failure registry access.
+            // Best-effort: registry access failures are silent.
         }
     }
 }

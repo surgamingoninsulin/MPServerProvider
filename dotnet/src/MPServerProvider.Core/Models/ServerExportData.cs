@@ -1,21 +1,5 @@
 namespace MPServerProvider.Core.Models;
 
-/// <summary>
-/// Portable export of a server's configuration (sans runtime state like stats/tunnel) for
-/// sharing or backup.
-/// Ported from <c>MPServerProvider.Core.Models.ServerExportData</c> (decompile token 0x02000033).
-/// No standalone export sample file was found under <c>data/</c>, so field names follow the same
-/// <c>snake_case</c> convention confirmed by real <c>server.json</c> shape, whose fields this
-/// type is a subset of.
-/// <para>
-/// HARDENING: an export never contains absolute paths (<c>server_root</c>, <c>source_file</c>,
-/// a rooted <c>server_file</c>/<c>mods_folder</c>), so sharing one leaks nothing about the
-/// exporting machine and importing one can't point at someone else's folders. Because the field
-/// names are a subset of <c>server.json</c>'s, <see cref="Json.Json"/> reads both an export and an
-/// old-style full <c>server.json</c> into this type (unknown fields are ignored) — import accepts
-/// either shape.
-/// </para>
-/// </summary>
 public class ServerExportData
 {
     public int ManifestVersion { get; set; } = 1;
@@ -30,7 +14,6 @@ public class ServerExportData
 
     public string ServerType { get; set; } = string.Empty;
 
-    /// <summary>The server's main file relative to its folder (e.g. <c>server.jar</c>); never rooted.</summary>
     public string? ServerFile { get; set; }
 
     public int ServerPort { get; set; }
@@ -51,7 +34,6 @@ public class ServerExportData
 
     public bool CreateFirewallRule { get; set; }
 
-    /// <summary>Builds the portable export of <paramref name="server"/>.</summary>
     public static ServerExportData FromServer(ServerInstance server) => new()
     {
         ManifestVersion = server.ManifestVersion,
@@ -72,11 +54,6 @@ public class ServerExportData
         CreateFirewallRule = server.CreateFirewallRule,
     };
 
-    /// <summary>
-    /// A new, unsaved <see cref="ServerInstance"/> carrying this export's settings. Paths
-    /// (<c>ServerRoot</c>, <c>SourceFile</c>) are left empty for the importer to assign, stats
-    /// start fresh, and a rooted or <c>..</c>-escaping <see cref="ServerFile"/> is dropped.
-    /// </summary>
     public ServerInstance ToServerInstance() => new()
     {
         ManifestVersion = ManifestVersion,
@@ -97,7 +74,6 @@ public class ServerExportData
         CreateFirewallRule = CreateFirewallRule,
     };
 
-    /// <summary>A plain relative path with no drive, UNC prefix or <c>..</c> segments.</summary>
     public static bool IsSafeRelative(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -113,8 +89,6 @@ public class ServerExportData
         return path.Split('/', '\\').All(s => s.Length > 0 && s != "." && s != "..");
     }
 
-    /// <summary><paramref name="path"/> made relative to <paramref name="root"/> when it lies
-    /// inside it; any other absolute path is dropped (<c>null</c>).</summary>
     private static string? PortableRelative(string? path, string root)
     {
         if (string.IsNullOrWhiteSpace(path))

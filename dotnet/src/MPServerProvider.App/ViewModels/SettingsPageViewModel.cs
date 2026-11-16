@@ -7,16 +7,6 @@ using MPServerProvider.Core.Services;
 
 namespace MPServerProvider.App.ViewModels;
 
-/// <summary>
-/// Port of <c>MPServerProvider.App.Views.SettingsPage</c>'s code-behind state
-/// (<c>0x0200001b_SettingsPage.md</c>): Storage Management (disk usage bar, game files size,
-/// installation drive picker), Startup &amp; Behavior checkboxes, System Resources (live CPU/RAM
-/// tiles), System Specifications, and Firewall Rules — cross-checked against the already-proven
-/// Rust reference (<c>crates/mpsp-app/src/pages/settings.rs</c>) for call sequencing. The
-/// "Add Rule"/"Delete Rule" buttons are wired by <see cref="Views.Pages.SettingsPage"/>'s
-/// code-behind (they open <see cref="Views.Dialogs.AddFirewallRuleDialog"/>, which isn't a plain
-/// command), everything else lives here.
-/// </summary>
 public sealed partial class SettingsPageViewModel : ObservableObject
 {
     private readonly AppServices _services;
@@ -64,8 +54,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         _toasts = toasts;
     }
 
-    /// <summary>Port of the <c>.ctor</c>'s one-shot spec read + first full load, and
-    /// <c>SettingsPage.OnNavigatedTo()</c> (storage/rules re-pulled on every visit).</summary>
     public void Initialize()
     {
         LoadSpecs();
@@ -87,9 +75,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         RefreshRules();
     }
 
-    /// <summary>Port of <c>SettingsPage.LoadSettings()</c>. Suppresses the normal
-    /// save-on-change hooks while applying the loaded values (otherwise loading would
-    /// immediately re-save/re-apply settings that were just read from disk).</summary>
     private void LoadSettings()
     {
         var settings = _services.Settings.Settings;
@@ -107,10 +92,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Port of the <c>.ctor</c>'s one-shot <c>SystemMetricsService.Specs()</c> read. The WMI
-    /// queries run on a worker thread (they can take seconds) instead of freezing the UI.
-    /// </summary>
     private async void LoadSpecs()
     {
         try
@@ -127,7 +108,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>SettingsPage.LoadDrives()</c>.</summary>
     private void LoadDrives()
     {
         _drives.Clear();
@@ -153,7 +133,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         InstallPathText = $"Current path: {serversRoot}";
     }
 
-    /// <summary>How long a computed "game files" size is reused before re-walking the folder.</summary>
     private static readonly TimeSpan GameFilesSizeCacheDuration = TimeSpan.FromMinutes(5);
 
     private long _cachedGameFilesBytes = -1;
@@ -162,12 +141,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
     private bool _sizingGameFiles;
     private bool _refreshingLive;
 
-    /// <summary>
-    /// Port of <c>SettingsPage.RefreshStorage()</c>. Drive totals are cheap; the recursive
-    /// "game files" size (potentially hundreds of thousands of files) is computed on a worker
-    /// thread and cached for <see cref="GameFilesSizeCacheDuration"/> instead of blocking every
-    /// page visit.
-    /// </summary>
     private async void RefreshStorage()
     {
         try
@@ -227,10 +200,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>SettingsPage.RefreshLive()</c>, called from
-    /// <see cref="Views.Pages.SettingsPage"/>'s 2 s timer. The CPU/RAM sampling runs on a worker
-    /// thread (it used to be a WMI query on the UI thread every tick) and overlapping ticks are
-    /// skipped.</summary>
     public async void RefreshLive()
     {
         if (_refreshingLive)
@@ -261,7 +230,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Applies a settings change, reporting (instead of throwing) a failed save.</summary>
     private void UpdateSettings(Action<Core.Models.AppSettings> mutate)
     {
         try
@@ -274,7 +242,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>SettingsPage.RefreshRules()</c>.</summary>
     public void RefreshRules()
     {
         var rules = _services.Settings.Settings.FirewallRules;
@@ -330,7 +297,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Port of <c>SettingsPage.OnDriveChanged</c>.</summary>
     partial void OnSelectedDriveIndexChanged(int value)
     {
         if (_loadingDrives || value < 0 || value >= _drives.Count)
@@ -369,7 +335,6 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>Puts the drive combo back on the drive currently in use, without re-triggering a change.</summary>
     private void RevertDriveSelection()
     {
         // Deferred: changing the bound index from inside its own change handler is unreliable.

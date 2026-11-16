@@ -9,7 +9,6 @@ using MPServerProvider.Core.Native;
 
 namespace MPServerProvider.Core.Services;
 
-/// <summary>Where the playit.gg agent is in its lifecycle, as shown in the UI.</summary>
 public enum PlayitState
 {
     NotInstalled,
@@ -21,10 +20,8 @@ public enum PlayitState
     Error,
 }
 
-/// <summary>One playit.gg tunnel: the public address players use and where it points locally.</summary>
 public sealed record PlayitTunnel(string Address, string Destination)
 {
-    /// <summary>Local port the tunnel forwards to ("127.0.0.1:25565" → 25565), or null.</summary>
     public int? DestinationPort
     {
         get
@@ -35,14 +32,8 @@ public sealed record PlayitTunnel(string Address, string Destination)
     }
 }
 
-/// <summary>
-/// How the playit tunnels line up with one server's port. playit tunnels are created on the
-/// playit.gg website, where e.g. a "Minecraft Java" tunnel defaults to local port 25565; a
-/// server on another port (25566) then gets no traffic and status sites report it offline.
-/// </summary>
 public sealed record PlayitPortCheck(IReadOnlyList<PlayitTunnel> Matching, IReadOnlyList<PlayitTunnel> OtherPorts)
 {
-    /// <summary>The single other port all tunnels point at when none match, or null.</summary>
     public int? SuggestedPort =>
         Matching.Count == 0 && OtherPorts.Select(t => t.DestinationPort).Distinct().ToList() is [int only]
             ? only
@@ -57,7 +48,6 @@ public sealed record PlayitPortCheck(IReadOnlyList<PlayitTunnel> Matching, IRead
     }
 }
 
-/// <summary>A snapshot of the playit.gg agent for the UI.</summary>
 public sealed record PlayitStatus(
     PlayitState State,
     string Message,
@@ -67,10 +57,8 @@ public sealed record PlayitStatus(
     bool UsingInstalledService,
     string DashboardUrl);
 
-/// <summary>A downloadable file of a GitHub release.</summary>
 public sealed record GitHubReleaseAsset(string Name, string DownloadUrl, long Size, string? Digest);
 
-/// <summary>What one line of playit agent output means.</summary>
 public enum PlayitLineKind
 {
     None,
@@ -88,7 +76,6 @@ public enum PlayitLineKind
 
 public sealed record PlayitLineInfo(PlayitLineKind Kind, string? Url = null, PlayitTunnel? Tunnel = null, string? Message = null);
 
-/// <summary>The daemon's state as reported over its IPC pipe (<c>get_state</c>).</summary>
 public sealed record PlayitLifecycle(
     string State,
     string? ErrorMessage,
@@ -97,16 +84,6 @@ public sealed record PlayitLifecycle(
     string? LoginLink,
     IReadOnlyList<string> Notices);
 
-/// <summary>
-/// Understands the playit agent's console output. Based on the agent's source
-/// (playit-cli <c>main.rs</c>/<c>client.rs</c>, playitd <c>daemon.rs</c>, v2.0.x): in
-/// <c>--stdout</c> mode it prints setup messages verbatim, e.g.
-/// <c>Open this link to finish setting up playit:</c> followed by
-/// <c>https://playit.gg/claim/1a2b3c4d5e</c>, then daemon log lines formatted as
-/// <c>{timestamp} {LEVEL} {target}: {message}</c>, e.g.
-/// <c>2026-11-15T10:00:00.123456Z  INFO playitd::daemon: playit connected; tunnels loaded, agent_id=…, tunnel_count=1</c>.
-/// Older agents and the TUI list tunnels as <c>address => destination</c>.
-/// </summary>
 public static class PlayitOutputParser
 {
     private static readonly Regex Ansi = new(@"\x1B\[[0-9;?]*[ -/]*[@-~]", RegexOptions.Compiled);
@@ -120,7 +97,6 @@ public static class PlayitOutputParser
 
     public static string StripAnsi(string line) => Ansi.Replace(line ?? string.Empty, string.Empty);
 
-    /// <summary>Hides session keys and secrets before a line is shown or logged.</summary>
     public static string Redact(string line)
     {
         var text = GuestLogin.Replace(line ?? string.Empty, "https://playit.gg/login/guest-account/<hidden>");
@@ -128,7 +104,6 @@ public static class PlayitOutputParser
         return LongSecret.Replace(text, "<hidden>");
     }
 
-    /// <summary>True only for https URLs on playit.gg (or a subdomain): the only links the app opens.</summary>
     public static bool IsTrustedPlayitUrl(string? url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri)
         && uri.Scheme == Uri.UriSchemeHttps
@@ -222,11 +197,6 @@ public static class PlayitOutputParser
         static PlayitLineInfo Fatal(string text) => new(PlayitLineKind.Fatal, Message: text);
     }
 
-    /// <summary>
-    /// Parses one line of the daemon's IPC reply to <c>get_state</c>, e.g.
-    /// <c>{"message_kind":"response","data":{"ipc_version":3,"request_id":1,"response":{"type":"state","data":{"state":"running","data":{…AgentState…}}}}}</c>.
-    /// Returns null for anything that isn't a state/error response.
-    /// </summary>
     public static PlayitLifecycle? ParseIpcStateResponse(string line)
     {
         try
@@ -302,7 +272,6 @@ public static class PlayitOutputParser
                 : string.Empty;
     }
 
-    /// <summary>The <c>ipc_version</c> from the daemon's hello frame, if present.</summary>
     public static int? ParseIpcHelloVersion(string? line)
     {
         if (string.IsNullOrEmpty(line))
@@ -328,10 +297,8 @@ public static class PlayitOutputParser
 
 public sealed partial class TunnelService
 {
-    /// <summary>Named pipe of an installed playit Windows service (playit 2.x).</summary>
     public const string PlayitServicePipe = "playitd-system";
 
-    /// <summary>Prefix of the pipe a standalone <c>playit.exe</c> opens (followed by its PID).</summary>
     public const string PlayitPortablePipePrefix = "playit-portable-";
 
     public const string PlayitDefaultDashboardUrl = "https://playit.gg/account/agents";
@@ -358,16 +325,12 @@ public sealed partial class TunnelService
     private IReadOnlyList<PlayitTunnel> _playitTunnels = Array.Empty<PlayitTunnel>();
     private bool _playitUsesService;
 
-    /// <summary>Raised (on a background thread) whenever <see cref="PlayitCurrentStatus"/> changes.</summary>
     public event Action<PlayitStatus>? PlayitStatusChanged;
 
-    /// <summary>Raised (on a background thread) for each line of agent output, already redacted.</summary>
     public event Action<string>? PlayitOutputReceived;
 
-    /// <summary>Where a downloaded agent lives: <c>{tools}\playit\playit.exe</c> (path literals from the decompile).</summary>
     public string PlayitExePath(IToolPaths paths) => Path.Combine(paths.ToolsDir, "playit", "playit.exe");
 
-    /// <summary>Port of <c>TunnelService.get_PlayitInstalled()</c>.</summary>
     public bool PlayitInstalled(IToolPaths paths) => File.Exists(PlayitExePath(paths));
 
     private string? ManagedPlayitPath => _toolsDir is null ? null : Path.Combine(_toolsDir, "playit", "playit.exe");
@@ -394,7 +357,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>The last few hundred (redacted) output lines, oldest first.</summary>
     public IReadOnlyList<string> PlayitOutputSnapshot()
     {
         lock (_playitOutput)
@@ -403,11 +365,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>
-    /// Finds an agent to run: an existing install (a <c>playit.exe</c> on PATH, or
-    /// <c>%ProgramFiles%\playit_gg\bin</c> where the official installer puts it) wins over the
-    /// copy this app downloads into its tools folder. Only absolute PATH entries are searched.
-    /// </summary>
     public string? LocatePlayitAgent()
     {
         try
@@ -467,11 +424,6 @@ public sealed partial class TunnelService
 
     // -- Install ------------------------------------------------------------------------------
 
-    /// <summary>
-    /// Downloads the latest official Windows agent from the playit-cloud/playit-agent GitHub
-    /// releases into <c>{tools}\playit\playit.exe</c>: temp file, size + SHA-256 (GitHub's asset
-    /// digest) + PE-header checks, then an atomic move into place.
-    /// </summary>
     public async Task<string> InstallPlayitAsync(IProgress<double>? progress = null, CancellationToken ct = default)
     {
         var target = ManagedPlayitPath ?? throw new InvalidOperationException("No tools folder is configured to install playit into.");
@@ -606,10 +558,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>
-    /// Checks the DOS/PE headers: <c>MZ</c>, a sane <c>e_lfanew</c>, the <c>PE\0\0</c> signature
-    /// and the expected machine type (0x8664 = x64, 0x014C = x86).
-    /// </summary>
     public static bool IsValidPeExecutable(ReadOnlySpan<byte> head, ushort expectedMachine)
     {
         if (head.Length < 0x40 || head[0] != (byte)'M' || head[1] != (byte)'Z')
@@ -628,7 +576,6 @@ public sealed partial class TunnelService
         return BitConverter.ToUInt16(head.Slice(peOffset + 4, 2)) == expectedMachine;
     }
 
-    /// <summary>Reads <c>assets[]</c> (name, browser_download_url, size, digest) from a GitHub release JSON.</summary>
     public static IReadOnlyList<GitHubReleaseAsset> ParseReleaseAssets(string releaseJson)
     {
         var list = new List<GitHubReleaseAsset>();
@@ -652,12 +599,6 @@ public sealed partial class TunnelService
         return list;
     }
 
-    /// <summary>
-    /// Picks the standalone Windows command-line agent for <paramref name="arch"/>
-    /// (<c>playit-windows-x86_64[-signed].exe</c>, or the x86 build on 32-bit Windows),
-    /// preferring the signed build. The GUI, tray, daemon-only and MSI assets are never chosen.
-    /// ARM64 Windows runs the x64 build under emulation.
-    /// </summary>
     public static GitHubReleaseAsset? SelectPlayitAsset(IEnumerable<GitHubReleaseAsset> assets, Architecture arch)
     {
         var archToken = arch == Architecture.X86 ? "x86" : "x86_64";
@@ -672,12 +613,6 @@ public sealed partial class TunnelService
 
     // -- Start / stop -------------------------------------------------------------------------
 
-    /// <summary>
-    /// Starts the agent (downloading it first when <paramref name="installIfMissing"/>) as a
-    /// hidden child process in <c>--stdout</c> mode, then watches its output and IPC pipe.
-    /// When this app runs elevated, the agent is launched with the desktop user's normal token
-    /// instead; if that isn't possible it refuses rather than running playit as admin.
-    /// </summary>
     public async Task StartPlayitAgentAsync(bool installIfMissing, CancellationToken ct = default)
     {
         if (IsPlayitRunning)
@@ -863,7 +798,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>Stops the agent: asks a standalone agent to shut down cleanly over IPC, then kills the process tree.</summary>
     public async Task StopPlayitAgentAsync()
     {
         IPlayitRunner? runner;
@@ -920,10 +854,6 @@ public sealed partial class TunnelService
         RefreshAfterStop(usesService);
     }
 
-    /// <summary>
-    /// Port of <c>TunnelService.StopPlayit()</c>: synchronous hard stop (kill tree, wait, dispose),
-    /// used at app exit. Safe to call when nothing is running.
-    /// </summary>
     public void StopPlayit()
     {
         IPlayitRunner? runner;
@@ -1201,11 +1131,6 @@ public sealed partial class TunnelService
         return names;
     }
 
-    /// <summary>
-    /// One request over the agent's local IPC pipe (JSON lines: a hello frame from the daemon,
-    /// then <c>{"ipc_version":3,"request_id":1,"request":{"type":"get_state"}}</c> and its
-    /// response). Returns the response line, or null if the pipe isn't there/doesn't answer.
-    /// </summary>
     private static async Task<string?> PlayitIpcRequestAsync(string pipeName, string requestType, TimeSpan timeout, CancellationToken ct)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -1315,11 +1240,9 @@ public sealed partial class TunnelService
 
         Task WaitForExitAsync(CancellationToken ct);
 
-        /// <summary>Kills the whole process tree and waits briefly for it to go.</summary>
         void Kill();
     }
 
-    /// <summary>The normal case: a hidden child with stdout and stderr both read asynchronously.</summary>
     private sealed class DirectPlayitRunner : IPlayitRunner
     {
         private readonly Process _process;
@@ -1426,11 +1349,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>
-    /// The elevated-app case: <c>cmd.exe</c> launched with the desktop user's (unelevated) token
-    /// via <see cref="DeElevatedLauncher"/>, running playit with stdin from NUL and output
-    /// redirected to a temp file this runner tails.
-    /// </summary>
     private sealed class DeElevatedPlayitRunner : IPlayitRunner
     {
         private readonly Process _shell;
@@ -1566,10 +1484,6 @@ public sealed partial class TunnelService
         }
     }
 
-    /// <summary>
-    /// A Windows job object with KILL_ON_JOB_CLOSE: if this app dies without stopping the agent,
-    /// Windows ends it too, so no orphaned tunnel is left running. Best-effort.
-    /// </summary>
     private sealed class KillOnCloseJob : IDisposable
     {
         private const int JobObjectExtendedLimitInformation = 9;

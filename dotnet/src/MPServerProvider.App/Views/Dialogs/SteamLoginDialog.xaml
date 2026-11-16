@@ -1,0 +1,46 @@
+<local:DialogWindow x:Class="MPServerProvider.App.Views.Dialogs.SteamLoginDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
+        Title="Steam Login"
+        Width="452" SizeToContent="Height">
+    <!-- Asked before installing/updating a SteamCMD game whose server isn't free to download
+         (DayZ, Starbound). Chrome comes from DialogWindow. -->
+    <StackPanel Margin="24,18,24,24">
+        <TextBlock Text="Steam login needed" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+        <TextBlock x:Name="IntroText" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,16" TextWrapping="Wrap" />
+
+        <TextBlock Text="Steam username" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <TextBox x:Name="UsernameBox" Margin="0,0,0,12" />
+
+        <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <PasswordBox x:Name="PasswordBox" Margin="0,0,0,4" />
+        <TextBlock x:Name="CachedHint" Text="Leave empty to reuse the login SteamCMD saved last time."
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap" />
+
+        <TextBlock Text="Steam Guard code (if Steam asks for one)" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <TextBox x:Name="GuardBox" Margin="0,0,0,14" CharacterCasing="Upper" MaxLength="10" />
+
+        <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="&#xE72E;" Style="{StaticResource IconTextStyle}" Foreground="{StaticResource BrandAccentBrush}"
+                           VerticalAlignment="Top" Margin="0,2,8,0" />
+                <TextBlock Grid.Column="1" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                           Text="Your password goes straight to Valve's SteamCMD for this download and is never saved by MP Server Provider. Only the username is remembered." />
+            </Grid>
+        </Border>
+
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="12" Margin="0,0,0,8"
+                   TextWrapping="Wrap" Visibility="Collapsed" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="Cancel" Width="90" Style="{StaticResource GhostButtonStyle}" Click="CancelButton_Click" />
+            <Button x:Name="ContinueButton" Content="Continue" Width="110" Margin="10,0,0,0" IsDefault="True"
+                    Style="{StaticResource AccentButtonStyle}" Click="ContinueButton_Click" />
+        </StackPanel>
+    </StackPanel>
+</local:DialogWindow>
