@@ -1,0 +1,181 @@
+<UserControl x:Class="MPServerProvider.App.Views.Pages.GameDetailPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True">
+    <!-- Game Detail drill-down (opened from a Library card or a Home news card): hero banner
+         with name/genres/Install, About/Features/Setup tips/Screenshots on the left, an info
+         sidebar (facts, requirements, ports, links) on the right. Content comes from the
+         manifest's optional `details` block; every section collapses when its data is missing.
+         Repeating rows (features, tips, ports, screenshots, links) are built in code-behind. -->
+    <UserControl.Resources>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style x:Key="InfoLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+        <Style x:Key="InfoValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style x:Key="DetailCard" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+        <!-- Small chip-like button for external links (Website / Store / Docs). -->
+        <Style x:Key="LinkButton" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="28,20,28,32">
+            <Button x:Name="BackButton" Style="{StaticResource GhostButtonStyle}" HorizontalAlignment="Left"
+                    Padding="12,6" Margin="0,0,0,14" Click="BackButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock x:Name="BackText" Text="Back" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- Hero: a clean full-bleed banner on top, title/genres/Install in a strip below it so
+                 nothing is drawn over the artwork. The banner is painted as an ImageBrush, which
+                 always fills (and is rounded with) its Border exactly whatever the image's aspect
+                 ratio; an Image + manual Clip used to leave tall/square images mostly off-screen. -->
+            <Border Style="{StaticResource CardStyle}" Padding="0">
+                <StackPanel>
+                    <Border x:Name="HeroBanner" Height="300" CornerRadius="12,12,0,0">
+                        <Grid>
+                            <TextBlock x:Name="HeroFallbackIcon" Text="&#xE7FC;" FontFamily="Segoe MDL2 Assets" FontSize="64"
+                                       Foreground="White" Opacity="0.35"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <Grid Margin="28,20,28,22">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,24,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="NameText" Foreground="{StaticResource TextPrimaryBrush}" FontSize="28" FontWeight="Bold"
+                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="80" />
+                            <TextBlock x:Name="TaglineText" Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"
+                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="40"
+                                       MaxWidth="760" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                            <ItemsControl x:Name="GenreChips" Margin="0,10,0,-6">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#1FFFFFFF" CornerRadius="6" Padding="9,3" Margin="0,0,6,6">
+                                            <TextBlock Text="{Binding}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" FontWeight="SemiBold" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <Button x:Name="InstallButton" Style="{StaticResource AccentButtonStyle}"
+                                    Padding="28,12" FontSize="14" FontWeight="SemiBold" Click="InstallButton_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <TextBlock Text="Install Server" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock x:Name="InstallViaText" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Body: main column + info sidebar -->
+            <Grid Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="330" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <Border x:Name="AboutCard" Style="{StaticResource DetailCard}">
+                        <StackPanel>
+                            <TextBlock Text="About" Style="{StaticResource SectionTitle}" />
+                            <StackPanel x:Name="AboutPanel" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="FeaturesCard" Style="{StaticResource DetailCard}">
+                        <StackPanel>
+                            <TextBlock Text="Features" Style="{StaticResource SectionTitle}" />
+                            <UniformGrid x:Name="FeaturesPanel" Columns="2" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="TipsCard" Style="{StaticResource DetailCard}">
+                        <StackPanel>
+                            <TextBlock Text="Server setup tips" Style="{StaticResource SectionTitle}" />
+                            <StackPanel x:Name="TipsPanel" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="ScreenshotsCard" Style="{StaticResource DetailCard}">
+                        <StackPanel>
+                            <TextBlock Text="Screenshots" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="Click a screenshot to open it full size in your browser."
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="0,-6,0,12" />
+                            <UniformGrid x:Name="ScreenshotsPanel" Columns="3" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource DetailCard}">
+                        <StackPanel x:Name="InfoPanel">
+                            <TextBlock Text="Game info" Style="{StaticResource SectionTitle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="RequirementsCard" Style="{StaticResource DetailCard}">
+                        <StackPanel x:Name="RequirementsPanel">
+                            <TextBlock Text="Server requirements" Style="{StaticResource SectionTitle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="PortsCard" Style="{StaticResource DetailCard}">
+                        <StackPanel>
+                            <TextBlock Text="Network ports" Style="{StaticResource SectionTitle}" />
+                            <Grid x:Name="PortsGrid">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="86" />
+                                    <ColumnDefinition Width="Auto" MinWidth="64" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="LinksCard" Style="{StaticResource DetailCard}">
+                        <StackPanel x:Name="LinksPanel">
+                            <TextBlock Text="Links" Style="{StaticResource SectionTitle}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

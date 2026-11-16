@@ -1,0 +1,209 @@
+<UserControl x:Class="MPServerProvider.App.Views.ServerTabs.ResourcePackTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style x:Key="NoteText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <!-- Warning line that collapses while its text is empty. -->
+        <Style x:Key="WarningNote" TargetType="TextBlock" BasedOn="{StaticResource NoteText}">
+            <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ValueText" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource MonoFontFamily}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="380" />
+        </Grid.ColumnDefinitions>
+
+        <!-- mcpacks.dev embed -->
+        <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,12,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="10,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button Style="{StaticResource IconButtonStyle}" ToolTip="Back" Click="Back_Click">
+                            <TextBlock Text="&#xE72B;" Style="{StaticResource IconTextStyle}" FontSize="12" />
+                        </Button>
+                        <Button Style="{StaticResource IconButtonStyle}" ToolTip="Reload" Click="Reload_Click">
+                            <TextBlock Text="&#xE72C;" Style="{StaticResource IconTextStyle}" FontSize="12" />
+                        </Button>
+                        <Button Style="{StaticResource IconButtonStyle}" ToolTip="Upload page" Click="Home_Click">
+                            <TextBlock Text="&#xE80F;" Style="{StaticResource IconTextStyle}" FontSize="12" />
+                        </Button>
+                    </StackPanel>
+                    <TextBlock x:Name="AddressText" Grid.Column="1" Text="mcpacks.dev" Margin="10,0"
+                               VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                               TextTrimming="CharacterEllipsis" />
+                    <Button Grid.Column="2" Style="{StaticResource GhostButtonStyle}" Padding="10,5" Click="OpenExternal_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8A7;" Style="{StaticResource IconTextStyle}" FontSize="12" Margin="0,0,6,0" />
+                            <TextBlock Text="Open in browser" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <Grid Grid.Row="1">
+                    <wv2:WebView2 x:Name="Web" Visibility="Collapsed" />
+                    <StackPanel x:Name="Placeholder" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="460" Margin="20">
+                        <TextBlock x:Name="PlaceholderText" Text="Loading mcpacks.dev…" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Text="Upload your pack on mcpacks.dev (free hosting, Java Edition), or paste any direct download link on the right."
+                                   Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Settings -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Server resource pack" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,6" />
+                        <Border CornerRadius="8" Padding="10,8" Margin="0,0,0,12" Background="{StaticResource PanelBackgroundBrush}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasCapture}" Value="True">
+                                            <Setter Property="BorderThickness" Value="1" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding CaptureText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" />
+                        </Border>
+
+                        <TextBlock Text="Pack download URL" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding PackUrl, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFontFamily}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="SHA-1" Style="{StaticResource FieldLabel}" />
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding PackSha1, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFontFamily}" />
+                            <Button Grid.Column="1" Style="{StaticResource GhostButtonStyle}" Padding="10,5" Margin="8,0,0,0"
+                                    ToolTip="Compute the SHA-1 of a local .zip" Command="{Binding ComputeSha1Command}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8E5;" Style="{StaticResource IconTextStyle}" FontSize="12" Margin="0,0,6,0" />
+                                    <TextBlock Text="From .zip…" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <TextBlock Style="{StaticResource NoteText}" Margin="0,0,0,12"
+                                   Text="Lets players cache the pack. It must match the exact file at the URL, or they get an error." />
+
+                        <CheckBox Content="Require the pack (players who decline are disconnected)" Foreground="{StaticResource TextSecondaryBrush}"
+                                  IsChecked="{Binding RequirePack}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Prompt message (optional)" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding PromptText, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="True"
+                                 MinHeight="48" Margin="0,0,0,4" />
+                        <TextBlock Style="{StaticResource NoteText}" Text="Shown on the download screen. Require and prompt need Minecraft 1.17+." />
+                        <TextBlock Style="{StaticResource WarningNote}" Text="{Binding StyledPromptNote}" />
+                        <TextBlock Style="{StaticResource WarningNote}" Text="{Binding VersionWarning}" />
+
+                        <WrapPanel Margin="0,14,0,0">
+                            <Button Style="{StaticResource AccentButtonStyle}" Padding="16,7" Margin="0,0,8,8" Command="{Binding ApplyCommand}"
+                                    ToolTip="Write these values to server.properties">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE73E;" Style="{StaticResource IconTextStyle}" FontSize="12" Margin="0,0,6,0" />
+                                    <TextBlock Text="Apply" />
+                                </StackPanel>
+                            </Button>
+                            <Button Padding="12,7" Margin="0,0,8,8" Command="{Binding RemovePackCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                                        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                    </Style>
+                                </Button.Style>
+                                <TextBlock Text="Remove pack" />
+                            </Button>
+                            <Button Style="{StaticResource GhostButtonStyle}" Padding="12,7" Margin="0,0,8,8" Command="{Binding CopyServerPropertiesCommand}"
+                                    ToolTip="Copy the four server.properties lines">
+                                <TextBlock Text="Copy lines" />
+                            </Button>
+                        </WrapPanel>
+
+                        <Border CornerRadius="8" Padding="10,8" Margin="0,4,0,0" BorderThickness="1" BorderBrush="{StaticResource WarningBrush}"
+                                Visibility="{Binding IsRestartNeeded, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Minecraft reads server.properties at startup: restart the server for this to take effect."
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Style="{StaticResource GhostButtonStyle}" Padding="10,5" Margin="8,0,0,0"
+                                        Command="{Binding RestartCommand}" Visibility="{Binding ShowRestartButton, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE72C;" Style="{StaticResource IconTextStyle}" FontSize="12" Margin="0,0,6,0" />
+                                        <TextBlock Text="Restart" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Current server.properties" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <Button Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Right" ToolTip="Re-read server.properties (discards unsaved edits)"
+                                    Command="{Binding ReloadCommand}" Height="24">
+                                <TextBlock Text="&#xE72C;" Style="{StaticResource IconTextStyle}" FontSize="11" />
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="resource-pack" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding CurrentUrlText, Mode=OneWay}" Style="{StaticResource ValueText}" Margin="0,0,0,8" />
+                        <TextBlock Text="resource-pack-sha1" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding CurrentSha1Text, Mode=OneWay}" Style="{StaticResource ValueText}" Margin="0,0,0,8" />
+                        <TextBlock Text="require-resource-pack" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding CurrentRequiredText, Mode=OneWay}" Style="{StaticResource ValueText}" Margin="0,0,0,8" />
+                        <TextBlock Text="resource-pack-prompt" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding CurrentPromptText, Mode=OneWay}" Style="{StaticResource ValueText}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1,0 +1,93 @@
+{
+  "manifest_version": 1,
+  "id": "pixark",
+  "name": "PixARK Dedicated Server",
+  "description": "Official PixARK dedicated server (Snail Games), installed through Valve\u0027s SteamCMD (anonymous). A voxel sandbox mashup of ARK and block worlds \u2014 tame dinosaurs, build bases and explore a procedurally generated cube world.",
+  "genres": [
+    "Survival",
+    "Sandbox"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/593600/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/593600/library_hero.jpg",
+    "accent": "#38BDF8"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 824360,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\ShooterGame\\Binaries\\Win64\\PixARKServer.exe",
+    "arguments": "\"CubeWorld_Light?listen?SessionName={server_name}?MaxPlayers=20?Port={server_port}?QueryPort=27015?RCONEnabled=False?RCONPort=27020\" -Port={server_port} -QueryPort=27015 -CubePort=15000 -cubeworld=world -CULTUREFORCOOKING=en -NoBattlEye -NoHangDetection -server -log",
+    "working_dir": "{server_root}"
+  },
+  "network": {
+    "default_port": 7777,
+    "protocol": "both",
+    "query": "a2s",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "PixARK is a voxel survival sandbox from Snail Games that takes ARK-style dinosaur taming and puts it in a procedurally generated cube world. You gather materials, craft tools and weapons, tame creatures and build bases alone or with a tribe.\n\nRunning your own dedicated server gives your group a persistent world that keeps going between sessions. You choose the server type (Pioneering PvE, or the Fury and Chaos PvP rulesets), set passwords and player limits, and run several worlds side by side by giving each its own ports.",
+    "developer": "Snail Games USA",
+    "publisher": "Snail Games USA",
+    "release_date": "May 31, 2019",
+    "store_url": "https://store.steampowered.com/app/593600/",
+    "docs_url": "https://steamcommunity.com/app/593600/discussions/0/1697168437881708051",
+    "max_players": "Configurable (MaxPlayers launch option; this app launches with 20)",
+    "features": [
+      "Voxel survival sandbox with ARK-style creature taming",
+      "Procedurally generated cube worlds",
+      "Pioneering (PvE), Fury and Chaos (PvP) server types",
+      "Tribes, base building and crafting",
+      "Server password, admin password and RCON options",
+      "Several servers can run on one machine with separate ports"
+    ],
+    "ports": [
+      {
+        "port": "7777",
+        "protocol": "UDP",
+        "purpose": "Game traffic (Port, the app's default)"
+      },
+      {
+        "port": "27014-27015",
+        "protocol": "UDP",
+        "purpose": "Steam query (QueryPort 27015; the server also uses the port just below it)"
+      },
+      {
+        "port": "15000",
+        "protocol": "TCP",
+        "purpose": "Terrain data (CubePort); must be reachable or players see no terrain"
+      },
+      {
+        "port": "27020",
+        "protocol": "TCP",
+        "purpose": "RCON (RCONPort, only when RCONEnabled=True)"
+      }
+    ],
+    "setup_tips": [
+      "The app launches ShooterGame\\Binaries\\Win64\\PixARKServer.exe on CubeWorld_Light with your server name, MaxPlayers=20, Port (default 7777), QueryPort 27015 and CubePort 15000, plus -NoBattlEye, -CULTUREFORCOOKING=en and -NoHangDetection, which Snail's server guide lists as required.",
+      "Open UDP 7777, UDP 27014-27015 and TCP 15000 on the Firewall Rules page or through Connect to Tunnel. The CubePort (TCP) carries terrain data: if it is blocked, players join but see no terrain.",
+      "For a private server add ?ServerPassword=<password> inside the quoted map URL. For RCON, set RCONEnabled=True, add ?ServerAdminPassword=<password> and open TCP 27020.",
+      "Set the server type in GameUserSettings.ini under Config\\WindowsServer: ServerPVE=true for Pioneering. For Fury use ServerPVE=false, CanPVPAttack=true, ServerPVPCanAttack=false. For Chaos use ServerPVE=false, CanPVPAttack=false, ServerPVPCanAttack=true.",
+      "When running several servers, give each its own Port, QueryPort, CubePort and -cubeworld name. The official example spaces the query ports two apart (27019, 27021, 27023) because each one also uses the port below it."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/593600/ss_af25791685ccb02a74ccdf41a3a6e4d14ea6eac9.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/593600/ss_56115b4b0002b9052e4aa905d64d336d9e838260.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/593600/ss_1bc99af9fb36e8b757ec235515154625484ef120.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/593600/ss_125547aac2af9dc0204307b0ea2fddef5026ad0b.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/593600/ss_dfe17070a7af9795fc0ba773fb47aaefbd147ff3.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/593600/ss_118403eca87e5610486e83feb05adbf410de9199.1920x1080.jpg"
+    ]
+  }
+}

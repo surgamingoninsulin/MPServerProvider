@@ -1,0 +1,81 @@
+{
+  "manifest_version": 1,
+  "id": "beammp",
+  "name": "BeamMP Server",
+  "description": "Official BeamMP multiplayer server for BeamNG.drive. An AuthKey from keymaster.beammp.com is required in ServerConfig.toml.",
+  "genres": [
+    "Simulation",
+    "Sandbox"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/284160/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/284160/library_hero.jpg",
+    "accent": "#3B82F6"
+  },
+  "install": {
+    "provider": "beammp",
+    "variants": [],
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_file}",
+    "arguments": "",
+    "working_dir": "{server_root}",
+    "stop_command": "exit"
+  },
+  "network": {
+    "default_port": 30814,
+    "protocol": "both",
+    "query": "none",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": true,
+    "folder": "Resources\\Client",
+    "extensions": [
+      ".zip"
+    ],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "BeamNG.drive is a vehicle simulator built around soft-body physics, so crashes, suspension and handling behave realistically. BeamMP is a community multiplayer mod for it that lets several players drive in the same map at once through the BeamMP Launcher.\n\nRunning your own BeamMP server lets you choose the map, player limit, vehicles per player and which mods everyone downloads when they join. The server is configured through ServerConfig.toml. It needs an AuthKey from BeamMP's Keymaster to appear on the public server list, and a key is recommended even for private servers.",
+    "developer": "BeamNG",
+    "publisher": "BeamNG",
+    "release_date": "May 29, 2015",
+    "website": "https://beammp.com",
+    "store_url": "https://store.steampowered.com/app/284160/",
+    "docs_url": "https://docs.beammp.com/server/create-a-server/",
+    "max_players": "Configurable (default 8)",
+    "features": [
+      "Shared soft-body physics driving on any BeamNG.drive map",
+      "Map, player limit and cars-per-player set in ServerConfig.toml",
+      "Vehicle and map mods sent to joining players from Resources/Client",
+      "Public listing with an AuthKey, or Private = true to hide the server",
+      "Optional guest access (AllowGuests) and chat logging"
+    ],
+    "ports": [
+      {
+        "port": "30814",
+        "protocol": "TCP+UDP",
+        "purpose": "Game traffic"
+      }
+    ],
+    "setup_tips": [
+      "Create an AuthKey at keymaster.beammp.com (Discord login, then Keys > +) and paste it into AuthKey in ServerConfig.toml. Never share this key. One key runs only one server at a time.",
+      "Open port 30814 for both TCP and UDP on the Firewall Rules page, or use Connect to Tunnel. The server supports IPv4 only.",
+      "Set Map to a path ending in /info.json, for example /levels/ks_nord/info.json. For a modded map, use the folder name inside the mod's levels folder.",
+      "Put vehicle and map mod .zip files in Resources/Client. They are sent to players when they join.",
+      "Set Private = false if you want the server on the public list. While Private = true, players must connect directly.",
+      "On Windows, install the Microsoft Visual C++ Redistributables if the server will not start. Stop it with the 'exit' console command."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/284160/ss_ae4c258e6f13ddf00ee8e72be8bd0b0fc5e67801.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/284160/ss_50b8ba7ff80d50af3bd6b1b4e326849555a952a2.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/284160/ss_e55bbb37fa7208d720d15e69c23c8d932283b4fe.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/284160/ss_ac6c91223f4f12662a9ae7c3a06e2c951a2551f0.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/284160/ss_1b129249ad662d242a81a34ee2fdcdcbe064eb32.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/284160/ss_9cff66c2f780d440c123c7f6307c3eb72d8aacc0.1920x1080.jpg"
+    ]
+  }
+}

@@ -1,0 +1,510 @@
+<Window x:Class="MPServerProvider.App.Views.Dialogs.TunnelDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:MPServerProvider.App.Converters"
+        Title="Connect to Tunnel" Width="580" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
+        FontFamily="{StaticResource AppFontFamily}">
+    <!--
+        Connect to Tunnel, in the app's dark borderless chrome (rounded card, custom title bar,
+        draggable, own close button) instead of a native title bar. Layout follows the original's
+        dialog: server picker, "UPnP Port Forward" / "playit.gg Agent" tabs, Remove Mapping /
+        Forward Port, Close. Styles that Theme.xaml doesn't have (dark ComboBox, TextBox, CheckBox)
+        live here so the shared theme stays untouched.
+    -->
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+        <conv:NullToVisibilityConverter x:Key="NullToCollapsed" />
+
+        <Style x:Key="TunnelTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource RootBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrandAccentDarkBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinHeight" Value="{StaticResource InputHeight}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TunnelCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="Box" Width="18" Height="18" CornerRadius="5" VerticalAlignment="Top" Margin="0,1,0,0"
+                                    Background="{StaticResource RootBackgroundBrush}" BorderBrush="{StaticResource BrandAccentDarkBrush}" BorderThickness="1">
+                                <TextBlock x:Name="Mark" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="11" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                            </Border>
+                            <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource BrandAccentBrush}" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                                <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TunnelComboItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource NavSelectedBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource BrandAccentDarkBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TunnelComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ItemContainerStyle" Value="{StaticResource TunnelComboItemStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Bd" Background="{StaticResource RootBackgroundBrush}" CornerRadius="8"
+                                                BorderBrush="{StaticResource BrandAccentDarkBrush}" BorderThickness="1">
+                                            <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter IsHitTestVisible="False" Margin="12,8,32,8" VerticalAlignment="Center"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              TextElement.Foreground="{StaticResource TextPrimaryBrush}" />
+                            <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
+                                <Border Background="{StaticResource CardBackgroundBrush}" BorderBrush="{StaticResource BrandAccentDarkBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="4" Margin="0,4,0,0"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="260">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SmallGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <!-- Dims the shared Accent/Ghost buttons while disabled (busy or not applicable). -->
+        <Style x:Key="TunnelAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="TunnelGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="TunnelTabStyle" TargetType="RadioButton" BasedOn="{StaticResource NavPillStyle}">
+            <Setter Property="Padding" Value="16,8" />
+        </Style>
+
+        <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0,0,0,5" />
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="12"
+            BorderBrush="{StaticResource BrandAccentDarkBrush}" BorderThickness="1" Margin="8">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.55" Color="Black" />
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Custom title bar (drag to move) -->
+            <Grid Grid.Row="0" Background="Transparent" Margin="20,14,12,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Background="{StaticResource NavSelectedBrush}" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource BrandAccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Connect to Tunnel" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock Text="Let players outside your network join this server." FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                </StackPanel>
+                <Button Grid.Column="2" Style="{StaticResource ChromeCloseButtonStyle}" VerticalAlignment="Top"
+                        Click="Close_Click" ToolTip="Close" IsCancel="True">
+                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10" />
+                </Button>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="24,18,24,0">
+                <!-- Server picker -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="SERVER" Style="{StaticResource SectionLabelStyle}" />
+                        <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServer}"
+                                  Style="{StaticResource TunnelComboBoxStyle}" MinHeight="34">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding ServerName}" TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <Border Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Bottom" CornerRadius="8" Padding="12,9"
+                            Background="{StaticResource CardBackgroundBrush}"
+                            Visibility="{Binding HasSelectedServer, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding ServerSummary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" />
+                    </Border>
+                </Grid>
+
+                <!-- Tabs -->
+                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="12" Padding="4" Margin="0,16,0,14"
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="TabUpnp" Style="{StaticResource TunnelTabStyle}" GroupName="tunnelTab"
+                                     Content="UPnP Port Forward" IsChecked="True" Checked="Tab_Checked" />
+                        <RadioButton x:Name="TabPlayit" Style="{StaticResource TunnelTabStyle}" GroupName="tunnelTab"
+                                     Content="playit.gg Agent" Checked="Tab_Checked" Margin="4,0,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ========================= UPnP ========================= -->
+                <StackPanel x:Name="UpnpPanel">
+                    <Border Style="{StaticResource CardStyle}" Padding="12" Margin="0,0,0,12">
+                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" FontSize="12"
+                                   Text="UPnP asks your router to forward this server's ports to this PC and shows the public address players join with. UPnP must be enabled on your router. It can't work behind carrier-grade NAT; use playit.gg there." />
+                    </Border>
+
+                    <TextBlock Text="{Binding PlannedMappingsText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                               TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                    <TextBlock Text="EXTRA PORTS (OPTIONAL)" Style="{StaticResource SectionLabelStyle}" />
+                    <TextBox Text="{Binding ExtraPortsText}" Style="{StaticResource TunnelTextBoxStyle}"
+                             ToolTip="Comma-separated, e.g. 27015/udp, 8080/tcp, 27015-27017/udp. Without /tcp or /udp the game's protocol is used." />
+                    <TextBlock Text="{Binding ExtraPortsError}" Foreground="{StaticResource WarningBrush}" FontSize="11" TextWrapping="Wrap"
+                               Margin="0,4,0,0" Visibility="{Binding HasExtraPortsError, Converter={StaticResource BoolToVis}}" />
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,2,8,0"
+                                   Foreground="{StaticResource BrandAccentBrush}" VerticalAlignment="Top"
+                                   Visibility="{Binding UpnpBusy, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Grid.Column="1" Text="{Binding UpnpStatusText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   TextWrapping="Wrap" FontSize="12" />
+                    </Grid>
+
+                    <TextBlock Text="{Binding ActiveMappingsText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                               TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding HasActiveMappings, Converter={StaticResource BoolToVis}}" />
+
+                    <Border Background="{StaticResource RootBackgroundBrush}" CornerRadius="8" Padding="12,8" Margin="0,10,0,0"
+                            Visibility="{Binding HasExternalAddress, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="PUBLIC ADDRESS" Style="{StaticResource SectionLabelStyle}" Margin="0,0,0,2" />
+                                <TextBlock Text="{Binding ExternalAddress}" FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource BrandAccentBrush}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Test from internet" Style="{StaticResource SmallGhostButtonStyle}"
+                                    VerticalAlignment="Center" Margin="0,0,8,0"
+                                    ToolTip="Ask mcstatus.io to connect to this address from outside your network"
+                                    Visibility="{Binding CanTestReachability, Converter={StaticResource BoolToVis}}"
+                                    Command="{Binding TestReachabilityCommand}" CommandParameter="{Binding ExternalAddress}" />
+                            <Button Grid.Column="2" Content="Copy" Style="{StaticResource SmallGhostButtonStyle}"
+                                    VerticalAlignment="Center" Click="CopyExternalAddress_Click" />
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Text="{Binding ReachabilityText}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding HasReachabilityText, Converter={StaticResource BoolToVis}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ReachabilityOnline}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{Binding LocalJoinText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                               TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding HasExternalAddress, Converter={StaticResource BoolToVis}}" />
+
+                    <Border BorderBrush="{StaticResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0"
+                            Visibility="{Binding HasUpnpWarning, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding UpnpWarning}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" FontSize="12" />
+                    </Border>
+
+                    <CheckBox Style="{StaticResource TunnelCheckBoxStyle}" Margin="0,14,0,0" IsChecked="{Binding UpnpAutoEnable}">
+                        <TextBlock TextWrapping="Wrap" Text="Auto-enable when this server starts (forward on start, remove on stop)" />
+                    </CheckBox>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <Button Content="Remove Mapping" Style="{StaticResource TunnelGhostButtonStyle}" Command="{Binding RemoveMappingsCommand}" />
+                        <Button Style="{StaticResource TunnelAccentButtonStyle}" MinWidth="150" Margin="8,0,0,0" Command="{Binding ForwardPortsCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Forward Port" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ========================= playit.gg ========================= -->
+                <StackPanel x:Name="PlayitPanel" Visibility="Collapsed">
+                    <Border Style="{StaticResource CardStyle}" Padding="12" Margin="0,0,0,12">
+                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" FontSize="12"
+                                   Text="playit.gg is a free tunnel that works without router changes, even behind carrier-grade NAT. The first time, the agent shows a claim link (it may also open your browser): approve it on playit.gg, then add a tunnel there for this server's port. After that, players join with the address shown below." />
+                    </Border>
+
+                    <!-- Status -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Grid.Column="0" Width="10" Height="10" Margin="0,4,10,0" VerticalAlignment="Top">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource TextMutedBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PlayitStateKey}" Value="ok">
+                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PlayitStateKey}" Value="warn">
+                                            <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PlayitStateKey}" Value="error">
+                                            <Setter Property="Fill" Value="{StaticResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding PlayitStateText}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding PlayitMessage}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                       TextWrapping="Wrap" Margin="0,2,0,0" />
+                            <ProgressBar Height="4" Margin="0,6,0,0" Minimum="0" Maximum="100" Value="{Binding InstallProgress}"
+                                         Foreground="{StaticResource BrandAccentBrush}" Background="{StaticResource RootBackgroundBrush}" BorderThickness="0"
+                                         Visibility="{Binding IsInstalling, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Claim link -->
+                    <Border Background="{StaticResource RootBackgroundBrush}" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,8" Margin="0,0,0,8"
+                            Visibility="{Binding HasClaimUrl, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="CLAIM LINK" Style="{StaticResource SectionLabelStyle}" Margin="0,0,0,2" />
+                                <TextBlock Text="{Binding ClaimUrl}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Copy" Style="{StaticResource SmallGhostButtonStyle}" VerticalAlignment="Center"
+                                    Margin="8,0,0,0" Click="CopyClaimUrl_Click" />
+                            <Button Grid.Column="2" Content="Open claim link" Style="{StaticResource TunnelAccentButtonStyle}" Padding="12,5"
+                                    VerticalAlignment="Center" Margin="8,0,0,0" Command="{Binding OpenClaimLinkCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Tunnel addresses -->
+                    <TextBlock Text="TUNNELS" Style="{StaticResource SectionLabelStyle}" Margin="0,4,0,5" />
+                    <ItemsControl ItemsSource="{Binding PlayitTunnels}"
+                                  Visibility="{Binding HasPlayitTunnels, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource RootBackgroundBrush}" CornerRadius="8" Padding="12,8" Margin="0,0,0,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Address}" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource BrandAccentBrush}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextTrimming="CharacterEllipsis">
+                                                <Run Text="→" />
+                                                <Run Text="{Binding Destination, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="Test from internet" Style="{StaticResource SmallGhostButtonStyle}"
+                                                VerticalAlignment="Center" Margin="0,0,8,0"
+                                                ToolTip="Ask mcstatus.io to connect to this address from outside your network"
+                                                Visibility="{Binding DataContext.CanTestReachability, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVis}}"
+                                                Command="{Binding DataContext.TestReachabilityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding Address}" />
+                                        <Button Grid.Column="2" Content="Copy" Style="{StaticResource SmallGhostButtonStyle}"
+                                                VerticalAlignment="Center" Tag="{Binding Address}" Click="CopyTunnelAddress_Click" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding ReachabilityText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,6"
+                               Visibility="{Binding HasReachabilityText, Converter={StaticResource BoolToVis}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ReachabilityOnline}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"
+                               Text="{Binding PlayitPortHint}"
+                               Visibility="{Binding HasPlayitTunnels, Converter={StaticResource InverseBoolToVis}}" />
+
+                    <!-- Tunnel points at another local port than the selected server listens on. -->
+                    <Border CornerRadius="8" Padding="12,10" Margin="0,4,0,4" BorderThickness="1"
+                            BorderBrush="{StaticResource WarningBrush}" Background="#1FF59E0B"
+                            Visibility="{Binding HasPlayitMismatch, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding PlayitMismatchText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontSize="12" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="{Binding UsePlayitPortText}" Style="{StaticResource TunnelAccentButtonStyle}" Padding="12,5"
+                                        Command="{Binding UsePlayitPortCommand}"
+                                        Visibility="{Binding PlayitSuggestedPort, Converter={StaticResource NullToCollapsed}}" />
+                                <Button Content="Open playit.gg" Style="{StaticResource SmallGhostButtonStyle}" Margin="8,0,0,0"
+                                        Command="{Binding OpenDashboardCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Agent output -->
+                    <Border Background="{StaticResource RootBackgroundBrush}" CornerRadius="8" BorderBrush="{StaticResource CardBackgroundBrush}"
+                            BorderThickness="1" Height="120" Margin="0,10,0,4">
+                        <TextBox x:Name="PlayitOutputBox" Text="{Binding PlayitOutput, Mode=OneWay}" Background="Transparent" BorderThickness="0"
+                                 IsReadOnly="True" Foreground="{StaticResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11"
+                                 TextWrapping="Wrap" Padding="8" VerticalScrollBarVisibility="Auto" TextChanged="PlayitOutput_TextChanged" />
+                    </Border>
+                    <TextBlock Text="{Binding PlayitAgentText}" Foreground="{StaticResource TextMutedBrush}" FontSize="11"
+                               TextTrimming="CharacterEllipsis" />
+
+                    <CheckBox Style="{StaticResource TunnelCheckBoxStyle}" Margin="0,12,0,0" IsChecked="{Binding PlayitAutoEnable}">
+                        <TextBlock TextWrapping="Wrap" Text="Auto-enable when this server starts (start the agent; stop it when no such server runs)" />
+                    </CheckBox>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="playit.gg dashboard" Style="{StaticResource TunnelGhostButtonStyle}"
+                                Command="{Binding OpenDashboardCommand}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Install" Style="{StaticResource TunnelGhostButtonStyle}" Command="{Binding InstallPlayitCommand}"
+                                    Visibility="{Binding IsPlayitNotInstalled, Converter={StaticResource BoolToVis}}" Margin="0,0,8,0" />
+                            <Button Content="Stop Agent" Style="{StaticResource TunnelGhostButtonStyle}" Command="{Binding StopPlayitCommand}" />
+                            <Button Content="Start Agent" Style="{StaticResource TunnelAccentButtonStyle}" MinWidth="120" Margin="8,0,0,0"
+                                    Command="{Binding StartPlayitCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+
+            <Border Grid.Row="2" BorderBrush="{StaticResource CardBackgroundBrush}" BorderThickness="0,1,0,0" Margin="0,20,0,0" Padding="24,14">
+                <Button Content="Close" Style="{StaticResource GhostButtonStyle}" MinWidth="100" HorizontalAlignment="Right" Click="Close_Click" />
+            </Border>
+        </Grid>
+    </Border>
+</Window>

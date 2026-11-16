@@ -1,0 +1,83 @@
+{
+  "manifest_version": 1,
+  "id": "redm",
+  "name": "RedM Server",
+  "description": "Cfx.re FXServer for Red Dead Redemption 2 multiplayer. Uses the same official artifacts as FiveM with the RDR3 game profile.",
+  "genres": [
+    "Adventure"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/1174180/header.jpg",
+    "accent": "#B91C1C"
+  },
+  "install": {
+    "provider": "cfx",
+    "variants": [],
+    "anonymous": true,
+    "product": "redm",
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\artifact\\FXServer.exe",
+    "arguments": "+set gamename rdr3",
+    "working_dir": "{server_root}",
+    "stop_command": "quit"
+  },
+  "network": {
+    "default_port": 30120,
+    "protocol": "both",
+    "query": "fivem",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": true,
+    "folder": "resources",
+    "extensions": [],
+    "kind": "resource"
+  },
+  "details": {
+    "about": "RedM is a multiplayer modification for Red Dead Redemption 2 on PC, built on the same Cfx.re framework that powers FiveM. Instead of Rockstar's official online mode, players join community-run dedicated servers that can run their own rules, scripts and game modes, from Wild West roleplay to custom PvP.\n\nRunning your own RedM server uses the official FXServer artifacts with the RDR3 game profile. You control the resource list, player slots, permissions and game build, and the bundled txAdmin web panel gives you a browser-based dashboard for setup, restarts, player management and logs.\n\nPlayers need their own PC copy of Red Dead Redemption 2 plus the RedM client to connect. Your server needs a free Cfx.re license key from the Cfx.re Portal.",
+    "developer": "Cfx.re (RedM); Rockstar Games (Red Dead Redemption 2)",
+    "publisher": "Rockstar Games",
+    "release_date": "Dec 5, 2019",
+    "website": "https://redm.net/",
+    "store_url": "https://store.steampowered.com/app/1174180/",
+    "docs_url": "https://docs.fivem.net/docs/server-manual/setting-up-a-server/",
+    "max_players": "Configurable via sv_maxclients (1-2048; 32+ requires OneSync)",
+    "features": [
+      "Community-run Red Dead Redemption 2 multiplayer on dedicated servers",
+      "Same FXServer artifacts as FiveM, using the rdr3 game profile",
+      "Custom scripts and game modes installed as server resources",
+      "txAdmin web panel for setup, restarts, bans and logs",
+      "Choose the enforced RDR2 game build with sv_enforceGameBuild",
+      "Free Cfx.re license key from the Cfx.re Portal"
+    ],
+    "ports": [
+      {
+        "port": "30120",
+        "protocol": "TCP+UDP",
+        "purpose": "Game traffic (endpoint_add_tcp / endpoint_add_udp)"
+      },
+      {
+        "port": "40120",
+        "protocol": "TCP",
+        "purpose": "txAdmin web panel (keep private; do not expose publicly)"
+      }
+    ],
+    "setup_tips": [
+      "On first start, open txAdmin at http://127.0.0.1:40120. The setup PIN is printed in the Console tab.",
+      "Create a free server license key on the Cfx.re Portal (portal.cfx.re) and enter it in txAdmin's setup, or set sv_licenseKey in server.cfg.",
+      "The app launches FXServer with +set gamename rdr3 so the server runs the RedM (RDR2) profile. Keep it if you change the launch arguments.",
+      "Forward or allow port 30120 on both TCP and UDP using the Firewall Rules page or Connect to Tunnel. txAdmin's 40120 only needs local access.",
+      "Add scripts to the resources folder and enable them with ensure lines in server.cfg. Player slots above 32 need OneSync enabled.",
+      "Use the 'quit' console command (the app's stop command) to shut the server down cleanly."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/ss_66b553f4c209476d3e4ce25fa4714002cc914c4f.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/ss_bac60bacbf5da8945103648c08d27d5e202444ca.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/ss_668dafe477743f8b50b818d5bbfcec669e9ba93e.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/ss_4ce07ae360b166f0f650e9a895a3b4b7bf15e34f.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/ss_d1a8f5a69155c3186c65d1da90491fcfd43663d9.1920x1080.jpg"
+    ]
+  }
+}

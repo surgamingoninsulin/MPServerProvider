@@ -1,0 +1,16 @@
+{
+  "start_on_boot": false,
+  "start_minimized_to_tray": false,
+  "restore_running_servers": false,
+  "news_auto_scroll": true,
+  "firewall_rules": [
+    {
+      "name": "minecraft",
+      "port": 25565,
+      "protocol": "both",
+      "active": true,
+      "created": "2026-07-15T12:43:16.9806051+02:00"
+    }
+  ],
+  "assumed_hosting_price_per_hour": 0.02
+}

@@ -1,0 +1,8 @@
+bin/
+obj/
+*.user
+# Runtime-seeded data dir (GameLibraryService writes its catalog next to the exe
+# on first run) — this is generated output, not source; data/providers/json/*.json
+# at the repo root is the real source of truth.
+src/MPServerProvider.App/bin/
+data/

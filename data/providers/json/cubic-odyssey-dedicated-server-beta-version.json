@@ -1,0 +1,78 @@
+{
+  "manifest_version": 1,
+  "id": "cubic-odyssey-dedicated-server-beta-version",
+  "name": "Cubic Odyssey Dedicated Server (Beta Version)",
+  "description": "Embark on a galactic journey in Cubic Odyssey, an open-world adventure where you explore vibrant planets, craft tools, build vehicles, and fight the Red Darkness. Uncover ancient mysteries, and shape a universe full of life, danger, and limitless possibilities!",
+  "genres": [
+    "Action",
+    "Adventure"
+  ],
+  "artwork": {
+    "cover": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/header.jpg?t=1783408157",
+    "hero": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/header.jpg?t=1783408157",
+    "accent": "#4F6BFF"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 3858450,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\server\\CubicOdysseyServer.exe",
+    "arguments": "-Port={server_port}",
+    "working_dir": "{server_root}",
+    "stop_command": "quit"
+  },
+  "network": {
+    "default_port": 27015,
+    "protocol": "both",
+    "query": "a2s",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Cubic Odyssey is a voxel open-world adventure from Atypical Games, published by Gaijin. You travel between colourful planets, gather resources, craft tools, build vehicles and bases, and fight the spreading Red Darkness while uncovering ancient mysteries.\n\nThe dedicated server is a separate free tool for PC owners and is currently in beta. It lets the world keep running and evolving when the host is offline. Lobbies support up to 20 players, more than the peer-to-peer co-op mode. Each server has its own characters, so progress made there stays tied to that server.",
+    "developer": "Atypical Games",
+    "publisher": "Gaijin Network Ltd",
+    "release_date": "May 14, 2025",
+    "website": "https://cubicodyssey.game/",
+    "store_url": "https://store.steampowered.com/app/3400000/",
+    "max_players": "Up to 20 players",
+    "features": [
+      "Voxel open-world adventure across many planets",
+      "Crafting, vehicle building and base building",
+      "Free dedicated server tool for PC owners (beta)",
+      "Up to 20 players per server lobby",
+      "World persists while the host is offline",
+      "Characters and progress are separate for each server"
+    ],
+    "ports": [
+      {
+        "port": "27015",
+        "protocol": "TCP+UDP",
+        "purpose": "Game traffic (-Port, the app's default; no official port list is published)"
+      }
+    ],
+    "setup_tips": [
+      "The server is a separate free Steam tool (app 3858450). The app downloads it with an anonymous SteamCMD login (no Steam account needed to install it) and launches server\\CubicOdysseyServer.exe -Port=<port> from the server folder.",
+      "Settings live in config/server_config.txt in the server folder (the download ships config/server_config.txt.sample as a template): serverName, serverPassword, maxPlayers, galaxySeed, privateServer, allowRelaying and the difficulty scales. help/server_manual.txt lists the launch options: -Port, -MaxPort, -MaxNumPlayers, -Password and -Gamemode=adventure|creative.",
+      "Players join from Join Game > Dedicated Servers in the game. Each server uses its own character, so tell players that progress does not carry over from their other worlds.",
+      "No official port list is published. The app passes your port (default 27015) as -Port, so open it on the Firewall Rules page or through Connect to Tunnel, and check the server console for the port it actually binds to."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/2b09f6346b32c2a8b6ffecd3e7e5dfd49608b191/ss_2b09f6346b32c2a8b6ffecd3e7e5dfd49608b191.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/ss_42dfb80d95b5fe58171d4dde92ed663cb505db66.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/7c0f479fc14dab3c582d5e54f0f80194a6a90987/ss_7c0f479fc14dab3c582d5e54f0f80194a6a90987.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/ss_6ec6404e0695a325eca5472beb8ff30d9494dc3b.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/0e6755afae8125468e187e2f9464626d605c8bd4/ss_0e6755afae8125468e187e2f9464626d605c8bd4.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3400000/45104b133ebf4ef107c61f450df5fb02578254dc/ss_45104b133ebf4ef107c61f450df5fb02578254dc.1920x1080.jpg"
+    ]
+  }
+}

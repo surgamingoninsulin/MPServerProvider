@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-16"?>
+<mav:ServerDetailView Background="System.Windows.StaticResourceExtension" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:mav="clr-namespace:MPServerProvider.App.Views;assembly=MPServerProvider.App" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+      <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+      <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+    </Grid.RowDefinitions>
+    <Grid.Children>
+      <Grid Row="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+          <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+        </Grid.ColumnDefinitions>
+        <Grid.Children>
+          <StackPanel Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <StackPanel.Children>
+              <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <StackPanel.Children>
+                  <TextBlock x:ConnectionId="1" Name="NameText" Text="Server" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <Border x:ConnectionId="2" Name="StatusBadge" CornerRadius="System.Windows.Baml2006.TypeConverterMarkupExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension">
+                    <Border.Child>
+                      <TextBlock x:ConnectionId="3" Name="StatusText" Text="offline" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" />
+                    </Border.Child>
+                  </Border>
+                </StackPanel.Children>
+              </StackPanel>
+              <TextBlock x:ConnectionId="4" Name="GameText" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+            </StackPanel.Children>
+          </StackPanel>
+          <StackPanel Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <StackPanel.Children>
+              <Button x:ConnectionId="5" Name="StartButton" Style="System.Windows.StaticResourceExtension" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <StackPanel.Children>
+                    <TextBlock Text="" FontFamily="System.Windows.StaticResourceExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <TextBlock Text="Start" />
+                  </StackPanel.Children>
+                </StackPanel>
+              </Button>
+              <Button x:ConnectionId="6" Name="StopButton" Style="System.Windows.StaticResourceExtension" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <StackPanel.Children>
+                    <TextBlock Text="" FontFamily="System.Windows.StaticResourceExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <TextBlock Text="Stop" />
+                  </StackPanel.Children>
+                </StackPanel>
+              </Button>
+              <Button x:ConnectionId="7" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <StackPanel.Children>
+                    <TextBlock Text="" FontFamily="System.Windows.StaticResourceExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <TextBlock Text="Restart" />
+                  </StackPanel.Children>
+                </StackPanel>
+              </Button>
+              <Button x:ConnectionId="8" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <StackPanel.Children>
+                    <TextBlock Text="" FontFamily="System.Windows.StaticResourceExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <TextBlock Text="Open Folder" />
+                  </StackPanel.Children>
+                </StackPanel>
+              </Button>
+              <Button x:ConnectionId="9" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <StackPanel.Children>
+                    <TextBlock Text="" FontFamily="System.Windows.StaticResourceExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <TextBlock Text="Export" />
+                  </StackPanel.Children>
+                </StackPanel>
+              </Button>
+            </StackPanel.Children>
+          </StackPanel>
+        </Grid.Children>
+      </Grid>
+      <StackPanel Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <StackPanel.Children>
+          <RadioButton x:ConnectionId="10" Name="TabConsole">Console<RadioButton.Style>System.Windows.StaticResourceExtension</RadioButton.Style><RadioButton.GroupName>detailTab</RadioButton.GroupName><RadioButton.IsChecked>System.Windows.Baml2006.TypeConverterMarkupExtension</RadioButton.IsChecked></RadioButton>
+          <RadioButton x:ConnectionId="11" Name="TabFiles">File Manager<RadioButton.Style>System.Windows.StaticResourceExtension</RadioButton.Style><RadioButton.GroupName>detailTab</RadioButton.GroupName></RadioButton>
+          <RadioButton x:ConnectionId="12" Name="TabMods">Mods<RadioButton.Style>System.Windows.StaticResourceExtension</RadioButton.Style><RadioButton.GroupName>detailTab</RadioButton.GroupName></RadioButton>
+          <RadioButton x:ConnectionId="13" Name="TabResources">Resources<RadioButton.Style>System.Windows.StaticResourceExtension</RadioButton.Style><RadioButton.GroupName>detailTab</RadioButton.GroupName></RadioButton>
+          <RadioButton x:ConnectionId="14" Name="TabTxAdmin">txAdmin<RadioButton.Style>System.Windows.StaticResourceExtension</RadioButton.Style><RadioButton.GroupName>detailTab</RadioButton.GroupName><RadioButton.Visibility>System.Windows.Baml2006.TypeConverterMarkupExtension</RadioButton.Visibility></RadioButton>
+          <RadioButton x:ConnectionId="15" Name="TabSettings">Server Settings<RadioButton.Style>System.Windows.StaticResourceExtension</RadioButton.Style><RadioButton.GroupName>detailTab</RadioButton.GroupName></RadioButton>
+        </StackPanel.Children>
+      </StackPanel>
+      <Grid x:ConnectionId="16" Name="ConsolePanel" Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+          <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+        </Grid.RowDefinitions>
+        <Grid.Children>
+          <Border Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" CornerRadius="System.Windows.Baml2006.TypeConverterMarkupExtension" BorderBrush="System.Windows.StaticResourceExtension" BorderThickness="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Border.Child>
+              <ScrollViewer x:ConnectionId="17" Name="ConsoleScroll" VerticalScrollBarVisibility="System.Windows.Baml2006.TypeConverterMarkupExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <TextBox x:ConnectionId="18" Name="ConsoleOutput" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" BorderThickness="System.Windows.Baml2006.TypeConverterMarkupExtension" IsReadOnly="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" FontFamily="System.Windows.Baml2006.TypeConverterMarkupExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" TextWrapping="System.Windows.Baml2006.TypeConverterMarkupExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" CaretBrush="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" />
+              </ScrollViewer>
+            </Border.Child>
+          </Border>
+          <Grid Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+            </Grid.ColumnDefinitions>
+            <Grid.Children>
+              <TextBox x:ConnectionId="19" Name="CommandBox" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" FontFamily="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <Button x:ConnectionId="20" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">Send<Button.Style>System.Windows.StaticResourceExtension</Button.Style><Button.Width>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Width><Button.Margin>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Margin></Button>
+            </Grid.Children>
+          </Grid>
+        </Grid.Children>
+      </Grid>
+      <Grid x:ConnectionId="21" Name="FilesPanel" Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+          <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+        </Grid.RowDefinitions>
+        <Grid.Children>
+          <Grid Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+            </Grid.ColumnDefinitions>
+            <Grid.Children>
+              <Button x:ConnectionId="22" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension"><Button.FontFamily>System.Windows.StaticResourceExtension</Button.FontFamily><Button.FontSize>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.FontSize><ToolTipService.ToolTip>Up one folder</ToolTipService.ToolTip></Button>
+              <TextBlock x:ConnectionId="23" Name="FilesPathText" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" TextTrimming="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <Button x:ConnectionId="24" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">Refresh</Button>
+              <Button x:ConnectionId="25" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">Open in Explorer</Button>
+              <Button x:ConnectionId="26" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">Delete</Button>
+              <Button x:ConnectionId="27" Name="NewFileButton" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">New File</Button>
+            </Grid.Children>
+          </Grid>
+          <Grid x:ConnectionId="28" Name="FileEditorPanel" Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+            </Grid.RowDefinitions>
+            <Grid.Children>
+              <Grid Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                </Grid.ColumnDefinitions>
+                <Grid.Children>
+                  <TextBlock x:ConnectionId="29" Name="EditorFileName" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Text="filename.txt" Style="System.Windows.StaticResourceExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" TextTrimming="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <Button x:ConnectionId="30" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">Save<Button.Style>System.Windows.StaticResourceExtension</Button.Style><Button.Padding>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Padding><Button.Margin>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Margin></Button>
+                  <Button x:ConnectionId="31" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">Discard<Button.Style>System.Windows.StaticResourceExtension</Button.Style><Button.Padding>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Padding><Button.Margin>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Margin></Button>
+                  <Button x:ConnectionId="32" Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension"><Button.FontFamily>System.Windows.StaticResourceExtension</Button.FontFamily><Button.FontSize>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.FontSize><Button.Style>System.Windows.StaticResourceExtension</Button.Style><Button.Padding>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Padding><ToolTipService.ToolTip>Back to file list</ToolTipService.ToolTip></Button>
+                </Grid.Children>
+              </Grid>
+              <TextBox x:ConnectionId="33" Name="FileEditorBox" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" FontFamily="System.Windows.Baml2006.TypeConverterMarkupExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" AcceptsReturn="System.Windows.Baml2006.TypeConverterMarkupExtension" AcceptsTab="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalScrollBarVisibility="System.Windows.Baml2006.TypeConverterMarkupExtension" HorizontalScrollBarVisibility="System.Windows.Baml2006.TypeConverterMarkupExtension" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" Foreground="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" BorderThickness="System.Windows.Baml2006.TypeConverterMarkupExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+              <TextBlock x:ConnectionId="34" Name="EditorStatus" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" />
+            </Grid.Children>
+          </Grid>
+          <Border x:ConnectionId="35" Name="FilesListBorder" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension">
+            <Border.Child>
+              <ListBox x:ConnectionId="36" Name="FilesList" Style="System.Windows.StaticResourceExtension">
+                <ListBox.ItemTemplate>
+                  <DataTemplate Template="System.Xaml.XamlNodeList" />
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Border.Child>
+          </Border>
+        </Grid.Children>
+      </Grid>
+      <Grid x:ConnectionId="38" Name="ModsPanel" Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+          <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+          <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+        </Grid.ColumnDefinitions>
+        <Grid.Children>
+          <Border Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Border.Child>
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                </Grid.RowDefinitions>
+                <Grid.Children>
+                  <TextBlock x:ConnectionId="39" Name="ModLibraryHeader" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Text="Mod Library" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <ListBox x:ConnectionId="40" Name="LibraryModsList" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate Template="System.Xaml.XamlNodeList" />
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </Grid.Children>
+              </Grid>
+            </Border.Child>
+          </Border>
+          <Border Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Border.Child>
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                </Grid.RowDefinitions>
+                <Grid.Children>
+                  <TextBlock x:ConnectionId="42" Name="InstalledModsHeader" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Text="Installed on this server" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <ListBox x:ConnectionId="43" Name="InstalledModsList" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate Template="System.Xaml.XamlNodeList" />
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </Grid.Children>
+              </Grid>
+            </Border.Child>
+          </Border>
+        </Grid.Children>
+      </Grid>
+      <Grid x:ConnectionId="45" Name="ResourcesPanel" Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+          <RowDefinition Height="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+        </Grid.RowDefinitions>
+        <Grid.Children>
+          <UniformGrid Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Columns="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <UniformGrid.Children>
+              <Border Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <Border.Child>
+                  <StackPanel>
+                    <StackPanel.Children>
+                      <TextBlock Text="CPU Usage" Style="System.Windows.StaticResourceExtension" />
+                      <TextBlock x:ConnectionId="46" Name="CpuText" Text="—" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                      <ProgressBar x:ConnectionId="47" Name="CpuBar" Style="System.Windows.StaticResourceExtension" Maximum="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    </StackPanel.Children>
+                  </StackPanel>
+                </Border.Child>
+              </Border>
+              <Border Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <Border.Child>
+                  <StackPanel>
+                    <StackPanel.Children>
+                      <TextBlock Text="Memory" Style="System.Windows.StaticResourceExtension" />
+                      <TextBlock x:ConnectionId="48" Name="RamText" Text="—" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                      <ProgressBar x:ConnectionId="49" Name="RamBar" Style="System.Windows.StaticResourceExtension" Maximum="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    </StackPanel.Children>
+                  </StackPanel>
+                </Border.Child>
+              </Border>
+              <Border Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <Border.Child>
+                  <StackPanel>
+                    <StackPanel.Children>
+                      <TextBlock Text="Uptime" Style="System.Windows.StaticResourceExtension" />
+                      <TextBlock x:ConnectionId="50" Name="UptimeText" Text="—" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    </StackPanel.Children>
+                  </StackPanel>
+                </Border.Child>
+              </Border>
+              <Border Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                <Border.Child>
+                  <StackPanel>
+                    <StackPanel.Children>
+                      <TextBlock Text="Players" Style="System.Windows.StaticResourceExtension" />
+                      <TextBlock x:ConnectionId="51" Name="PlayersText" Text="—" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    </StackPanel.Children>
+                  </StackPanel>
+                </Border.Child>
+              </Border>
+            </UniformGrid.Children>
+          </UniformGrid>
+          <Border Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Border.Child>
+              <StackPanel>
+                <StackPanel.Children>
+                  <TextBlock Text="Connection" Style="System.Windows.StaticResourceExtension" />
+                  <TextBlock x:ConnectionId="52" Name="ConnectionText" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                </StackPanel.Children>
+              </StackPanel>
+            </Border.Child>
+          </Border>
+        </Grid.Children>
+      </Grid>
+      <Grid x:ConnectionId="53" Name="TxAdminPanel" Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Grid.Children>
+          <Border Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension">
+            <Border.Child>
+              <Grid>
+                <Grid.Children>
+                  <wv2:WebView2 x:ConnectionId="54" Name="TxAdminWeb" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  <StackPanel x:ConnectionId="55" Name="TxAdminPlaceholder" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" HorizontalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                    <StackPanel.Children>
+                      <Border Width="System.Windows.Baml2006.TypeConverterMarkupExtension" Height="System.Windows.Baml2006.TypeConverterMarkupExtension" CornerRadius="System.Windows.Baml2006.TypeConverterMarkupExtension" Background="System.Windows.Baml2006.DeferredBinaryDeserializerExtension" BorderBrush="System.Windows.StaticResourceExtension" BorderThickness="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                        <Border.Child>
+                          <TextBlock Text="" FontFamily="System.Windows.StaticResourceExtension" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" HorizontalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                        </Border.Child>
+                      </Border>
+                      <TextBlock x:ConnectionId="56" Name="TxAdminStatusText" Text="Start the server to open the txAdmin console" FontSize="System.Windows.Baml2006.TypeConverterMarkupExtension" FontWeight="System.Windows.Baml2006.TypeConverterMarkupExtension" Foreground="System.Windows.StaticResourceExtension" HorizontalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" TextAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                      <TextBlock Text="txAdmin runs on 127.0.0.1:40120 — the first-run setup PIN is printed in the Console tab." Style="System.Windows.StaticResourceExtension" HorizontalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" TextAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    </StackPanel.Children>
+                  </StackPanel>
+                </Grid.Children>
+              </Grid>
+            </Border.Child>
+          </Border>
+        </Grid.Children>
+      </Grid>
+      <ScrollViewer x:ConnectionId="57" Name="SettingsPanel" Grid.Row="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" Visibility="System.Windows.Baml2006.TypeConverterMarkupExtension" VerticalScrollBarVisibility="System.Windows.Baml2006.TypeConverterMarkupExtension">
+        <Border Style="System.Windows.StaticResourceExtension" Padding="System.Windows.Baml2006.TypeConverterMarkupExtension" MaxWidth="System.Windows.Baml2006.TypeConverterMarkupExtension" HorizontalAlignment="System.Windows.Baml2006.TypeConverterMarkupExtension">
+          <Border.Child>
+            <StackPanel>
+              <StackPanel.Children>
+                <TextBlock Text="Description" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                <TextBox x:ConnectionId="58" Name="SettingDescription" Style="System.Windows.StaticResourceExtension" />
+                <Grid Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                    <ColumnDefinition Width="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                  </Grid.ColumnDefinitions>
+                  <Grid.Children>
+                    <StackPanel Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                      <StackPanel.Children>
+                        <TextBlock Text="Port" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                        <TextBox x:ConnectionId="59" Name="SettingPort" Style="System.Windows.StaticResourceExtension" />
+                      </StackPanel.Children>
+                    </StackPanel>
+                    <StackPanel Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                      <StackPanel.Children>
+                        <TextBlock Text="RAM Min (MB)" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                        <TextBox x:ConnectionId="60" Name="SettingRamMin" Style="System.Windows.StaticResourceExtension" />
+                      </StackPanel.Children>
+                    </StackPanel>
+                    <StackPanel Grid.Column="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                      <StackPanel.Children>
+                        <TextBlock Text="RAM Max (MB)" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                        <TextBox x:ConnectionId="61" Name="SettingRamMax" Style="System.Windows.StaticResourceExtension" />
+                      </StackPanel.Children>
+                    </StackPanel>
+                  </Grid.Children>
+                </Grid>
+                <TextBlock Text="Start Command" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                <TextBox x:ConnectionId="62" Name="SettingStartCommand" Style="System.Windows.StaticResourceExtension" FontFamily="System.Windows.Baml2006.TypeConverterMarkupExtension" TextWrapping="System.Windows.Baml2006.TypeConverterMarkupExtension" AcceptsReturn="System.Windows.Baml2006.TypeConverterMarkupExtension" MinHeight="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                <TextBlock Text="Stop Command (stdin)" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                <TextBox x:ConnectionId="63" Name="SettingStopCommand" Style="System.Windows.StaticResourceExtension" FontFamily="System.Windows.Baml2006.TypeConverterMarkupExtension" />
+                <CheckBox x:ConnectionId="64" Name="SettingAutoRestart" Style="System.Windows.StaticResourceExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">Restart automatically when the server crashes</CheckBox>
+                <StackPanel Orientation="System.Windows.Baml2006.TypeConverterMarkupExtension" Margin="System.Windows.Baml2006.TypeConverterMarkupExtension">
+                  <StackPanel.Children>
+                    <Button x:ConnectionId="65">Save Changes<Button.Style>System.Windows.StaticResourceExtension</Button.Style><Button.Width>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Width></Button>
+                    <Button x:ConnectionId="66">Delete Server<Button.Style>System.Windows.StaticResourceExtension</Button.Style><Button.Width>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Width><Button.Margin>System.Windows.Baml2006.TypeConverterMarkupExtension</Button.Margin></Button>
+                  </StackPanel.Children>
+                </StackPanel>
+              </StackPanel.Children>
+            </StackPanel>
+          </Border.Child>
+        </Border>
+      </ScrollViewer>
+    </Grid.Children>
+  </Grid>
+</mav:ServerDetailView>

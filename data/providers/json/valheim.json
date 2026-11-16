@@ -1,0 +1,80 @@
+{
+  "manifest_version": 1,
+  "id": "valheim",
+  "name": "Valheim Server",
+  "description": "Official Valheim dedicated server from Iron Gate, installed through Valve\u0027s SteamCMD (anonymous). Password is \u0027mpserver\u0027 by default \u2014 change it in the server settings.",
+  "genres": [
+    "Survival",
+    "Adventure"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/892970/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/892970/library_hero.jpg",
+    "accent": "#7F1D1D"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 896660,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\valheim_server.exe",
+    "arguments": "-nographics -batchmode -name \u0022{server_name}\u0022 -port {server_port} -world \u0022Dedicated\u0022 -password \u0022mpserver\u0022 -public 1",
+    "working_dir": "{server_root}"
+  },
+  "network": {
+    "default_port": 2456,
+    "protocol": "udp",
+    "query": "none",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": false,
+    "folder": "mods",
+    "extensions": [],
+    "kind": "mod"
+  },
+  "details": {
+    "about": "Valheim is a co-op exploration and survival game from Iron Gate, set in a procedurally generated purgatory inspired by Norse mythology. Players gather resources, build longhouses and ships, craft gear and take on increasingly dangerous biomes and bosses together.\n\nA dedicated server keeps your world running around the clock, so your group can drop in whenever they like without one player hosting from their game client. Iron Gate's free Valheim Dedicated Server tool handles world saves, automatic backups, world modifiers and admin, ban and permitted-player lists.\n\nServers can be listed publicly or kept private with a password. An optional crossplay backend relays traffic so Xbox and Game Pass players can join without port forwarding.",
+    "developer": "Iron Gate AB",
+    "publisher": "Coffee Stain Publishing",
+    "release_date": "Sep 9, 2026",
+    "website": "https://www.valheim.com/",
+    "store_url": "https://store.steampowered.com/app/892970/",
+    "docs_url": "https://www.valheim.com/support/a-guide-to-dedicated-servers/",
+    "max_players": "Up to 10 players",
+    "features": [
+      "Official Valheim Dedicated Server, installed anonymously via SteamCMD (app 896660)",
+      "Persistent world that stays online without a player hosting",
+      "Automatic saves and rotating backups (-saveinterval, -backups)",
+      "World modifier presets such as Casual, Hard and Hardcore (-preset)",
+      "Admin, ban and permitted-player lists in the save folder",
+      "Optional crossplay backend that needs no port forwarding (-crossplay)"
+    ],
+    "ports": [
+      {
+        "port": "2456-2457",
+        "protocol": "UDP",
+        "purpose": "Game traffic and Steam query (the -port value and port + 1)"
+      }
+    ],
+    "setup_tips": [
+      "The app launches valheim_server.exe with -name, -port 2456, -world \"Dedicated\", -password \"mpserver\" and -public 1. Change the default password before inviting anyone.",
+      "Open UDP 2456-2457 in Firewall Rules or with Connect to Tunnel. Valheim uses the -port value and the port after it.",
+      "Worlds and the adminlist.txt, bannedlist.txt and permittedlist.txt files are stored in %USERPROFILE%\\AppData\\LocalLow\\IronGate\\Valheim unless you add -savedir.",
+      "Add -crossplay to let Xbox and Game Pass players join through Iron Gate's relay. Those players connect using a join code or the server list instead of a forwarded port.",
+      "Set -public 0 to hide the server from the community list. Friends can still join by IP and port.",
+      "Add -saveinterval (seconds, default 1800) and -backups to tune autosaves and backup retention."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/5a31353178f635b67f0c8720ebb8a1a95b637276/ss_5a31353178f635b67f0c8720ebb8a1a95b637276.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/bc7c361dab1780543a3ceca50c8fba831e5bc8db/ss_bc7c361dab1780543a3ceca50c8fba831e5bc8db.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_a600a7d4ca954543e22f571a9629521a13f82143.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/f7a47b4bd150ce1a2c6ec88f7d79fd57e7c538c8/ss_f7a47b4bd150ce1a2c6ec88f7d79fd57e7c538c8.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_cd0262c5abf8a90ee5e1059acafc5a92b6be0e73.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_3db385fc1223914dadb199ac8682683a8c59454e.1920x1080.jpg"
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+<UserControl x:Class="MPServerProvider.App.Views.Pages.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MPServerProvider.App.Controls"
+             xmlns:converters="clr-namespace:MPServerProvider.App.Converters">
+    <UserControl.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <!-- News card: accent outline on hover, hand cursor only when the card opens a game. -->
+        <Style x:Key="NewsCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Width" Value="340" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,16,0" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                </Trigger>
+                <DataTrigger Binding="{Binding CanOpen}" Value="True">
+                    <Setter Property="Cursor" Value="Hand" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <!-- Port of views_homepage.xaml's named elements (PlayersStat/UptimeStat/
+         ServersShortcutText/ModsShortcutText/NewsHost-NewsScroller): hero banner + stat tiles +
+         the real NewsService feed on the auto-scrolling AutoScrollingItemsControl. Each news
+         card shows the game's banner, title and a 2-line trimmed summary; clicking one opens
+         that game's Game Detail page (HomePage.xaml.cs NewsCard_MouseLeftButtonUp). -->
+    <!-- News sits directly under the stat tiles (as in docs/reference-screenshots/1.png) with the
+         free space left BELOW it, instead of being pinned to the window's bottom edge. The page
+         scrolls vertically if the window is shorter than the content. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="28,28,28,40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource HeroBannerBackgroundBrush}"
+                CornerRadius="{StaticResource CardCornerRadius}" Padding="32" Height="220">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock FontSize="34" FontWeight="Bold">
+                    <Run Text="MP SERVER" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <Run Text=" PROVIDER" Foreground="{StaticResource BrandAccentBrush}" />
+                </TextBlock>
+                <TextBlock Text="L O C A L   G A M E   S E R V E R   P A N E L"
+                           Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,20" />
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="ManageServersButton" Content="Manage Servers" Style="{StaticResource AccentButtonStyle}" Margin="0,0,12,0" Click="ManageServersButton_Click" />
+                    <Button x:Name="BrowseGamesButton" Content="Browse Games" Style="{StaticResource GhostButtonStyle}" Click="BrowseGamesButton_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,20,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="UPTIME" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                    <TextBlock x:Name="UptimeStat" Text="0h 0m" Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="4,0,4,0">
+                <StackPanel>
+                    <TextBlock Text="TOTAL PLAYERS" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                    <TextBlock x:Name="PlayersStat" Text="0" Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="4,0,4,0">
+                <StackPanel>
+                    <TextBlock Text="MODS" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                    <TextBlock x:Name="ModsShortcutText" Text="0 installed" Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Style="{StaticResource CardStyle}" Margin="8,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="MY SERVERS" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                    <TextBlock x:Name="ServersShortcutText" Text="0 running" Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Installed servers: how many there are and which one was installed last. -->
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="SERVERS INSTALLED" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                    <TextBlock x:Name="InstalledCountText" Text="0" Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock x:Name="InstalledBreakdownText" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"
+                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" x:Name="LastInstalledCard" Style="{StaticResource CardStyle}" Margin="8,0,0,0"
+                    Cursor="Hand" MouseLeftButtonUp="LastInstalledCard_MouseLeftButtonUp" ToolTip="Open in My Servers">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="LastInstalledArt" Grid.Column="0" Width="96" Height="45" CornerRadius="6" Margin="0,0,14,0"
+                            Background="{StaticResource PanelBackgroundBrush}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="LAST SERVER INSTALLED" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                        <TextBlock x:Name="LastInstalledName" Text="None yet" Foreground="{StaticResource TextPrimaryBrush}" FontSize="16"
+                                   FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="LastInstalledDetail" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="&#xE76C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"
+                               Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" x:Name="NewsHost" Margin="0,28,0,0" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Latest News &amp; Updates" Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="17" FontWeight="SemiBold" Margin="0,0,0,12" />
+            <controls:AutoScrollingItemsControl x:Name="NewsScroller" Grid.Row="1">
+                <controls:AutoScrollingItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource NewsCardStyle}"
+                                MouseLeftButtonDown="NewsCard_MouseLeftButtonDown"
+                                MouseLeftButtonUp="NewsCard_MouseLeftButtonUp">
+                            <StackPanel>
+                                <Grid Height="128">
+                                    <Border Background="{Binding AccentBrush}" />
+                                    <Image Source="{Binding CoverImage}" Stretch="UniformToFill"
+                                           Visibility="{Binding CoverImage, Converter={StaticResource NullToVisibilityConverter}}" />
+                                    <Border Background="{StaticResource BrandAccentBrush}" CornerRadius="6"
+                                            Padding="8,2,8,3" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding Tag}" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                    </Border>
+                                </Grid>
+                                <StackPanel Margin="16,12,16,14">
+                                    <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextPrimaryBrush}"
+                                               FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Summary}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                                               LineStackingStrategy="BlockLineHeight" LineHeight="17" Height="34"
+                                               Margin="0,6,0,0" ToolTip="{Binding Summary}" />
+                                    <TextBlock Text="View game details  &#x203A;" Foreground="{StaticResource BrandAccentBrush}"
+                                               FontSize="11" FontWeight="SemiBold" Margin="0,8,0,0"
+                                               Visibility="{Binding CanOpen, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </controls:AutoScrollingItemsControl.ItemTemplate>
+            </controls:AutoScrollingItemsControl>
+        </Grid>
+    </Grid>
+    </ScrollViewer>
+</UserControl>

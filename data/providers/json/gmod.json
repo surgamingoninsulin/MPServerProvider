@@ -1,0 +1,91 @@
+{
+  "manifest_version": 1,
+  "id": "gmod",
+  "name": "Garry\u0027s Mod Server",
+  "description": "Official SRCDS dedicated server for Garry\u0027s Mod, installed through Valve\u0027s SteamCMD (anonymous).",
+  "genres": [
+    "Sandbox"
+  ],
+  "artwork": {
+    "cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/4000/header.jpg",
+    "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/4000/library_hero.jpg",
+    "accent": "#60A5FA"
+  },
+  "install": {
+    "provider": "steamcmd",
+    "variants": [],
+    "app_id": 4020,
+    "anonymous": true,
+    "workshop_ids": []
+  },
+  "runtime": {
+    "executable": "{server_root}\\srcds.exe",
+    "arguments": "-console -game garrysmod \u002Bmap gm_construct \u002Bmaxplayers 16 -port {server_port} -norestart",
+    "working_dir": "{server_root}",
+    "stop_command": "quit"
+  },
+  "network": {
+    "default_port": 27015,
+    "protocol": "both",
+    "query": "a2s",
+    "console_method": "stdin"
+  },
+  "mods": {
+    "supported": true,
+    "folder": "garrysmod\\addons",
+    "extensions": [
+      ".gma"
+    ],
+    "kind": "addon"
+  },
+  "details": {
+    "about": "Garry's Mod is Facepunch's physics sandbox built on Valve's Source engine. It has no fixed goals. Players spawn props, ragdolls, NPCs and vehicles, weld contraptions together and play a huge range of community gamemodes, from Trouble in Terrorist Town and Prop Hunt to DarkRP.\n\nA dedicated Garry's Mod server runs Valve's Source Dedicated Server (SRCDS). It lets you choose the gamemode, map rotation, player slots and admin tools, and install addons from the Steam Workshop or drop .gma files into the addons folder.\n\nThe server is free to download through SteamCMD. Facepunch's wiki recommends a Game Server Login Token so your server is ranked properly in the server browser.",
+    "developer": "Facepunch Studios",
+    "publisher": "Valve",
+    "release_date": "Nov 29, 2006",
+    "website": "https://gmod.facepunch.com/",
+    "store_url": "https://store.steampowered.com/app/4000/",
+    "docs_url": "https://wiki.facepunch.com/gmod/Downloading_a_Dedicated_Server",
+    "max_players": "Configurable via +maxplayers (this app launches with 16)",
+    "features": [
+      "Official SRCDS dedicated server, installed anonymously via SteamCMD (app 4020)",
+      "Run sandbox or any installed gamemode (+gamemode)",
+      "Auto-install Workshop addons with +host_workshop_collection",
+      "Drop-in .gma addons in garrysmod\\addons",
+      "Lua scripting for custom gamemodes and server-side tools",
+      "Valve Anti-Cheat enabled"
+    ],
+    "ports": [
+      {
+        "port": "27015",
+        "protocol": "UDP",
+        "purpose": "Game traffic and server queries (-port)"
+      },
+      {
+        "port": "27015",
+        "protocol": "TCP",
+        "purpose": "RCON remote console"
+      },
+      {
+        "port": "27020",
+        "protocol": "UDP",
+        "purpose": "SourceTV (only if enabled; +tv_port)"
+      }
+    ],
+    "setup_tips": [
+      "The app starts srcds.exe with -console -game garrysmod +map gm_construct +maxplayers 16 -port 27015. Edit these to change the starting map or slot count.",
+      "Generate a Game Server Login Token for app 4000 on Steam and add +sv_setsteamaccount <token>. Facepunch says servers without one are penalized in the browser ranking.",
+      "Add +host_workshop_collection <collectionID> to download a Workshop collection automatically, or place .gma files in garrysmod\\addons.",
+      "Pick a gamemode with +gamemode (for example sandbox or terrortown) and make sure its files are installed.",
+      "Allow 27015 (UDP for players, TCP for RCON) in Firewall Rules or with Connect to Tunnel. Set rcon_password in garrysmod\\cfg\\server.cfg only if you need remote RCON."
+    ],
+    "screenshots": [
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/ss_af060d0a9aeb6598e154c9704ce250b0e63b2266.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/ss_d314d7dba0987b3e7f49154964bda0ae74ee5161.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/ss_3d320f333fb74413911cbc2bffae9bdda683e2ec.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/ss_12741a4344b5cfee33726ae219476c8634517f7d.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/ss_74a181b4584a04c88ee316df31a850ab2810fb79.1920x1080.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/ss_a6133770663ff34d535adf050f2af64ab47a6974.1920x1080.jpg"
+    ]
+  }
+}
