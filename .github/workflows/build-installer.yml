@@ -1,0 +1,105 @@
+name: Build Installer
+
+# Builds "MPServerProvider Installer <version>.exe" with Inno Setup and publishes it as a
+# GitHub Release. Runs on windows-latest (not ubuntu): the app is a Windows WPF self-contained
+# build and Inno Setup only runs on Windows, so there's no Linux runner that can produce this.
+#
+# The version is never stored in the repo. It's computed here from the highest existing
+# "vMAJOR.MINOR.PATCH" git tag, bumped by one level (patch by default), and passed straight into
+# `dotnet publish -p:Version=...` and `ISCC /DAppVersion=...` — the same two switches
+# build-installer.bat uses locally. A new tag + GitHub Release is created with that version.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version part to increment"
+        required: false
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-installer
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: version
+        shell: bash
+        run: |
+          set -e
+          git fetch --tags --force
+          latest="$(git tag --list 'v*.*.*' | sed 's/^v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)"
+          if [ -z "$latest" ]; then
+            latest="0.0.0"
+          fi
+          IFS='.' read -r major minor patch <<< "$latest"
+          bump="${{ github.event.inputs.bump }}"
+          if [ -z "$bump" ]; then
+            bump="patch"
+          fi
+          case "$bump" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            *)     patch=$((patch + 1)) ;;
+          esac
+          version="$major.$minor.$patch"
+          echo "Previous tag: v$latest -> building v$version ($bump bump)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish "dotnet/src/MPServerProvider.App/MPServerProvider.App.csproj" `
+            -c Release -r win-x64 --self-contained true `
+            -p:Version=${{ steps.version.outputs.version }} `
+            -o "installer/publish"
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $ISCC = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $ISCC)) { $ISCC = Join-Path $env:ProgramFiles "Inno Setup 6\ISCC.exe" }
+          & $ISCC "/DAppVersion=${{ steps.version.outputs.version }}" "installer\MPServerProvider.iss"
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      - name: Tag release
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.version.outputs.version }}"
+          name: "MP Server Provider v${{ steps.version.outputs.version }}"
+          files: "installer/Output/MPServerProvider Installer ${{ steps.version.outputs.version }}.exe"
