@@ -434,14 +434,66 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         var appId = request.Game.Install.AppId
             ?? throw new InvalidOperationException($"Game '{request.Game.Id}' has no steamcmd app_id.");
 
-        var steamcmd = await EnsureSteamCmdAsync(progress, ct).ConfigureAwait(false);
-        progress.Report(InstallProgress.Indeterminate($"SteamCMD: downloading app {appId} (this can take a while)…"));
-
         if (request.TargetDir.Contains('"'))
         {
             throw new InvalidOperationException("The install folder path contains a quote character, which SteamCMD can't accept.");
         }
 
+        var steamcmd = await EnsureSteamCmdAsync(progress, ct).ConfigureAwait(false);
+        progress.Report(InstallProgress.Indeterminate($"SteamCMD: downloading app {appId} (this can take a while)…"));
+
+        var run = await RunSteamCmdAsync(steamcmd, appId, request, progress, ct).ConfigureAwait(false);
+
+        if (!InstallSucceeded(run.ExitCode, run.Output, appId))
+        {
+            if (LoginProblem(run.Output, request) is { } loginProblem)
+            {
+                throw new InvalidOperationException(loginProblem);
+            }
+
+            // Most non-login SteamCMD failures (the "Missing configuration" error is the classic
+            // case, but also a partial/antivirus-mangled extraction, a stale appcache, etc.) trace
+            // back to a corrupted local SteamCMD install rather than the app itself. SteamCMD is a
+            // tiny, disposable bootstrap tool (unlike the game files in request.TargetDir, which
+            // app_update resumes untouched), so wiping our managed copy and re-downloading it fresh
+            // is a cheap, safe self-heal — tried once before giving up, for every SteamCMD game.
+            progress.Report(InstallProgress.Indeterminate("SteamCMD hit an error — reinstalling SteamCMD and retrying once…"));
+            TryDeleteDirectory(Path.Combine(DownloadHelper.ToolsDir(), "steamcmd"));
+            var freshSteamcmd = await EnsureSteamCmdAsync(progress, ct).ConfigureAwait(false);
+            var retry = await RunSteamCmdAsync(freshSteamcmd, appId, request, progress, ct).ConfigureAwait(false);
+
+            if (!InstallSucceeded(retry.ExitCode, retry.Output, appId))
+            {
+                if (LoginProblem(retry.Output, request) is { } retryLoginProblem)
+                {
+                    throw new InvalidOperationException(retryLoginProblem);
+                }
+
+                var detail = LastErrorLine(retry.Output) ?? LastErrorLine(run.Output);
+                throw new InvalidOperationException(
+                    $"SteamCMD could not install app {appId} (exit code {retry.ExitCode}), even after reinstalling SteamCMD" + (detail is null ? "." : $": {detail}"));
+            }
+
+            run = retry;
+        }
+
+        var definitionExe = ExeFromDefinition(request);
+        var serverExe = definitionExe ?? AutoDetectServerExe(request.TargetDir)
+            ?? throw new InvalidOperationException(
+                $"SteamCMD exited and no server executable was found in {request.TargetDir}.");
+
+        return new InstallResult
+        {
+            ServerFile = serverExe,
+            Version = $"latest (app {appId})",
+            StartCommand = null,
+            JavaMajor = 0,
+        };
+    }
+
+    private static async Task<ExternalProcessResult> RunSteamCmdAsync(
+        string steamcmd, long appId, InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
+    {
         void OnLine(string line)
         {
             // Streamed live (not parsed after exit) so the progress bar actually moves.
@@ -453,7 +505,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         }
 
         string? scriptDir = null;
-        ExternalProcessResult run;
         try
         {
             var loginLine = request.SteamLogin is { Password.Length: > 0 } typed
@@ -503,7 +554,7 @@ public sealed partial class SteamCmdProvider : IInstallProvider
                 args = argList.ToArray();
             }
 
-            run = await ExternalProcess.RunAsync(steamcmd, args, request.TargetDir, OnLine, InstallTimeout, ct).ConfigureAwait(false);
+            return await ExternalProcess.RunAsync(steamcmd, args, request.TargetDir, OnLine, InstallTimeout, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -512,31 +563,6 @@ public sealed partial class SteamCmdProvider : IInstallProvider
                 TryDeleteDirectory(scriptDir);
             }
         }
-
-        if (!InstallSucceeded(run.ExitCode, run.Output, appId))
-        {
-            if (LoginProblem(run.Output, request) is { } loginProblem)
-            {
-                throw new InvalidOperationException(loginProblem);
-            }
-
-            var detail = LastErrorLine(run.Output);
-            throw new InvalidOperationException(
-                $"SteamCMD could not install app {appId} (exit code {run.ExitCode})" + (detail is null ? "." : $": {detail}"));
-        }
-
-        var definitionExe = ExeFromDefinition(request);
-        var serverExe = definitionExe ?? AutoDetectServerExe(request.TargetDir)
-            ?? throw new InvalidOperationException(
-                $"SteamCMD exited and no server executable was found in {request.TargetDir}.");
-
-        return new InstallResult
-        {
-            ServerFile = serverExe,
-            Version = $"latest (app {appId})",
-            StartCommand = null,
-            JavaMajor = 0,
-        };
     }
 }
 
