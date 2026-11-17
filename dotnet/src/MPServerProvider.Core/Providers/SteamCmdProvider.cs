@@ -183,9 +183,14 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return null;
     }
 
-    internal static string? BranchName(InstallSpec spec)
+    // The picked variant overrides the game's default branch when it names a Steam beta branch
+    // other than "stable" (e.g. Starbound's "unstable" branch), so one GameDefinition can offer
+    // several branches through its Variant picker instead of needing a separate catalog entry.
+    internal static string? BranchName(InstallSpec spec, string? variant = null)
     {
-        var branch = spec.Branch?.Trim();
+        var branch = !string.IsNullOrWhiteSpace(variant) && !variant.Equals("stable", StringComparison.OrdinalIgnoreCase)
+            ? variant.Trim()
+            : spec.Branch?.Trim();
         if (string.IsNullOrEmpty(branch) || branch.Equals("public", StringComparison.OrdinalIgnoreCase))
         {
             return null;
@@ -199,8 +204,8 @@ public sealed partial class SteamCmdProvider : IInstallProvider
         return branch;
     }
 
-    private static string BranchSuffix(InstallSpec spec)
-        => BranchName(spec) is { } branch ? $" -beta {branch}" : string.Empty;
+    private static string BranchSuffix(InstallSpec spec, string? variant)
+        => BranchName(spec, variant) is { } branch ? $" -beta {branch}" : string.Empty;
 
     private static string RequireSafeToken(string value, string what)
     {
@@ -465,7 +470,7 @@ public sealed partial class SteamCmdProvider : IInstallProvider
                     "@NoPromptForPassword 1",
                     $"force_install_dir \"{request.TargetDir}\"",
                     loginLine,
-                    $"app_update {appId}{BranchSuffix(request.Game.Install)} validate",
+                    $"app_update {appId}{BranchSuffix(request.Game.Install, request.Variant)} validate",
                     "quit",
                 });
                 scriptDir = Path.GetDirectoryName(script);
@@ -487,7 +492,7 @@ public sealed partial class SteamCmdProvider : IInstallProvider
                     "+login", login,
                     "+app_update", appId.ToString(),
                 };
-                if (BranchName(request.Game.Install) is { } branch)
+                if (BranchName(request.Game.Install, request.Variant) is { } branch)
                 {
                     argList.Add("-beta");
                     argList.Add(branch);

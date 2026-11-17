@@ -6,8 +6,44 @@ public sealed class UrlProvider : IInstallProvider
 {
     public string Id => "url";
 
-    public Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct)
-        => Task.FromResult(new List<string> { "latest" });
+    public async Task<List<string>> GetVersionsAsync(GameDefinition game, string? variant, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(game.Install.VersionListUrl))
+        {
+            return new List<string> { "latest" };
+        }
+
+        if (string.IsNullOrWhiteSpace(game.Install.VersionListPattern))
+        {
+            throw new InvalidOperationException($"Game '{game.Id}' sets install.version_list_url but no install.version_list_pattern.");
+        }
+
+        var pageText = await DownloadHelper.GetStringAsync(game.Install.VersionListUrl, ct).ConfigureAwait(false);
+        var versions = ParseVersionList(pageText, game.Install.VersionListPattern);
+        return versions.Count > 0 ? versions : new List<string> { "latest" };
+    }
+
+    // The page lists versions newest-first, so this preserves that order for the Version
+    // dropdown (which picks index 0 as the default) instead of re-sorting them.
+    internal static List<string> ParseVersionList(string pageText, string pattern)
+    {
+        var regex = new System.Text.RegularExpressions.Regex(
+            pattern,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant,
+            TimeSpan.FromSeconds(2));
+        var versions = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (System.Text.RegularExpressions.Match match in regex.Matches(pageText))
+        {
+            var version = match.Groups["version"].Value;
+            if (seen.Add(version))
+            {
+                versions.Add(version);
+            }
+        }
+
+        return versions;
+    }
 
     internal static string FileNameFor(string url)
     {
@@ -63,8 +99,9 @@ public sealed class UrlProvider : IInstallProvider
             $"The latest {repo} release{(tag is null ? string.Empty : $" ({tag})")} has no download matching '{assetPattern}'.");
     }
 
-    private static async Task<(string Url, string? Version)> ResolveDownloadAsync(GameDefinition game, IProgress<InstallProgress> progress, CancellationToken ct)
+    private static async Task<(string Url, string? Version)> ResolveDownloadAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
+        var game = request.Game;
         var install = game.Install;
         if (!string.IsNullOrWhiteSpace(install.GithubRepo))
         {
@@ -85,12 +122,27 @@ public sealed class UrlProvider : IInstallProvider
             throw new InvalidOperationException($"Custom game '{game.Id}' has no install.url.");
         }
 
+        // A "{version}" placeholder is filled from the Version dropdown's pick (install.
+        // version_list_url supplies that list), so the downloaded file always matches what the
+        // player actually selected, not just whatever happens to be newest.
+        if (install.Url.Contains("{version}", StringComparison.Ordinal))
+        {
+            if (string.IsNullOrWhiteSpace(request.Version) || request.Version.Equals("latest", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"Game '{game.Id}' needs a specific version to download, not 'latest'.");
+            }
+
+            var resolvedUrl = install.Url.Replace("{version}", request.Version);
+            DownloadHelper.RequireHttps(resolvedUrl);
+            return (resolvedUrl, request.Version);
+        }
+
         return (install.Url, null);
     }
 
     public async Task<InstallResult> InstallAsync(InstallRequest request, IProgress<InstallProgress> progress, CancellationToken ct)
     {
-        var (url, version) = await ResolveDownloadAsync(request.Game, progress, ct).ConfigureAwait(false);
+        var (url, version) = await ResolveDownloadAsync(request, progress, ct).ConfigureAwait(false);
 
         var fileName = FileNameFor(url);
         var downloaded = Path.Combine(request.TargetDir, fileName);

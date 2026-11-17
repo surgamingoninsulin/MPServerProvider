@@ -39,11 +39,14 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         _timer = new DispatcherPollTimer(TimeSpan.FromMilliseconds(800), SafeRefreshLiveFields);
         ResourcePack = new ResourcePackTabViewModel(services, toasts);
         LuckPerms = new LuckPermsTabViewModel(services, toasts);
+        Scenarios = new ScenarioDownloaderTabViewModel(services, toasts);
     }
 
     public ResourcePackTabViewModel ResourcePack { get; }
 
     public LuckPermsTabViewModel LuckPerms { get; }
+
+    public ScenarioDownloaderTabViewModel Scenarios { get; }
 
     public ServerInstance? Current { get; private set; }
 
@@ -100,23 +103,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
 
     [ObservableProperty]
     private string _txAdminUrl = "http://127.0.0.1:40120/";
-
-    // -- Hytale Login tab --------------------------------------------------------------------
-
-    [ObservableProperty]
-    private bool _isHytale;
-
-    [ObservableProperty]
-    private string? _hytaleAuthLink;
-
-    [ObservableProperty]
-    private string? _hytaleAuthCode;
-
-    [ObservableProperty]
-    private bool _hytaleSignedIn;
-
-    [ObservableProperty]
-    private string _hytaleAuthStatus = string.Empty;
 
     // -- Klei Token tab (Don't Starve Together) ---------------------------------------------
 
@@ -203,6 +189,7 @@ public sealed partial class ServerDetailViewModel : ObservableObject
             }
             ResourcePack.SetServer(server);
             LuckPerms.SetServer(server);
+            Scenarios.SetServer(server);
             RefreshLiveFields();
             UpdateTimer();
         }
@@ -240,6 +227,7 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         HasServer = false;
         ResourcePack.SetServer(null);
         LuckPerms.SetServer(null);
+        Scenarios.SetServer(null);
         ResetConsole();
         _timer.Stop();
     }
@@ -325,11 +313,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         GameText = $"{(game?.Name ?? server.ServerGame)}  •  {server.ServerVersion}  •  port {server.ServerPort}";
         IsFiveMOrRedM = server.ServerGame is "fivem" or "redm";
         IsDontStarve = server.ServerGame == DstCluster.GameId;
-        IsHytale = server.ServerGame == HytaleAuth.GameId;
-        if (IsHytale)
-        {
-            RefreshHytaleAuth(server);
-        }
         SupportsMods = game?.Mods.Supported ?? false;
         ConnectionText = $"{server.ServerIp}:{server.ServerPort}";
 
@@ -667,58 +650,6 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         catch (Exception ex)
         {
             ReportError("Could not send the command", ex);
-        }
-    }
-
-    // -- Hytale Login tab -----------------------------------------------------------------
-
-    private void RefreshHytaleAuth(ServerInstance server)
-    {
-        var state = HytaleAuth.Scan(_services.Processes.ConsoleOf(server));
-        HytaleAuthLink = state.Link;
-        HytaleAuthCode = state.Code;
-        HytaleSignedIn = state.SignedIn;
-        HytaleAuthStatus = !IsOnline
-            ? "Start the server, then sign it in to your Hytale account here."
-            : state.SignedIn
-                ? "Signed in. Click \"Keep login\" once so the server stays signed in after a restart."
-                : state.Link is not null
-                    ? "Sign in on the page below with your Hytale account and enter the code."
-                    : "Click \"Sign in server\" to get a sign-in code.";
-    }
-
-    [RelayCommand]
-    private void HytaleSignIn()
-    {
-        if (Current is not { } server || !IsOnline)
-        {
-            _toasts.Warning("Start the Hytale server first.");
-            return;
-        }
-
-        _services.Processes.SendCommand(server, HytaleAuth.LoginCommand);
-        HytaleAuthStatus = "Asked the server for a sign-in code…";
-    }
-
-    [RelayCommand]
-    private void HytaleKeepLogin()
-    {
-        if (Current is not { } server || !IsOnline)
-        {
-            _toasts.Warning("Start the Hytale server first.");
-            return;
-        }
-
-        _services.Processes.SendCommand(server, HytaleAuth.PersistCommand);
-        _toasts.Success("The server will keep its Hytale login after restarts.");
-    }
-
-    [RelayCommand]
-    private void OpenHytaleAuthInBrowser()
-    {
-        if (!Controls.ArtworkImages.OpenInBrowser(HytaleAuthLink ?? HytaleAuth.DevicePage))
-        {
-            _toasts.Error("Couldn't open the Hytale sign-in page.");
         }
     }
 

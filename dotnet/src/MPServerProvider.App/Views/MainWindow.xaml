@@ -11,7 +11,7 @@
     <!-- Borderless custom-chrome shell. WindowChrome gives us the
          real resize/snap behavior of a normal window while WindowStyle=None removes the native
          titlebar, so the top bar below supplies its own drag region (CaptionHeight) plus custom
-         minimize/maximize/close buttons (⤢ / □ / ✕ in the reference screenshots' top-right). -->
+         minimize/maximize/close buttons (_ / □ / ✕ in the reference screenshots' top-right). -->
     <WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" />
     </WindowChrome.WindowChrome>
@@ -83,9 +83,9 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
-                <Button Style="{StaticResource ChromeButtonStyle}" Click="Fullscreen_Click"
-                        ToolTip="Toggle fullscreen">
-                    <TextBlock Text="&#xE740;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
+                <Button Style="{StaticResource ChromeButtonStyle}" Click="Minimize_Click"
+                        ToolTip="Minimize">
+                    <TextBlock Text="&#xE921;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
                 </Button>
                 <Button x:Name="MaxRestoreButton" Style="{StaticResource ChromeButtonStyle}" Click="MaxRestore_Click">
                     <TextBlock Text="&#xE739;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />

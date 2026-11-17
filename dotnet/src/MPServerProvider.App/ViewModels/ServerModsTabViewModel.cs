@@ -75,7 +75,13 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
         _toasts = toasts;
         _owner = owner;
         _owner.PropertyChanged += Owner_PropertyChanged;
+        Modrinth = new ModrinthBrowserViewModel(services, toasts, Reload);
+        VsMods = new VsModBrowserViewModel(services, toasts, Reload);
     }
+
+    public ModrinthBrowserViewModel Modrinth { get; }
+
+    public VsModBrowserViewModel VsMods { get; }
 
     public ObservableCollection<ServerModRowViewModel> Installed { get; } = new();
 
@@ -112,6 +118,8 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
         _active = active;
         if (active)
         {
+            Modrinth.SetServer(_owner.Current);
+            VsMods.SetServer(_owner.Current);
             Reload();
         }
     }
@@ -122,6 +130,8 @@ public sealed partial class ServerModsTabViewModel : ObservableObject
         if (_active && e.PropertyName == nameof(ServerDetailViewModel.NameText)
             && _owner.Current?.ServerName != _loadedServerName)
         {
+            Modrinth.SetServer(_owner.Current);
+            VsMods.SetServer(_owner.Current);
             Reload();
         }
     }

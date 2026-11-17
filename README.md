@@ -11,15 +11,55 @@ You pick a game, click install, and the app downloads the server for you. After 
 - FiveM (GTA V)
 - RedM (Red Dead Redemption 2)
 - BeamMP (BeamNG.drive)
+- Hytale
 - Rust
 - Valheim
 - Garry's Mod
+- ARK: Survival Evolved
+- ARK: Survival Ascended
+- 7 Days to Die
 - PixARK
 - Unturned
-- 7 Days to Die
+- Palworld
+- Enshrouded
+- Conan Exiles
+- DayZ (Server and Experimental)
+- Project Zomboid
+- SCUM
+- Don't Starve Together
+- The Forest
+- Sons of the Forest
+- Core Keeper
+- Craftopia
+- Creativerse
+- CryoFall
+- Cubic Odyssey
+- ASKA
+- ASTRONEER
+- Abiotic Factor
+- DeadPoly
+- Eco
+- Empyrion - Galactic Survival
+- Left 4 Dead
+- Left 4 Dead 2
+- Medieval Engineers
+- Memories of Mars
+- Smalland
+- Starbound (stable or unstable branch)
+- Survive the Nights
+- Totally Accurate Battlegrounds
+- VEIN
 - American Truck Simulator
 - Euro Truck Simulator 2
-- OpenRCT2
+- OpenRCT2 (with a built-in scenario downloader)
+- Half-Life
+- Counter-Strike 1.6
+- Terraria
+- Rising World
+- Stationeers
+- Stormworks
+- Satisfactory
+- Vintage Story
 
 More games are on the way. You can also add your own game with a custom JSON file.
 

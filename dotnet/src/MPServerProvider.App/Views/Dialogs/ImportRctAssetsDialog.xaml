@@ -1,0 +1,44 @@
+<local:DialogWindow x:Class="MPServerProvider.App.Views.Dialogs.ImportRctAssetsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
+        Title="Import RCT2 / RCT1 data"
+        Width="480" SizeToContent="Height">
+    <!-- OpenRCT2 needs the player's own legitimate RCT2 (or RCT Classic) data files, and
+         optionally RCT1 (or RCT1 Deluxe) for its scenery and scenarios. This just points
+         user-data\config.ini at the chosen folders; nothing is copied. -->
+    <StackPanel Margin="24,18,24,24">
+        <TextBlock Text="Import game data" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,16" TextWrapping="Wrap"
+                   Text="OpenRCT2 needs the data files from your own copy of RollerCoaster Tycoon 2 (or RCT Classic). Point it at that install folder below. RCT1 (or RCT1 Deluxe) is optional and only unlocks RCT1 scenery and scenarios." />
+
+        <TextBlock Text="RollerCoaster Tycoon 2 / RCT Classic folder" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <Grid Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="Rct2Box" />
+            <Button Grid.Column="1" Content="Browse…" Margin="8,0,0,0" Style="{StaticResource GhostButtonStyle}" Click="BrowseRct2_Click" />
+        </Grid>
+
+        <TextBlock Text="RollerCoaster Tycoon 1 / Deluxe folder (optional)" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="Rct1Box" />
+            <Button Grid.Column="1" Content="Browse…" Margin="8,0,0,0" Style="{StaticResource GhostButtonStyle}" Click="BrowseRct1_Click" />
+        </Grid>
+
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="12" Margin="0,0,0,8"
+                   TextWrapping="Wrap" Visibility="Collapsed" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="Skip for now" Style="{StaticResource GhostButtonStyle}" Click="CancelButton_Click" />
+            <Button x:Name="SaveButton" Content="Save" Width="100" Margin="10,0,0,0" IsDefault="True"
+                    Style="{StaticResource AccentButtonStyle}" Click="SaveButton_Click" />
+        </StackPanel>
+    </StackPanel>
+</local:DialogWindow>

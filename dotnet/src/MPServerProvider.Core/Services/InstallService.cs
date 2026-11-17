@@ -129,6 +129,11 @@ public class InstallService
             _workshop.DeployToServer(game, request.TargetDir);
         }
 
+        if (game.Id == OpenRct2Setup.GameId)
+        {
+            OpenRct2Setup.EnsureGroupsFile(request.TargetDir);
+        }
+
         ct.ThrowIfCancellationRequested();
         var instance = BuildInstance(game, request, result);
         _servers.Save(instance);

@@ -67,6 +67,9 @@ public partial class InstallServerDialog : DialogWindow
 
         var isMinecraft = game.Id == "minecraft-java";
         EulaPanel.Visibility = isMinecraft ? Visibility.Visible : Visibility.Collapsed;
+
+        // Sits left of center so there's room for the Hytale sign-in window to open beside it.
+        Loaded += (_, _) => Left = Math.Max(0, Left - 90);
     }
 
     internal static string DefaultServerName(string gameName, Func<string, bool> nameTaken)
@@ -140,6 +143,10 @@ public partial class InstallServerDialog : DialogWindow
             ProgressStatusText.Text = "Cancelling…";
             e.Cancel = true;
         }
+        else
+        {
+            _hytaleAuthDialog?.Close();
+        }
         base.OnClosing(e);
     }
 
@@ -211,7 +218,7 @@ public partial class InstallServerDialog : DialogWindow
                 return;
             }
             ProgressStatusText.Text = p.Status;
-            ShowProgressLink(p.Link);
+            _ = ShowHytaleAuthAsync(p.Link, p.Code);
             if (p.Percent > 0)
             {
                 ProgressBarControl.IsIndeterminate = false;
@@ -228,6 +235,11 @@ public partial class InstallServerDialog : DialogWindow
 
             succeeded = true;
             _toasts?.Success($"Installed '{instance.ServerName}'.");
+
+            if (_game.Id == Core.Services.OpenRct2Setup.GameId)
+            {
+                ImportRctAssetsDialog.Show(this, _services.Servers.RootFor(instance));
+            }
         }
         catch (OperationCanceledException)
         {
@@ -262,20 +274,61 @@ public partial class InstallServerDialog : DialogWindow
         }
     }
 
-    private string? _progressLink;
+    private HytaleAuthDialog? _hytaleAuthDialog;
 
-    private void ShowProgressLink(string? link)
+    private async Task ShowHytaleAuthAsync(string? link, string? code)
     {
-        if (link is null || link == _progressLink)
+        if (link is null && code is null)
         {
             return;
         }
 
-        _progressLink = link;
-        ProgressLinkButton.Visibility = Visibility.Visible;
-        Controls.ArtworkImages.OpenInBrowser(link);
+        if (_hytaleAuthDialog is not { IsLoaded: true } dialog)
+        {
+            dialog = new HytaleAuthDialog(_toasts) { Owner = this };
+            dialog.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_hytaleAuthDialog, dialog))
+                {
+                    _hytaleAuthDialog = null;
+                }
+            };
+            _hytaleAuthDialog = dialog;
+
+            // DialogWindow defaults to CenterOwner, which would ignore the fixed Left/Top below.
+            dialog.WindowStartupLocation = WindowStartupLocation.Manual;
+            PositionBeside(dialog);
+            dialog.Show();
+        }
+
+        await dialog.UpdateAsync(link, code);
     }
 
-    private void ProgressLinkButton_Click(object sender, RoutedEventArgs e)
-        => Controls.ArtworkImages.OpenInBrowser(_progressLink);
+    // Fixed, non-overlapping placement next to this window: right, then left, then below,
+    // whichever fits the work area; never centered over this window.
+    private void PositionBeside(Window dialog)
+    {
+        const double gap = 16;
+        var work = SystemParameters.WorkArea;
+
+        var right = Left + ActualWidth + gap;
+        if (right + dialog.Width <= work.Right)
+        {
+            dialog.Left = right;
+            dialog.Top = Math.Max(work.Top, Math.Min(Top, work.Bottom - dialog.Height));
+            return;
+        }
+
+        var left = Left - gap - dialog.Width;
+        if (left >= work.Left)
+        {
+            dialog.Left = left;
+            dialog.Top = Math.Max(work.Top, Math.Min(Top, work.Bottom - dialog.Height));
+            return;
+        }
+
+        var below = Top + ActualHeight + gap;
+        dialog.Left = Math.Max(work.Left, Math.Min(Left, work.Right - dialog.Width));
+        dialog.Top = below + dialog.Height <= work.Bottom ? below : Math.Max(work.Top, work.Bottom - dialog.Height);
+    }
 }

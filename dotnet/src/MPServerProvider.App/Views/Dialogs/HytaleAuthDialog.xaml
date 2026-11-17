@@ -1,0 +1,42 @@
+<local:DialogWindow x:Class="MPServerProvider.App.Views.Dialogs.HytaleAuthDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MPServerProvider.App.Views.Dialogs"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Hytale sign-in" Width="560" Height="780" MinWidth="420" MinHeight="560" ResizeMode="CanResize">
+    <!-- Opened automatically from InstallServerDialog once the Hytale Downloader hands back a
+         device sign-in link, so the player signs in inside the app instead of a system browser. -->
+    <Grid Margin="20,16,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Sign in to Hytale" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock Text="Sign in below with your Hytale account, then enter the code when the page asks for it."
+                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Button Grid.Row="1" x:Name="CodeButton" Style="{StaticResource GhostButtonStyle}" Margin="0,0,0,10"
+                HorizontalAlignment="Left" Visibility="Collapsed" Click="CodeButton_Click"
+                ToolTip="Click to copy to clipboard">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Code: " Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                <TextBlock x:Name="CodeButtonText" FontFamily="Consolas" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+            </StackPanel>
+        </Button>
+
+        <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+            <Grid>
+                <wv2:WebView2 x:Name="Web" Visibility="Collapsed" />
+                <TextBlock x:Name="StatusText" Text="Waiting for the Hytale sign-in page…"
+                           VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
+                           TextWrapping="Wrap" MaxWidth="360" TextAlignment="Center" />
+            </Grid>
+        </Border>
+    </Grid>
+</local:DialogWindow>

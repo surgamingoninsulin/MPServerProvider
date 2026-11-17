@@ -21,6 +21,7 @@ public static partial class BuiltInGames
         added.AddRange(SurvivalCGames());
         added.AddRange(SurvivalDGames());
         added.AddRange(MiscGames());
+        added.AddRange(ClassicGames());
         return added;
     }
 

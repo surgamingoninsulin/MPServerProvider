@@ -2,7 +2,7 @@
 setlocal
 
 :: Run the .NET application
-dotnet run --project "_MPServerProvider\dotnet\src\MPServerProvider.App"
+dotnet run --project "dotnet\src\MPServerProvider.App"
 
 :: Check if the command failed (any exit code other than 0)
 if %errorlevel% neq 0 (

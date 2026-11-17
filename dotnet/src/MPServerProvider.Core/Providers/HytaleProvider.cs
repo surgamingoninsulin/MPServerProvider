@@ -34,17 +34,23 @@ public sealed partial class HytaleProvider : IInstallProvider
         {
             if (SignInLink(line) is { } link)
             {
+                var code = DeviceCode(line);
                 progress.Report(new InstallProgress
                 {
-                    Status = DeviceCode(line) is { } code
+                    Status = code is not null
                         ? $"Sign in with your Hytale account: open the sign-in page and enter code {code}."
                         : "Sign in with your Hytale account on the page that just opened.",
                     Link = link,
+                    Code = code,
                 });
             }
             else if (DeviceCode(line) is { } code)
             {
-                progress.Report(InstallProgress.Indeterminate($"Sign in with your Hytale account and enter code {code}."));
+                progress.Report(new InstallProgress
+                {
+                    Status = $"Sign in with your Hytale account and enter code {code}.",
+                    Code = code,
+                });
             }
             else if (Percent(line) is { } percent)
             {

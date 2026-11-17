@@ -76,8 +76,6 @@
         <StackPanel Grid.Row="2" x:Name="ProgressPanel" Visibility="Collapsed" Margin="0,8,0,8">
             <TextBlock x:Name="ProgressStatusText" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
                        Margin="0,0,0,6" TextWrapping="Wrap" />
-            <Button x:Name="ProgressLinkButton" Content="Open sign-in page" Style="{StaticResource AccentButtonStyle}"
-                    HorizontalAlignment="Left" Margin="0,0,0,8" Visibility="Collapsed" Click="ProgressLinkButton_Click" />
             <ProgressBar x:Name="ProgressBarControl" Height="6" Minimum="0" Maximum="100" BorderThickness="0"
                          Foreground="{StaticResource BrandAccentBrush}" Background="{StaticResource PanelBackgroundBrush}" />
         </StackPanel>

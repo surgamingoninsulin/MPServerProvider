@@ -50,6 +50,7 @@ public partial class ServerDetailView : UserControl
         EditorBox.SelectionChanged += (_, _) => UpdateCaretPosition();
         FallBackToConsoleWhenHidden(TabResourcePack);
         FallBackToConsoleWhenHidden(TabLuckPerms);
+        FallBackToConsoleWhenHidden(TabScenarios);
     }
 
     private void FallBackToConsoleWhenHidden(RadioButton tab)
@@ -117,10 +118,6 @@ public partial class ServerDetailView : UserControl
                 {
                     _ = TryShowTxAdminAsync();
                 }
-            }
-            else if (e.PropertyName == nameof(ServerDetailViewModel.HytaleAuthLink))
-            {
-                _ = TryShowHytaleAuthAsync();
             }
             else if (e.PropertyName == nameof(ServerDetailViewModel.IsEditorOpen) && ViewModel is { } vm)
             {
@@ -203,10 +200,10 @@ public partial class ServerDetailView : UserControl
             ResourcesPanel.Visibility = Visibility.Collapsed;
             TxAdminPanel.Visibility = Visibility.Collapsed;
             KleiPanel.Visibility = Visibility.Collapsed;
-            HytalePanel.Visibility = Visibility.Collapsed;
             SettingsPanel.Visibility = Visibility.Collapsed;
             ResourcePackPanel.Visibility = Visibility.Collapsed;
             LuckPermsPanel.Visibility = Visibility.Collapsed;
+            ScenariosPanel.Visibility = Visibility.Collapsed;
 
             if (ReferenceEquals(sender, TabConsole))
             {
@@ -233,11 +230,6 @@ public partial class ServerDetailView : UserControl
                 TxAdminPanel.Visibility = Visibility.Visible;
                 _ = TryShowTxAdminAsync();
             }
-            else if (ReferenceEquals(sender, TabHytale))
-            {
-                HytalePanel.Visibility = Visibility.Visible;
-                _ = TryShowHytaleAuthAsync();
-            }
             else if (ReferenceEquals(sender, TabKlei))
             {
                 KleiPanel.Visibility = Visibility.Visible;
@@ -254,6 +246,10 @@ public partial class ServerDetailView : UserControl
             else if (ReferenceEquals(sender, TabLuckPerms))
             {
                 LuckPermsPanel.Visibility = Visibility.Visible;
+            }
+            else if (ReferenceEquals(sender, TabScenarios))
+            {
+                ScenariosPanel.Visibility = Visibility.Visible;
             }
         }
         catch (Exception ex)
@@ -281,33 +277,6 @@ public partial class ServerDetailView : UserControl
             KleiWeb.Visibility = Visibility.Collapsed;
             KleiWebStatus.Visibility = Visibility.Visible;
             KleiWebStatus.Text = $"Couldn't show the Klei page here ({ex.Message}). Use Open in Browser instead.";
-        }
-    }
-
-    private async Task TryShowHytaleAuthAsync()
-    {
-        try
-        {
-            if (ViewModel is not { IsHytale: true, HytaleAuthLink: { } link } || HytalePanel.Visibility != Visibility.Visible)
-            {
-                return;
-            }
-
-            await HytaleWeb.EnsureCoreWebView2Async();
-            var uri = new Uri(link);
-            if (HytaleWeb.Source?.AbsoluteUri != uri.AbsoluteUri)
-            {
-                HytaleWeb.Source = uri;
-            }
-
-            HytaleWeb.Visibility = Visibility.Visible;
-            HytaleWebStatus.Visibility = Visibility.Collapsed;
-        }
-        catch (Exception ex)
-        {
-            HytaleWeb.Visibility = Visibility.Collapsed;
-            HytaleWebStatus.Visibility = Visibility.Visible;
-            HytaleWebStatus.Text = $"Couldn't show the Hytale page here ({ex.Message}). Use Open in Browser instead.";
         }
     }
 
@@ -718,5 +687,23 @@ public partial class ServerDetailView : UserControl
         }
         var column = caret - EditorBox.GetCharacterIndexFromLineIndex(line);
         CaretPositionText.Text = $"Ln {line + 1}, Col {column + 1}   ·   Ctrl+S to save";
+    }
+
+    private void ModrinthSearchBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && ViewModel?.ModsTab.Modrinth.SearchCommand is { } command && command.CanExecute(null))
+        {
+            e.Handled = true;
+            command.Execute(null);
+        }
+    }
+
+    private void VsModsSearchBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && ViewModel?.ModsTab.VsMods.SearchCommand is { } command && command.CanExecute(null))
+        {
+            e.Handled = true;
+            command.Execute(null);
+        }
     }
 }

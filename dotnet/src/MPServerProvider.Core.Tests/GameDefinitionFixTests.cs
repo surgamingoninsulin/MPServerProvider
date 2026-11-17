@@ -251,6 +251,49 @@ public class GithubReleaseAssetTests
     [InlineData("owner/re po")]
     public void Rejects_malformed_repo_names(string repo)
         => Assert.Throws<InvalidOperationException>(() => UrlProvider.LatestReleaseApiUrl(repo));
+
+    // A trimmed excerpt of wiki.vintagestory.at/Version_history's real markup (its version
+    // table, newest first), so the regex is checked against the site's actual structure.
+    private const string VintageStoryWikiExcerpt = """
+        <table class="wikitable" style="width: 30%;">
+        <tbody><tr>
+        <th>Version</th>
+        <th>Release Date
+        </th></tr>
+        <tr>
+        <td><a href="/1.22.7" title="1.22.7">1.22.7</a></td>
+        <td><time datetime="2026-8-16">16 August 2026</time>
+        </td></tr>
+        <tr>
+        <td><a href="/1.22.6" title="1.22.6">1.22.6</a></td>
+        <td><time datetime="2026-7-30">30 July 2026</time>
+        </td></tr>
+        <tr>
+        <td><a href="/1.22.5" class="mw-redirect" title="1.22.5">1.22.5</a></td>
+        <td><time datetime="2026-7-21">21 July 2026</time>
+        </td></tr>
+        """;
+
+    [Fact]
+    public void Built_in_pattern_parses_the_version_list_newest_first()
+    {
+        var spec = BuiltInGames.All().Single(g => g.Id == "vintage-story").Install;
+        var versions = UrlProvider.ParseVersionList(VintageStoryWikiExcerpt, spec.VersionListPattern!);
+        Assert.Equal(new[] { "1.22.7", "1.22.6", "1.22.5" }, versions);
+    }
+
+    [Fact]
+    public void Picked_version_builds_the_matching_cdn_url()
+    {
+        var spec = BuiltInGames.All().Single(g => g.Id == "vintage-story").Install;
+        Assert.Equal(
+            "https://cdn.vintagestory.at/gamefiles/stable/vs_server_win-x64_1.22.6.zip",
+            spec.Url!.Replace("{version}", "1.22.6"));
+    }
+
+    [Fact]
+    public void Page_with_no_versions_returns_an_empty_list()
+        => Assert.Empty(UrlProvider.ParseVersionList("<html>no versions here</html>", @"<a href=""/(?<version>\d+\.\d+\.\d+)"""));
 }
 
 public class CubicOdysseyDefinitionTests

@@ -43,6 +43,51 @@ public static class ModCompatibility
         };
     }
 
+    // Modrinth tags a project's loader support as "categories" (e.g. "fabric", "paper"), not a
+    // dedicated field, so browsing/installing from it needs this server's accepted platforms
+    // translated into that vocabulary.
+    public static List<string> ModrinthLoaders(MinecraftPlatform accepted)
+    {
+        var loaders = new List<string>();
+        if (accepted.HasFlag(MinecraftPlatform.Fabric))
+        {
+            loaders.Add("fabric");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.Quilt))
+        {
+            loaders.Add("quilt");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.Forge))
+        {
+            loaders.Add("forge");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.NeoForge))
+        {
+            loaders.Add("neoforge");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.Bukkit))
+        {
+            loaders.Add("bukkit");
+            loaders.Add("spigot");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.Paper))
+        {
+            loaders.Add("paper");
+            loaders.Add("folia");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.Velocity))
+        {
+            loaders.Add("velocity");
+        }
+        if (accepted.HasFlag(MinecraftPlatform.BungeeCord))
+        {
+            loaders.Add("bungeecord");
+            loaders.Add("waterfall");
+        }
+
+        return loaders;
+    }
+
     public static string VariantLabel(ServerInstance server)
     {
         var type = (server.ServerType ?? string.Empty).Trim();

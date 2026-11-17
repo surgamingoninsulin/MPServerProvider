@@ -12,6 +12,8 @@ public class InstallProgress
 
     public string? Link { get; set; }
 
+    public string? Code { get; set; }
+
     public static InstallProgress Indeterminate(string status) => new()
     {
         Status = status,

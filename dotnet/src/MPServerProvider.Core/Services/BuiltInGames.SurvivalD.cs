@@ -22,7 +22,9 @@ public static partial class BuiltInGames
             Install = new InstallSpec
             {
                 Provider = "steamcmd",
-                Variants = new(),
+                // "unstable" picks Starbound's public Steam beta branch of the same name instead
+                // of the default stable branch; SteamCmdProvider applies it via -beta.
+                Variants = new() { "stable", "unstable" },
                 AppId = 211820,
                 Anonymous = false,
             },
@@ -74,6 +76,7 @@ public static partial class BuiltInGames
                 {
                     "The app launches win64\\starbound_server.exe with no arguments from the win64 folder. The port, server name and player limit come from storage\\starbound_server.config, which is created on first start.",
                     "Installing asks for a Steam login on an account that owns Starbound. The password only goes to SteamCMD and is never saved; if Steam asks for a Steam Guard code, enter it in the same window.",
+                    "Pick \"unstable\" in the Variant list to install Starbound's public beta branch instead of the stable release. Switching branches reinstalls the server on that branch.",
                     "Open TCP 21025 in Firewall Rules or with Connect to Tunnel. Players connect with your IP and that port.",
                     "To require a password or make an admin, stop the server and add an entry under serverUsers in storage\\starbound_server.config, for example \"name\": { \"admin\": true, \"password\": \"secret\" }. Set allowAnonymousConnections to false to block guests.",
                     "Universe saves live in storage\\universe and the log is storage\\starbound_server.log. Back up the storage folder before updates.",

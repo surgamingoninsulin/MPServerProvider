@@ -228,7 +228,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Fullscreen_Click(object sender, RoutedEventArgs e) => ToggleMaximizeRestore();
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
     private void MaxRestore_Click(object sender, RoutedEventArgs e) => ToggleMaximizeRestore();
 

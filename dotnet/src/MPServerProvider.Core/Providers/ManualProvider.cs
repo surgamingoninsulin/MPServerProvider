@@ -13,6 +13,8 @@ public sealed class ManualProvider : IInstallProvider
         "RustDedicated.exe",
         "eurotrucks2_server.exe",
         "amtrucks_server.exe",
+        "TerrariaServer.exe",
+        "VintagestoryServer.exe",
     };
 
     public string Id => "manual";
