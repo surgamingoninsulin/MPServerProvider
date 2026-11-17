@@ -21,7 +21,7 @@ public sealed class VsModDbService
         return client;
     }
 
-    public async Task<List<VsModDbProject>> SearchAsync(string? query, int limit = 30, CancellationToken ct = default)
+    public async Task<List<VsModDbProject>> SearchAsync(string? query, int limit = 300, CancellationToken ct = default)
     {
         var url = $"{BaseUrl}/mods?text={Uri.EscapeDataString(query ?? string.Empty)}";
         using var doc = await Http.GetFromJsonAsync<JsonDocument>(url, ct).ConfigureAwait(false)
@@ -113,4 +113,42 @@ public sealed class VsModDbService
 
     public async Task<byte[]> DownloadAsync(VsModDbRelease release, CancellationToken ct = default)
         => await Http.GetByteArrayAsync(release.Url, ct).ConfigureAwait(false);
+
+    /// <summary>The newest release's version plus whether it's confirmed for <paramref name="gameVersion"/>,
+    /// shown as a badge on each search result card so a broken/outdated mod stands out before install.</summary>
+    public async Task<VsModCompatInfo?> GetCompatibilityAsync(string modIdStr, string? gameVersion, CancellationToken ct = default)
+    {
+        var url = $"{BaseUrl}/mod/{Uri.EscapeDataString(modIdStr)}";
+        using var doc = await Http.GetFromJsonAsync<JsonDocument>(url, ct).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("mods.vintagestory.at returned an empty response.");
+
+        return ParseCompatibility(doc.RootElement, gameVersion);
+    }
+
+    internal static VsModCompatInfo? ParseCompatibility(JsonElement root, string? gameVersion)
+    {
+        if (!root.TryGetProperty("mod", out var mod) || !mod.TryGetProperty("releases", out var releases)
+            || releases.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        // Releases come back newest first, so the first entry is the latest version.
+        foreach (var release in releases.EnumerateArray())
+        {
+            var latestVersion = release.TryGetProperty("modversion", out var vEl) ? vEl.GetString() : null;
+            if (string.IsNullOrWhiteSpace(gameVersion))
+            {
+                return new VsModCompatInfo(latestVersion, null);
+            }
+
+            var tags = release.TryGetProperty("tags", out var tagsEl) && tagsEl.ValueKind == JsonValueKind.Array
+                ? tagsEl.EnumerateArray().Select(t => t.GetString() ?? string.Empty).Where(t => t.Length > 0)
+                : Enumerable.Empty<string>();
+            var confirmed = tags.Contains(gameVersion, StringComparer.OrdinalIgnoreCase);
+            return new VsModCompatInfo(latestVersion, confirmed);
+        }
+
+        return null;
+    }
 }

@@ -78,6 +78,45 @@ public partial class CreativerseWorldDialog : DialogWindow
     private void FindIdButton_Click(object sender, RoutedEventArgs e)
         => Controls.ArtworkImages.OpenInBrowser("https://steamid.io/");
 
+    private async void ImportZipButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Import a Creativerse world from mod.io",
+            Filter = "World .zip (*.zip)|*.zip",
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        ImportZipButton.IsEnabled = false;
+        var previousHint = TemplateHint.Text;
+        TemplateHint.Text = "Importing world… this can take a minute for a large map.";
+        ErrorText.Visibility = Visibility.Collapsed;
+        try
+        {
+            var key = await System.Threading.Tasks.Task.Run(() => CreativerseWorld.ImportTemplateZip(dialog.FileName));
+
+            var items = TemplateCombo.ItemsSource as IEnumerable<string> ?? Enumerable.Empty<string>();
+            var templates = new List<string> { key };
+            templates.AddRange(items.Where(t => t != key));
+            TemplateCombo.ItemsSource = templates;
+            TemplateCombo.SelectedIndex = 0;
+            TemplateHint.Text = $"Imported '{key}' from {System.IO.Path.GetFileName(dialog.FileName)}.";
+        }
+        catch (Exception ex)
+        {
+            TemplateHint.Text = previousHint;
+            ShowError($"Couldn't import that world: {ex.Message}");
+        }
+        finally
+        {
+            ImportZipButton.IsEnabled = true;
+        }
+    }
+
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = false;

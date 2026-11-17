@@ -25,7 +25,17 @@
         <TextBox x:Name="WorldNameBox" Margin="0,0,0,12" />
 
         <TextBlock Text="World template" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
-        <ComboBox x:Name="TemplateCombo" IsEditable="True" Margin="0,0,0,4" />
+        <Grid Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox x:Name="TemplateCombo" IsEditable="True" />
+            <Button x:Name="ImportZipButton" Grid.Column="1" Content="Import from .zip…" Margin="8,0,0,0"
+                    Style="{StaticResource GhostButtonStyle}" Click="ImportZipButton_Click" />
+        </Grid>
+        <TextBlock Text="Downloaded a world from mod.io (mod.io/g/creativerse/m)? Import its .zip here instead of typing a key."
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
         <TextBlock x:Name="TemplateHint" Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap" />
 
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="12" Margin="0,0,0,8"

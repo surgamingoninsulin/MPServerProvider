@@ -6,6 +6,7 @@
         Width="1280" Height="800"
         MinWidth="1024" MinHeight="640"
         WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         Background="{StaticResource RootBackgroundBrush}">
     <!-- Borderless custom-chrome shell. WindowChrome gives us the

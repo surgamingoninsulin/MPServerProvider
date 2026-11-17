@@ -706,4 +706,14 @@ public partial class ServerDetailView : UserControl
             command.Execute(null);
         }
     }
+
+    // Fires once per card as the virtualized list scrolls it into view, so the latest-version /
+    // compatibility badge is only fetched from mods.vintagestory.at for cards the user actually sees.
+    private void VsModCard_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: VsModCardViewModel card })
+        {
+            _ = card.EnsureCompatibilityLoadedAsync();
+        }
+    }
 }

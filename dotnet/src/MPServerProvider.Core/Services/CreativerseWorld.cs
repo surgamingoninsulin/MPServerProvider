@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -114,6 +115,50 @@ public static partial class CreativerseWorld
 
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, config.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    /// <summary>
+    /// Imports a world downloaded from mod.io (https://mod.io/g/creativerse/m) as a local world
+    /// template: Creativerse's own in-game template downloader just unzips a template into
+    /// %LocalAppData%\PlayfulCorp\CreativerseServer\dltemplates\&lt;key&gt;, so dropping a mod.io
+    /// world zip there the same way makes it show up as a template to build a new world from —
+    /// no different from a template the game downloaded itself.
+    /// </summary>
+    /// <param name="zipPath">Path to the downloaded .zip (e.g. from mod.io's "Download" button).</param>
+    /// <param name="templateKey">Folder name to use; defaults to the zip's file name.</param>
+    /// <returns>The template key now visible in <see cref="KnownTemplateKeys"/>.</returns>
+    public static string ImportTemplateZip(string zipPath, string? templateKey = null, string? localAppData = null)
+    {
+        if (!File.Exists(zipPath))
+        {
+            throw new FileNotFoundException("That .zip file doesn't exist.", zipPath);
+        }
+
+        var key = SanitizeTemplateKey(templateKey) ?? SanitizeTemplateKey(Path.GetFileNameWithoutExtension(zipPath))
+            ?? throw new ArgumentException("Couldn't derive a template name from that file; rename the .zip and try again.");
+
+        var destDir = Path.Combine(DataDir(localAppData), "dltemplates", key);
+        if (Directory.Exists(destDir))
+        {
+            Directory.Delete(destDir, recursive: true);
+        }
+        Directory.CreateDirectory(destDir);
+
+        // ExtractToDirectory (net8) already refuses entries that would escape destDir.
+        ZipFile.ExtractToDirectory(zipPath, destDir);
+        return key;
+    }
+
+    private static string? SanitizeTemplateKey(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(raw.Trim().Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return cleaned.Length == 0 ? null : cleaned;
     }
 
     [GeneratedRegex(@"-worldId=(?<key>[A-Za-z0-9_\-]+)")]

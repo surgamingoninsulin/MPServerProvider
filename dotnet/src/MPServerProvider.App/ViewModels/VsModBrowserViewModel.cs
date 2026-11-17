@@ -40,6 +40,9 @@ public sealed partial class VsModBrowserViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = string.Empty;
 
+    [ObservableProperty]
+    private string? _serverVersionLabel;
+
     public ObservableCollection<VsModCardViewModel> Results { get; } = new();
 
     public void SetServer(ServerInstance? server)
@@ -48,12 +51,15 @@ public sealed partial class VsModBrowserViewModel : ObservableObject
         Results.Clear();
         StatusText = string.Empty;
         IsAvailable = server?.ServerGame == "vintage-story";
+        ServerVersionLabel = IsAvailable && !string.IsNullOrWhiteSpace(server?.ServerVersion)
+            ? $"Your server is on Vintage Story {server!.ServerVersion}"
+            : null;
     }
 
     [RelayCommand]
     private async Task Search()
     {
-        if (Current is null || !IsAvailable)
+        if (Current is not { } server || !IsAvailable)
         {
             return;
         }
@@ -66,7 +72,7 @@ public sealed partial class VsModBrowserViewModel : ObservableObject
             Results.Clear();
             foreach (var hit in hits)
             {
-                Results.Add(new VsModCardViewModel(hit));
+                Results.Add(new VsModCardViewModel(hit, _modDb, server.ServerVersion));
             }
 
             StatusText = hits.Count == 0 ? "No results." : $"{hits.Count} result(s).";
