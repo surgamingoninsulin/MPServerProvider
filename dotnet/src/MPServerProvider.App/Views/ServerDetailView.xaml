@@ -567,94 +567,11 @@
                                 </ItemsControl>
                             </StackPanel>
 
-                            <!-- One-click Vintage Story mod install from mods.vintagestory.at's public API. -->
+                            <!-- The real mods.vintagestory.at site, embedded — browsing/search/screenshots look exactly
+                                 like the website. Its own Download button installs straight into this server's mods folder. -->
                             <StackPanel DataContext="{Binding VsMods}" Visibility="{Binding IsAvailable, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0">
                                 <TextBlock Text="Browse mods.vintagestory.at" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" KeyDown="VsModsSearchBox_KeyDown" />
-                                    <Button Grid.Column="1" Content="Search" Margin="8,0,0,0" Style="{StaticResource AccentButtonStyle}"
-                                            Command="{Binding SearchCommand}" IsEnabled="{Binding IsSearching, Converter={StaticResource InverseBool}}" />
-                                </Grid>
-                                <TextBlock Text="{Binding ServerVersionLabel}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,4"
-                                           Visibility="{Binding ServerVersionLabel, Converter={StaticResource NullToCollapsed}}" />
-                                <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8" TextWrapping="Wrap" />
-                                <!-- Fixed-height + its own scrollbar so a large result set scrolls independently
-                                     (infinite-scroll feel) instead of stretching the whole page; VirtualizingStackPanel
-                                     keeps only the visible cards realized, and each card's Loaded event lazily fetches
-                                     its latest-version/compatibility badge only once it's actually scrolled into view. -->
-                                <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto" CanContentScroll="True">
-                                    <ItemsControl ItemsSource="{Binding Results}" Focusable="False" VirtualizingStackPanel.IsVirtualizing="True"
-                                                  VirtualizingStackPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <VirtualizingStackPanel />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type vm:VsModCardViewModel}">
-                                                <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="6" Padding="10,8" Margin="0,0,0,6"
-                                                        Loaded="VsModCard_Loaded">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Width="36" Height="36" CornerRadius="4" ClipToBounds="True"
-                                                                Background="{StaticResource RootBackgroundBrush}" Margin="0,0,10,0">
-                                                            <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToBitmap}}" Stretch="UniformToFill" />
-                                                        </Border>
-                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock Text="{Binding Summary}" Foreground="{StaticResource TextMutedBrush}" FontSize="11"
-                                                                       TextTrimming="CharacterEllipsis" />
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="{Binding DownloadsText}" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
-                                                                <TextBlock Text="{Binding LatestVersionText}" Foreground="{StaticResource TextMutedBrush}" FontSize="11" Margin="8,0,0,0"
-                                                                           Visibility="{Binding LatestVersionText, Converter={StaticResource NullToCollapsed}}" />
-                                                            </StackPanel>
-                                                            <TextBlock Text="{Binding CompatStatusText}" FontSize="11" Margin="0,2,0,0"
-                                                                       Visibility="{Binding CompatStatusText, Converter={StaticResource NullToCollapsed}}">
-                                                                <TextBlock.Style>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsCompatWarning}" Value="True">
-                                                                                <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </StackPanel>
-                                                        <Button Grid.Column="2" VerticalAlignment="Center"
-                                                                IsEnabled="{Binding IsInstalling, Converter={StaticResource InverseBool}}"
-                                                                Command="{Binding DataContext.InstallCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}">
-                                                            <Button.Style>
-                                                                <Style TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
-                                                                    <Setter Property="Content" Value="Install" />
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding IsInstalling}" Value="True">
-                                                                            <Setter Property="Content" Value="Installing…" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding IsInstalled}" Value="True">
-                                                                            <Setter Property="Content" Value="Installed ✓" />
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </Button.Style>
-                                                        </Button>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
+                                <tabs:VsModWebBrowser x:Name="VsModWebBrowser" />
                             </StackPanel>
 
                             <Grid Margin="0,16,0,6">

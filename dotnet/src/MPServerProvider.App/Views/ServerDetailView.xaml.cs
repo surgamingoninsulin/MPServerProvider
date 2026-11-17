@@ -28,6 +28,7 @@ public partial class ServerDetailView : UserControl
                 oldVm.FilesTabRequested -= ViewModel_FilesTabRequested;
                 oldVm.KleiTabRequested -= ViewModel_KleiTabRequested;
                 oldVm.EditorTextProvider = null;
+                oldVm.ModsTab.VsMods.PropertyChanged -= VsMods_PropertyChanged;
             }
             if (e.NewValue is ServerDetailViewModel newVm)
             {
@@ -41,6 +42,8 @@ public partial class ServerDetailView : UserControl
                 newVm.SetViewVisible(IsVisible);
                 _followConsole = true;
                 newVm.ResyncConsole();
+                newVm.ModsTab.VsMods.PropertyChanged += VsMods_PropertyChanged;
+                UpdateVsModWebBrowser(newVm.ModsTab.VsMods);
             }
         };
 
@@ -107,6 +110,17 @@ public partial class ServerDetailView : UserControl
             }
         };
     }
+
+    private void VsMods_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is VsModBrowserViewModel vm)
+        {
+            UpdateVsModWebBrowser(vm);
+        }
+    }
+
+    private void UpdateVsModWebBrowser(VsModBrowserViewModel vsMods)
+        => VsModWebBrowser.SetContext(vsMods.Services, vsMods.Toasts, vsMods.Current, vsMods.NotifyInstalled);
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -698,22 +712,4 @@ public partial class ServerDetailView : UserControl
         }
     }
 
-    private void VsModsSearchBox_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && ViewModel?.ModsTab.VsMods.SearchCommand is { } command && command.CanExecute(null))
-        {
-            e.Handled = true;
-            command.Execute(null);
-        }
-    }
-
-    // Fires once per card as the virtualized list scrolls it into view, so the latest-version /
-    // compatibility badge is only fetched from mods.vintagestory.at for cards the user actually sees.
-    private void VsModCard_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: VsModCardViewModel card })
-        {
-            _ = card.EnsureCompatibilityLoadedAsync();
-        }
-    }
 }

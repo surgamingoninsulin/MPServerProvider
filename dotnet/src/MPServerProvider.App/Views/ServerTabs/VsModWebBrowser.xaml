@@ -1,0 +1,55 @@
+<UserControl x:Class="MPServerProvider.App.Views.ServerTabs.VsModWebBrowser"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
+    <!-- The real mods.vintagestory.at site, embedded, so browsing/searching/screenshots/comments
+         all work exactly like the real site. Clicking a mod's "Download" button is caught by
+         CoreWebView2.DownloadStarting and redirected straight into this server's mods folder. -->
+    <Border Style="{StaticResource CardStyle}" Padding="0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="560" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" Margin="10,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Style="{StaticResource IconButtonStyle}" ToolTip="Back" Click="Back_Click">
+                        <TextBlock Text="&#xE72B;" Style="{StaticResource IconTextStyle}" FontSize="12" />
+                    </Button>
+                    <Button Style="{StaticResource IconButtonStyle}" ToolTip="Reload" Click="Reload_Click">
+                        <TextBlock Text="&#xE72C;" Style="{StaticResource IconTextStyle}" FontSize="12" />
+                    </Button>
+                    <Button Style="{StaticResource IconButtonStyle}" ToolTip="All mods" Click="Home_Click">
+                        <TextBlock Text="&#xE80F;" Style="{StaticResource IconTextStyle}" FontSize="12" />
+                    </Button>
+                </StackPanel>
+                <TextBlock x:Name="AddressText" Grid.Column="1" Text="mods.vintagestory.at" Margin="10,0"
+                           VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="ServerVersionText" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0"
+                           Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                <Button Grid.Column="3" Style="{StaticResource GhostButtonStyle}" Padding="10,5" Click="OpenExternal_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8A7;" Style="{StaticResource IconTextStyle}" FontSize="12" Margin="0,0,6,0" />
+                        <TextBlock Text="Open in browser" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+            <Grid Grid.Row="1">
+                <wv2:WebView2 x:Name="Web" Visibility="Collapsed" />
+                <StackPanel x:Name="Placeholder" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="460" Margin="20">
+                    <TextBlock x:Name="PlaceholderText" Text="Loading mods.vintagestory.at…" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                    <TextBlock Text="Browse and search mods here like the real site. Click a mod's Download button and it's saved straight into this server's mods folder."
+                               Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
