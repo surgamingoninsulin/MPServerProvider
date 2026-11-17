@@ -10,6 +10,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
         <conv:InverseBooleanConverter x:Key="InverseBool" />
+        <conv:NullToVisibilityConverter x:Key="NullToCollapsed" />
         <controls:UrlToBitmapConverter x:Key="UrlToBitmap" />
         <!-- Shown over the File Manager / Mods tab while files are dragged over it. -->
         <Style x:Key="DropOverlayStyle" TargetType="Border">
