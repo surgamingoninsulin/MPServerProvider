@@ -1,0 +1,103 @@
+<UserControl x:Class="MPServerProvider.App.Views.ServerTabs.ModInstallTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:MPServerProvider.App.Converters"
+             xmlns:vm="clr-namespace:MPServerProvider.App.ViewModels">
+    <UserControl.Resources>
+        <conv:InverseBooleanConverter x:Key="InverseBool" />
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Install Mods" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock Text="Search a marketplace and install a mod straight into this server's mods folder. The same compatibility checks as a manual drop apply."
+                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,8" TextWrapping="Wrap" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="0" Width="140" Height="34" VerticalContentAlignment="Center"
+                          ItemsSource="{Binding AvailableSources}" SelectedItem="{Binding SelectedSource}" />
+                <TextBox Grid.Column="1" Height="34" Margin="8,0" VerticalContentAlignment="Center"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         KeyDown="SearchBox_KeyDown" />
+                <Button Grid.Column="2" Content="Search" Style="{StaticResource AccentButtonStyle}" Width="90" Height="34"
+                        Command="{Binding SearchCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,8,0,0" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding LaunchArgNoticeText}" FontSize="12" Foreground="{StaticResource BrandAccentBrush}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Visibility="{Binding IsLaunchArgInstall, Converter={StaticResource BoolToVisibility}}" />
+        </StackPanel>
+
+        <!-- Scrollable, but the track itself is hidden - the mouse wheel still scrolls it. -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" ScrollChanged="ResultsScroll_ScrollChanged">
+            <ItemsControl ItemsSource="{Binding Results}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:ModListingCardViewModel}">
+                        <!-- Fixed height, with the button row pinned to the bottom ("*" row above
+                             absorbs the varying summary length) so every card's button lines up
+                             at the same height regardless of how long its text is. -->
+                        <Border Style="{StaticResource CardStyle}" Width="190" Height="252" Margin="0,0,10,10" Padding="10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0">
+                                    <Border Background="{StaticResource PanelBackgroundBrush}" Height="90" CornerRadius="6" ClipToBounds="True">
+                                        <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,8,0,0" TextTrimming="CharacterEllipsis"
+                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis">
+                                        <Run Text="by " /><Run Text="{Binding Author, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Summary}" Margin="0,6,0,0" FontSize="11" TextWrapping="Wrap" MaxHeight="48" TextTrimming="CharacterEllipsis"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                                    <TextBlock Text="{Binding DownloadsText}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <Button HorizontalAlignment="Stretch" Margin="0,6,0,0"
+                                            IsEnabled="{Binding IsInstalling, Converter={StaticResource InverseBool}}"
+                                            Command="{Binding DataContext.InstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+                                                <Setter Property="Content" Value="Install" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsInstalling}" Value="True">
+                                                        <Setter Property="Content" Value="Installing…" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                                        <Setter Property="Content" Value="Installed ✓" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Text="{Binding StatusText}" Margin="0,4,0,0" FontSize="10" TextWrapping="Wrap" MaxHeight="28" TextTrimming="CharacterEllipsis"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

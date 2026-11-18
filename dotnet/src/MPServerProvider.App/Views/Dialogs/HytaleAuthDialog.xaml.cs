@@ -35,12 +35,14 @@ public partial class HytaleAuthDialog : DialogWindow
             Web.CoreWebView2!.Navigate(link);
             Web.Visibility = Visibility.Visible;
             StatusText.Visibility = Visibility.Collapsed;
+            WaitingText.Visibility = Visibility.Visible;
         }
         catch (Exception ex)
         {
             Web.Visibility = Visibility.Collapsed;
             StatusText.Visibility = Visibility.Visible;
             StatusText.Text = EmbeddedBrowser.DescribeFailure(ex);
+            WaitingText.Visibility = Visibility.Collapsed;
         }
     }
 

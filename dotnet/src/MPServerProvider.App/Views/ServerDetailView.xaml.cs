@@ -54,6 +54,7 @@ public partial class ServerDetailView : UserControl
         FallBackToConsoleWhenHidden(TabResourcePack);
         FallBackToConsoleWhenHidden(TabLuckPerms);
         FallBackToConsoleWhenHidden(TabScenarios);
+        FallBackToConsoleWhenHidden(TabModInstall);
     }
 
     private void FallBackToConsoleWhenHidden(RadioButton tab)
@@ -218,6 +219,7 @@ public partial class ServerDetailView : UserControl
             ResourcePackPanel.Visibility = Visibility.Collapsed;
             LuckPermsPanel.Visibility = Visibility.Collapsed;
             ScenariosPanel.Visibility = Visibility.Collapsed;
+            ModInstallPanel.Visibility = Visibility.Collapsed;
 
             if (ReferenceEquals(sender, TabConsole))
             {
@@ -264,6 +266,10 @@ public partial class ServerDetailView : UserControl
             else if (ReferenceEquals(sender, TabScenarios))
             {
                 ScenariosPanel.Visibility = Visibility.Visible;
+            }
+            else if (ReferenceEquals(sender, TabModInstall))
+            {
+                ModInstallPanel.Visibility = Visibility.Visible;
             }
         }
         catch (Exception ex)

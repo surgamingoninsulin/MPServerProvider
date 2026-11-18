@@ -43,6 +43,11 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
 
     public ObservableCollection<ServerInstance> Servers { get; }
 
+    /// <summary>All tunnels on the playit.gg account, unfiltered. The account-wide list can include
+    /// tunnels for other games/servers - see <see cref="RefreshVisiblePlayitTunnels"/>.</summary>
+    private IReadOnlyList<PlayitTunnel> _rawPlayitTunnels = Array.Empty<PlayitTunnel>();
+
+    /// <summary>Only the tunnel(s) that match the selected server's port(s) - what the dialog shows.</summary>
     public ObservableCollection<PlayitTunnel> PlayitTunnels { get; } = new();
 
     [ObservableProperty]
@@ -311,7 +316,50 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
             : "Will forward: " + string.Join(", ", planned.Select(p => $"{p.ExternalPort}/{p.SoapProtocol}"));
         var playitKind = protocols.Count > 1 ? "TCP+UDP" : protoText;
         PlayitPortHint = $"On playit.gg, add a {playitKind} tunnel to local address 127.0.0.1, port {server.ServerPort}.";
+        RefreshVisiblePlayitTunnels();
         RefreshPlayitPortCheck();
+    }
+
+    /// <summary>
+    /// A playit.gg account's tunnel list is shared across every server/game the user runs, not
+    /// just this one - so the raw list from the agent can (and in practice does) include a tunnel
+    /// for an entirely different game's server. Only tunnels whose local port matches this
+    /// server's port (or one of its configured extra ports) belong in the dialog's tunnel list.
+    /// </summary>
+    private void RefreshVisiblePlayitTunnels()
+    {
+        var matching = SelectedServer is { } server
+            ? _rawPlayitTunnels.Where(t => t.DestinationPort is { } port && AllowedPlayitPorts(server).Contains(port)).ToList()
+            : new List<PlayitTunnel>();
+
+        if (PlayitTunnels.SequenceEqual(matching))
+        {
+            return;
+        }
+
+        PlayitTunnels.Clear();
+        foreach (var tunnel in matching)
+        {
+            PlayitTunnels.Add(tunnel);
+        }
+        OnPropertyChanged(nameof(HasPlayitTunnels));
+    }
+
+    private static HashSet<int> AllowedPlayitPorts(ServerInstance server)
+    {
+        var ports = new HashSet<int> { server.ServerPort };
+        foreach (var raw in server.Tunnel?.ExtraPorts ?? new List<string>())
+        {
+            if (!TunnelService.TryParseExtraPort(raw, out var from, out var to, out _))
+            {
+                continue;
+            }
+            for (var p = from; p <= to && p - from < 64; p++)
+            {
+                ports.Add(p);
+            }
+        }
+        return ports;
     }
 
     // -- playit tunnel ↔ server port check --
@@ -333,14 +381,28 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
 
     private void RefreshPlayitPortCheck()
     {
-        if (SelectedServer is not { } server || PlayitTunnels.Count == 0)
+        if (SelectedServer is not { } server || _rawPlayitTunnels.Count == 0)
         {
             PlayitMismatchText = string.Empty;
             PlayitSuggestedPort = null;
             return;
         }
 
-        var check = PlayitPortCheck.For(PlayitTunnels, server.ServerPort);
+        // A tunnel pointed at a port some other configured server already uses is that server's
+        // tunnel, not a misconfigured one for this server - don't suggest "fixing" onto it.
+        var otherServerPorts = Servers
+            .Where(s => s.ServerName != server.ServerName)
+            .Select(s => s.ServerPort)
+            .ToHashSet();
+        var candidates = _rawPlayitTunnels.Where(t => t.DestinationPort is not { } port || !otherServerPorts.Contains(port)).ToList();
+        if (candidates.Count == 0)
+        {
+            PlayitMismatchText = string.Empty;
+            PlayitSuggestedPort = null;
+            return;
+        }
+
+        var check = PlayitPortCheck.For(candidates, server.ServerPort);
         if (check.Matching.Count > 0 || check.OtherPorts.Count == 0)
         {
             PlayitMismatchText = string.Empty;
@@ -717,14 +779,10 @@ public sealed partial class TunnelDialogViewModel : ObservableObject, IDisposabl
         ClaimUrl = status.ClaimUrl ?? string.Empty;
         DashboardUrl = status.DashboardUrl;
 
-        if (!PlayitTunnels.SequenceEqual(status.Tunnels))
+        if (!_rawPlayitTunnels.SequenceEqual(status.Tunnels))
         {
-            PlayitTunnels.Clear();
-            foreach (var tunnel in status.Tunnels)
-            {
-                PlayitTunnels.Add(tunnel);
-            }
-            OnPropertyChanged(nameof(HasPlayitTunnels));
+            _rawPlayitTunnels = status.Tunnels;
+            RefreshVisiblePlayitTunnels();
             RefreshPlayitPortCheck();
         }
         StopPlayitCommand.NotifyCanExecuteChanged();

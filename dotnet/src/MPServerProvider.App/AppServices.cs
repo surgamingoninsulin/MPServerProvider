@@ -1,5 +1,6 @@
 using MPServerProvider.Core.Models;
 using MPServerProvider.Core.Services;
+using MPServerProvider.Core.Services.Mods;
 
 namespace MPServerProvider.App;
 
@@ -20,6 +21,7 @@ public sealed class AppServices
     public TunnelService Tunnel { get; }
     public NewsService News { get; }
     public HytaleAuthAutomation HytaleAuth { get; }
+    public ModInstallService ModInstaller { get; }
 
     public RunningServerTracker RunningTracker { get; }
 
@@ -39,7 +41,8 @@ public sealed class AppServices
         TunnelService tunnel,
         NewsService news,
         RunningServerTracker runningTracker,
-        HytaleAuthAutomation hytaleAuth)
+        HytaleAuthAutomation hytaleAuth,
+        ModInstallService modInstaller)
     {
         Paths = paths;
         Settings = settings;
@@ -57,6 +60,7 @@ public sealed class AppServices
         News = news;
         RunningTracker = runningTracker;
         HytaleAuth = hytaleAuth;
+        ModInstaller = modInstaller;
     }
 
     public static AppServices Initialize()
@@ -90,13 +94,24 @@ public sealed class AppServices
         // Keeps a Hytale server signed in across restarts: starts the device-code login when the
         // server reports it has no token, and saves it once signed in so it isn't asked again.
         var hytaleAuth = new HytaleAuthAutomation(processes);
+        var modHttp = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        modHttp.DefaultRequestHeaders.UserAgent.ParseAdd("MPServerProvider/1.0 (+https://github.com/surgamingoninsulin/MPServerProvider)");
+        var modInstaller = new ModInstallService(
+            new IModSource[]
+            {
+                new CurseForgeModSource(modHttp, () => settings.Settings.CurseForgeApiKey),
+                new ThunderstoreModSource(modHttp),
+                new ModIoModSource(modHttp, () => settings.Settings.ModIoApiKey, () => settings.Settings.ModIoApiHost),
+            },
+            mods,
+            servers);
 
         // Seeds built-in games on first run and merges any on-disk manifests.
         games.Reload();
 
         return new AppServices(
             paths, settings, games, servers, installer, processes,
-            mods, workshop, rcon, firewall, metrics, artwork, tunnel, news, runningTracker, hytaleAuth);
+            mods, workshop, rcon, firewall, metrics, artwork, tunnel, news, runningTracker, hytaleAuth, modInstaller);
     }
 
     private sealed class ServerRepositoryPersistence(ServerRepository repository) : IServerPersistence

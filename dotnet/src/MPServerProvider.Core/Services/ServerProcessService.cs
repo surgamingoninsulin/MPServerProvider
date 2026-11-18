@@ -207,6 +207,15 @@ public sealed class ProcessServerRunnerFactory : IServerRunnerFactory
             throw;
         }
 
+        if (OperatingSystem.IsWindows())
+        {
+            // Some dedicated servers (UE games launched with -log, e.g. Abiotic Factor, ARK,
+            // Astroneer) pop their own log window despite CreateNoWindow; output already reaches
+            // the app's Console tab via stdout, so hide it the moment it appears.
+            var pid = process.Id;
+            _ = ChildWindowHider.WatchAndHideAsync(pid, TimeSpan.FromMinutes(3), CancellationToken.None);
+        }
+
         return runner;
     }
 

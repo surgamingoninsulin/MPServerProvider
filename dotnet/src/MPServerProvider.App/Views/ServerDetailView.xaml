@@ -160,6 +160,9 @@
             <RadioButton x:Name="TabScenarios" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
                          Content="Scenarios" Checked="Tab_Checked" Margin="4,0,0,0"
                          Visibility="{Binding Scenarios.IsAvailable, Converter={StaticResource BoolToVis}}" />
+            <RadioButton x:Name="TabModInstall" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
+                         Content="Install Mods" Checked="Tab_Checked" Margin="4,0,0,0"
+                         Visibility="{Binding ModInstall.IsAvailable, Converter={StaticResource BoolToVis}}" />
             <RadioButton x:Name="TabSettings" Style="{StaticResource NavPillStyle}" GroupName="detailTab"
                          Content="Server Settings" Checked="Tab_Checked" Margin="4,0,0,0" />
         </StackPanel>
@@ -765,6 +768,7 @@
         <tabs:ResourcePackTab x:Name="ResourcePackPanel" Grid.Row="2" Visibility="Collapsed" DataContext="{Binding ResourcePack}" />
         <tabs:LuckPermsTab x:Name="LuckPermsPanel" Grid.Row="2" Visibility="Collapsed" DataContext="{Binding LuckPerms}" />
         <tabs:ScenarioDownloaderTab x:Name="ScenariosPanel" Grid.Row="2" Visibility="Collapsed" DataContext="{Binding Scenarios}" />
+        <tabs:ModInstallTab x:Name="ModInstallPanel" Grid.Row="2" Visibility="Collapsed" DataContext="{Binding ModInstall}" />
 
         <!-- Server Settings -->
         <ScrollViewer x:Name="SettingsPanel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">

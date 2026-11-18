@@ -40,6 +40,7 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         ResourcePack = new ResourcePackTabViewModel(services, toasts);
         LuckPerms = new LuckPermsTabViewModel(services, toasts);
         Scenarios = new ScenarioDownloaderTabViewModel(services, toasts);
+        ModInstall = new ModInstallTabViewModel(services, toasts);
     }
 
     public ResourcePackTabViewModel ResourcePack { get; }
@@ -47,6 +48,8 @@ public sealed partial class ServerDetailViewModel : ObservableObject
     public LuckPermsTabViewModel LuckPerms { get; }
 
     public ScenarioDownloaderTabViewModel Scenarios { get; }
+
+    public ModInstallTabViewModel ModInstall { get; }
 
     public ServerInstance? Current { get; private set; }
 
@@ -190,6 +193,7 @@ public sealed partial class ServerDetailViewModel : ObservableObject
             ResourcePack.SetServer(server);
             LuckPerms.SetServer(server);
             Scenarios.SetServer(server);
+            ModInstall.SetServer(server);
             RefreshLiveFields();
             UpdateTimer();
         }
@@ -228,6 +232,7 @@ public sealed partial class ServerDetailViewModel : ObservableObject
         ResourcePack.SetServer(null);
         LuckPerms.SetServer(null);
         Scenarios.SetServer(null);
+        ModInstall.SetServer(null);
         ResetConsole();
         _timer.Stop();
     }

@@ -11,6 +11,8 @@ public partial class SettingsPage : UserControl, INavigationAware
     private readonly DispatcherTimer _liveTimer;
 
     private SettingsPageViewModel? _viewModel;
+    private bool _settingCurseForgeKeyFromViewModel;
+    private bool _settingModIoKeyFromViewModel;
 
     // Never cast DataContext: it's inherited from MainWindow (DataContext = itself) until our own
     // view model is assigned, so the old `(SettingsPageViewModel)DataContext` cast threw
@@ -41,6 +43,28 @@ public partial class SettingsPage : UserControl, INavigationAware
                 DataContext = _viewModel;
                 _viewModel.Initialize();
                 _liveTimer.Start();
+
+                // PasswordBox.Password can't be data-bound (WPF deliberately blocks that for
+                // secrets), so it's synced by hand: seed it once from the loaded setting here,
+                // then push edits back on PasswordChanged below.
+                _settingCurseForgeKeyFromViewModel = true;
+                try
+                {
+                    CurseForgeApiKeyBox.Password = _viewModel.CurseForgeApiKey;
+                }
+                finally
+                {
+                    _settingCurseForgeKeyFromViewModel = false;
+                }
+                _settingModIoKeyFromViewModel = true;
+                try
+                {
+                    ModIoApiKeyBox.Password = _viewModel.ModIoApiKey;
+                }
+                finally
+                {
+                    _settingModIoKeyFromViewModel = false;
+                }
                 return;
             }
 
@@ -74,6 +98,24 @@ public partial class SettingsPage : UserControl, INavigationAware
         {
             ReportError("Could not add the firewall rule", ex);
         }
+    }
+
+    private void CurseForgeApiKeyBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_settingCurseForgeKeyFromViewModel || ViewModel is not { } vm)
+        {
+            return;
+        }
+        vm.CurseForgeApiKey = CurseForgeApiKeyBox.Password;
+    }
+
+    private void ModIoApiKeyBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_settingModIoKeyFromViewModel || ViewModel is not { } vm)
+        {
+            return;
+        }
+        vm.ModIoApiKey = ModIoApiKeyBox.Password;
     }
 
     private void ReportError(string what, Exception ex)

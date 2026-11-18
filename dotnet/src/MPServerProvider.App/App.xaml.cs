@@ -269,12 +269,22 @@ public partial class App : Application
             {
                 try
                 {
-                    if (!HytaleAuthDialogs.TryGetValue(server.ServerName, out var dialog) || !dialog.IsLoaded)
+                    var isNew = !HytaleAuthDialogs.TryGetValue(server.ServerName, out var dialog) || !dialog.IsLoaded;
+                    if (isNew)
                     {
                         dialog = new HytaleAuthDialog(toasts) { Owner = owner, Title = $"Sign in to Hytale - {server.ServerName}" };
                         dialog.Closed += (_, _) => HytaleAuthDialogs.Remove(server.ServerName);
                         HytaleAuthDialogs[server.ServerName] = dialog;
                         dialog.Show();
+                        toasts.Info($"{server.ServerName} needs a Hytale sign-in - a window just opened for it. Can't find it? Check behind your other windows.");
+                    }
+
+                    // The dialog can otherwise end up behind other windows with no hint it's
+                    // waiting on the user, which is what made this feel like it silently hung.
+                    dialog!.Activate();
+                    if (!isNew && dialog.WindowState == WindowState.Minimized)
+                    {
+                        dialog.WindowState = WindowState.Normal;
                     }
                     await dialog.UpdateAsync(link, code);
                 }

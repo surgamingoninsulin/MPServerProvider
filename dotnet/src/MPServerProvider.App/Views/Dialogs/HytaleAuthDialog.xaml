@@ -15,15 +15,15 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
             <TextBlock Text="Sign in to Hytale" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
-            <TextBlock Text="Sign in below with your Hytale account, then enter the code when the page asks for it."
+            <TextBlock Text="1. Sign in below with your Hytale account.  2. If it asks for a code, click the Code button to copy it and paste it in."
                        Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" />
         </StackPanel>
 
-        <Button Grid.Row="1" x:Name="CodeButton" Style="{StaticResource GhostButtonStyle}" Margin="0,0,0,10"
+        <Button Grid.Row="1" x:Name="CodeButton" Style="{StaticResource AccentButtonStyle}" Margin="0,0,0,10"
                 HorizontalAlignment="Left" Visibility="Collapsed" Click="CodeButton_Click"
                 ToolTip="Click to copy to clipboard">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Code: " Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="Code: " VerticalAlignment="Center" />
                 <TextBlock x:Name="CodeButtonText" FontFamily="Consolas" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
                 <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
@@ -32,10 +32,19 @@
 
         <Border Grid.Row="2" Style="{StaticResource CardStyle}">
             <Grid>
-                <wv2:WebView2 x:Name="Web" Visibility="Collapsed" />
-                <TextBlock x:Name="StatusText" Text="Waiting for the Hytale sign-in page…"
-                           VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
-                           TextWrapping="Wrap" MaxWidth="360" TextAlignment="Center" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <wv2:WebView2 x:Name="Web" Visibility="Collapsed" />
+                    <TextBlock x:Name="StatusText" Text="Waiting for the Hytale sign-in page…"
+                               VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="360" TextAlignment="Center" />
+                </Grid>
+                <TextBlock x:Name="WaitingText" Grid.Row="1" Visibility="Collapsed"
+                           Text="Approved it already? The server checks every few seconds - this window closes on its own once it confirms. No need to close it yourself."
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap" Margin="12,8,12,8" TextAlignment="Center" />
             </Grid>
         </Border>
     </Grid>

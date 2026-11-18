@@ -24,6 +24,8 @@
                 <!-- Row 9: Firewall Rules. This row was missing, so Grid.Row="9" got clamped
                      into row 8 and the Firewall section drew on top of System Specifications. -->
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,20">
@@ -283,6 +285,39 @@
                 <TextBlock Text="No firewall rules created by the panel yet." Foreground="{StaticResource TextSecondaryBrush}" Margin="0,8,0,0"
                            Visibility="{Binding NoRules, Converter={StaticResource BoolToVisibility}}" />
             </StackPanel>
+
+            <TextBlock Grid.Row="10" Text="Mod Marketplaces" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10" />
+            <Border Grid.Row="11" Style="{StaticResource CardStyle}" Margin="0,0,0,24">
+                <StackPanel>
+                    <TextBlock Text="CurseForge API key" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                    <TextBlock Margin="0,2,0,8" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap">
+                        Used by the "Install Mods" tab to search and download from CurseForge (Minecraft, Hytale and a few others).
+                        <Hyperlink Command="{Binding OpenCurseForgeConsoleCommand}" Foreground="{StaticResource BrandAccentBrush}">
+                            Get a free key from the CurseForge console
+                        </Hyperlink>, then paste it below.
+                    </TextBlock>
+                    <PasswordBox x:Name="CurseForgeApiKeyBox" MaxWidth="480" HorizontalAlignment="Left" PasswordChanged="CurseForgeApiKeyBox_PasswordChanged" />
+
+                    <TextBlock Text="mod.io API key" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,16,0,0" />
+                    <TextBlock Margin="0,2,0,8" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap">
+                        Used for mod.io games (e.g. Abiotic Factor).
+                        <Hyperlink Command="{Binding OpenModIoAccessCommand}" Foreground="{StaticResource BrandAccentBrush}">
+                            Get a free read-only key from mod.io
+                        </Hyperlink>, then paste it below.
+                    </TextBlock>
+                    <PasswordBox x:Name="ModIoApiKeyBox" MaxWidth="480" HorizontalAlignment="Left" PasswordChanged="ModIoApiKeyBox_PasswordChanged" />
+
+                    <TextBlock Text="mod.io API path" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,16,0,0" />
+                    <TextBlock Margin="0,2,0,8" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap">
+                        mod.io now gives every account its own API host instead of a shared one. On the
+                        <Hyperlink Command="{Binding OpenModIoAccessCommand}" Foreground="{StaticResource BrandAccentBrush}">
+                            mod.io API access page
+                        </Hyperlink>, copy the "API path" shown next to your key (looks like https://u-1234567.modapi.io/v1) and paste it here.
+                    </TextBlock>
+                    <TextBox Text="{Binding ModIoApiHost, UpdateSourceTrigger=PropertyChanged}" MaxWidth="480" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
         </Grid>
     </ScrollViewer>
 </UserControl>

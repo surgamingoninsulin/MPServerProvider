@@ -34,6 +34,9 @@ public sealed partial class SettingsPageViewModel : ObservableObject
     [ObservableProperty] private bool _startMinimized;
     [ObservableProperty] private bool _restoreServers;
     [ObservableProperty] private bool _newsAutoScroll;
+    [ObservableProperty] private string _curseForgeApiKey = string.Empty;
+    [ObservableProperty] private string _modIoApiKey = string.Empty;
+    [ObservableProperty] private string _modIoApiHost = string.Empty;
 
     [ObservableProperty] private string _cpuText = "—";
     [ObservableProperty] private double _cpuFraction;
@@ -85,6 +88,9 @@ public sealed partial class SettingsPageViewModel : ObservableObject
             StartMinimized = settings.StartMinimizedToTray;
             RestoreServers = settings.RestoreRunningServers;
             NewsAutoScroll = settings.NewsAutoScroll;
+            CurseForgeApiKey = settings.CurseForgeApiKey ?? string.Empty;
+            ModIoApiKey = settings.ModIoApiKey ?? string.Empty;
+            ModIoApiHost = settings.ModIoApiHost ?? string.Empty;
         }
         finally
         {
@@ -294,6 +300,48 @@ public sealed partial class SettingsPageViewModel : ObservableObject
         if (!_isLoadingSettings)
         {
             UpdateSettings(s => s.NewsAutoScroll = value);
+        }
+    }
+
+    partial void OnCurseForgeApiKeyChanged(string value)
+    {
+        if (!_isLoadingSettings)
+        {
+            UpdateSettings(s => s.CurseForgeApiKey = string.IsNullOrWhiteSpace(value) ? null : value.Trim());
+        }
+    }
+
+    partial void OnModIoApiKeyChanged(string value)
+    {
+        if (!_isLoadingSettings)
+        {
+            UpdateSettings(s => s.ModIoApiKey = string.IsNullOrWhiteSpace(value) ? null : value.Trim());
+        }
+    }
+
+    partial void OnModIoApiHostChanged(string value)
+    {
+        if (!_isLoadingSettings)
+        {
+            UpdateSettings(s => s.ModIoApiHost = string.IsNullOrWhiteSpace(value) ? null : value.Trim());
+        }
+    }
+
+    [RelayCommand]
+    private void OpenCurseForgeConsole()
+    {
+        if (!Controls.ArtworkImages.OpenInBrowser("https://console.curseforge.com/"))
+        {
+            _toasts.Error("Couldn't open the CurseForge console in your browser.");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenModIoAccess()
+    {
+        if (!Controls.ArtworkImages.OpenInBrowser("https://mod.io/me/access"))
+        {
+            _toasts.Error("Couldn't open mod.io in your browser.");
         }
     }
 
