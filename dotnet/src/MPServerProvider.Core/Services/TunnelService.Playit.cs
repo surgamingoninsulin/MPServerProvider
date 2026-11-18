@@ -131,13 +131,24 @@ public static class PlayitOutputParser
 
         var message = line;
         string? level = null;
+        string? target = null;
         if (LogLevel.Match(line) is { Success: true } log)
         {
             level = log.Groups["level"].Value;
+            target = log.Groups["target"].Value;
             message = log.Groups["msg"].Value;
         }
 
         bool Has(string text) => message.Contains(text, StringComparison.OrdinalIgnoreCase);
+
+        // The agent always tries IPv6 first; on networks without working IPv6 that times out and
+        // it falls back to IPv4 a moment later in the same startup attempt. That's normal and not
+        // worth surfacing as "the agent reported a problem" — it would just alarm the user for no reason.
+        if (target?.Contains("address_selector", StringComparison.Ordinal) == true
+            && (Has("timeout waiting for pong") || Has("failed to ping tunnel server")))
+        {
+            return new PlayitLineInfo(PlayitLineKind.None, Message: message);
+        }
 
         if (Has("Setup was not approved"))
         {
@@ -315,6 +326,8 @@ public sealed partial class TunnelService
     private int _playitQuickFailures;
     private DateTimeOffset _playitStartedAt;
     private string? _playitFatal;
+    private readonly List<DateTimeOffset> _playitRestartTimes = new();
+    private bool _playitFlapWarned;
 
     private PlayitState _playitState = PlayitState.NotInstalled;
     private string _playitMessage = string.Empty;
@@ -636,6 +649,8 @@ public sealed partial class TunnelService
             _playitWanted = true;
             _playitQuickFailures = 0;
             _playitFatal = null;
+            _playitRestartTimes.Clear();
+            _playitFlapWarned = false;
             _playitClaimUrl = null;
             _playitLoginUrl = null;
             _playitIpcLoginLink = null;
@@ -726,6 +741,8 @@ public sealed partial class TunnelService
 
         int delaySeconds;
         string? fatal;
+        bool isFlapping;
+        int recentRestarts;
         lock (_playitLock)
         {
             if (generation != _playitGeneration || !_playitWanted)
@@ -746,6 +763,19 @@ public sealed partial class TunnelService
             {
                 _playitWanted = false;
             }
+
+            // _playitQuickFailures resets whenever a run survives 2 minutes, so an agent that
+            // connects fine but dies every 1-5 minutes would otherwise restart forever in near
+            // silence. Track restarts over a longer window so that pattern gets surfaced too.
+            var now = DateTimeOffset.UtcNow;
+            _playitRestartTimes.Add(now);
+            _playitRestartTimes.RemoveAll(t => now - t > TimeSpan.FromMinutes(10));
+            recentRestarts = _playitRestartTimes.Count;
+            isFlapping = fatal is null && delaySeconds >= 0 && recentRestarts >= 3 && !_playitFlapWarned;
+            if (isFlapping)
+            {
+                _playitFlapWarned = true;
+            }
         }
         runner.Dispose();
 
@@ -763,8 +793,20 @@ public sealed partial class TunnelService
             return;
         }
 
+        if (isFlapping)
+        {
+            var flapWarning = $"playit.gg has restarted {recentRestarts} times in the last 10 minutes. Each run connects " +
+                "but then dies on its own - this usually means your internet connection is dropping, a VPN or firewall " +
+                "is killing the agent's connection, or antivirus is closing playit.exe. Check the output below for the " +
+                "reason it exits each time.";
+            AppendPlayitOutput($"[MP Server Provider] {flapWarning}");
+            Raise(TunnelNoticeLevel.Warning, flapWarning);
+        }
+
         AppendPlayitOutput($"[MP Server Provider] The agent exited; restarting in {delaySeconds} s.");
-        SetPlayitState(PlayitState.Starting, $"The agent exited unexpectedly; restarting in {delaySeconds} s…");
+        SetPlayitState(PlayitState.Starting, isFlapping
+            ? $"The agent keeps exiting on its own (restart #{recentRestarts} in the last 10 minutes); restarting in {delaySeconds} s… See the notice above for likely causes."
+            : $"The agent exited unexpectedly; restarting in {delaySeconds} s…");
         try
         {
             await Task.Delay(TimeSpan.FromSeconds(delaySeconds), ct).ConfigureAwait(false);

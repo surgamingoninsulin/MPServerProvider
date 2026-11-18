@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Threading;
 using MPServerProvider.App.Toasts;
 using MPServerProvider.App.Views;
+using MPServerProvider.App.Views.Dialogs;
+using MPServerProvider.Core.Models;
 
 namespace MPServerProvider.App;
 
@@ -235,6 +237,7 @@ public partial class App : Application
             _ = services.Tunnel.CleanupStaleMappingsAsync();
             var main = new MainWindow(toasts);
             MainWindow = main;
+            WireHytaleAuthPrompts(services, toasts, main);
 
             // "--minimized" is what the Windows sign-in Run entry passes when "Start minimized"
             // is on (SettingsService.ApplyStartOnBoot).
@@ -252,6 +255,47 @@ public partial class App : Application
         {
             splash.Close();
         }
+    }
+
+    private static readonly Dictionary<string, HytaleAuthDialog> HytaleAuthDialogs = new(StringComparer.OrdinalIgnoreCase);
+
+    private static void WireHytaleAuthPrompts(AppServices services, ToastService toasts, Window owner)
+    {
+        var dispatcher = owner.Dispatcher;
+
+        services.HytaleAuth.LoginPromptUpdated += (server, link, code) =>
+        {
+            dispatcher.BeginInvoke(async () =>
+            {
+                try
+                {
+                    if (!HytaleAuthDialogs.TryGetValue(server.ServerName, out var dialog) || !dialog.IsLoaded)
+                    {
+                        dialog = new HytaleAuthDialog(toasts) { Owner = owner, Title = $"Sign in to Hytale - {server.ServerName}" };
+                        dialog.Closed += (_, _) => HytaleAuthDialogs.Remove(server.ServerName);
+                        HytaleAuthDialogs[server.ServerName] = dialog;
+                        dialog.Show();
+                    }
+                    await dialog.UpdateAsync(link, code);
+                }
+                catch
+                {
+                    // Showing the sign-in dialog is best-effort; the link/code is also in the server's console.
+                }
+            });
+        };
+
+        services.HytaleAuth.LoginSucceeded += server =>
+        {
+            dispatcher.BeginInvoke(() =>
+            {
+                if (HytaleAuthDialogs.TryGetValue(server.ServerName, out var dialog))
+                {
+                    dialog.Close();
+                }
+                toasts.Success($"{server.ServerName}: signed in to Hytale. It will stay signed in across restarts.");
+            });
+        };
     }
 
     private static async Task RestoreRunningServersAsync(AppServices services, ToastService toasts)

@@ -19,6 +19,7 @@ public sealed class AppServices
     public ArtworkCacheService Artwork { get; }
     public TunnelService Tunnel { get; }
     public NewsService News { get; }
+    public HytaleAuthAutomation HytaleAuth { get; }
 
     public RunningServerTracker RunningTracker { get; }
 
@@ -37,7 +38,8 @@ public sealed class AppServices
         ArtworkCacheService artwork,
         TunnelService tunnel,
         NewsService news,
-        RunningServerTracker runningTracker)
+        RunningServerTracker runningTracker,
+        HytaleAuthAutomation hytaleAuth)
     {
         Paths = paths;
         Settings = settings;
@@ -54,6 +56,7 @@ public sealed class AppServices
         Tunnel = tunnel;
         News = news;
         RunningTracker = runningTracker;
+        HytaleAuth = hytaleAuth;
     }
 
     public static AppServices Initialize()
@@ -84,13 +87,16 @@ public sealed class AppServices
         // start and disabled on stop/delete. Event subscription only; never blocks a start.
         tunnel.AttachAutomation(processes, server => games.Find(server.ServerGame)?.Network?.Protocol, servers);
         var news = new NewsService();
+        // Keeps a Hytale server signed in across restarts: starts the device-code login when the
+        // server reports it has no token, and saves it once signed in so it isn't asked again.
+        var hytaleAuth = new HytaleAuthAutomation(processes);
 
         // Seeds built-in games on first run and merges any on-disk manifests.
         games.Reload();
 
         return new AppServices(
             paths, settings, games, servers, installer, processes,
-            mods, workshop, rcon, firewall, metrics, artwork, tunnel, news, runningTracker);
+            mods, workshop, rcon, firewall, metrics, artwork, tunnel, news, runningTracker, hytaleAuth);
     }
 
     private sealed class ServerRepositoryPersistence(ServerRepository repository) : IServerPersistence
